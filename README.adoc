@@ -24,8 +24,8 @@ endif::[]
 toc::[]
 :sectnums!:
 [frontmatter]
-= Frontmatter
 
+= Frontmatter
 include::frontmatter.adoc[]
 
 = The Spring Authorization Server

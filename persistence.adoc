@@ -6,7 +6,7 @@
 
 Spring makes it easy to substitute implementations with polymorphism.  _Dependency injection_ is one of the key reasons we use Spring.
 Spring Boot-based configuration makes this doubly powerful.
-While the Spring Authorization Server does amazing things out of the box, its real power lay in all the knobs and leavers available to you because it's just another Spring Boot autoconfiguration.
+While the Spring Authorization Server does amazing things out of the box, its real power lay in all the knobs and leavers available to you because it's just another Spring Boot autoconfiguration and starter.
 We have already acknowledged that keys parts of the Spring Authorization Server defer to in-memory implementations.
 In this section, we'll swap those, and more, out for implementations using JDBC.
 We'll use JDBC, but these are just interfaces.
