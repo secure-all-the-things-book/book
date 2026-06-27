@@ -36,11 +36,10 @@ include::federated-oauth.adoc[]
 
 = OAuth all the Things
 
-include::api.adoc[]
-include::gateway.adoc[]
-include::processor.adoc[]
+// include::gateway.adoc[]
+// include::processor.adoc[]
 
 [appendix]
 = Appendix
 
-include::java.adoc[]
+// include::java.adoc[]
