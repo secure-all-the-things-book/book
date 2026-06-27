@@ -2,17 +2,12 @@
 //JAVA 25
 //DEPS org.springframework.boot:spring-boot-starter:4.1.0
 
+import org.springframework.util.Assert;// X remove useless captions
 
-// X remove useless captions
-// X find all `.java` mentions
-// X validate that all includes work or resolve
-// X find all mentions of Kotlin, just in case
-// make sure we show the bullet form of the dependencies
-// X find all mentions of Graal
-String bookFolderRoot = "/secure-all-the-things";
+String bookFolderName = "secure-all-the-things-book";
 String home = System.getenv("HOME");
-String bookRoot = home + "/code/" + bookFolderRoot + "/book";
-String codeRoot = home + "/code/" + bookFolderRoot;
+String bookRoot = home + "/code/" + bookFolderName + "/book";
+String codeRoot = home + "/code/" + bookFolderName;
 
 List<Path> findAdocs(String rootPath) throws IOException {
     try (var stream = Files.walk(Path.of(rootPath))) {
@@ -61,11 +56,11 @@ void validateIncludes(Path path, String body) {
     while (m.find()) {
         var include = m.group();
         var pathWithColons = include.substring("include".length()).split("\\[")[0];
-        assert pathWithColons.startsWith("::");
+        Assert.state(pathWithColons.startsWith("::"), "the expression must start with ::");
         var p = pathWithColons.substring(2);
         if (p.startsWith("{code}")) {
             p = codeRoot + p.substring("{code}".length());
-            assert Files.exists(Path.of(p)) : "the include path must validate";
+            Assert.state(Files.exists(Path.of(p)), "the include path must validate");
         }
     }
 }
@@ -82,12 +77,9 @@ void findPoms(Path path, String body) {
 
 void main() throws IOException {
     var processors = List.<BiConsumer<Path, String>>of(
-            (path, s) -> findInlineDependencyWithNoSpaces(path, s)
-            // BookProcessor::findPoms
-            // BookProcessor::findReferencesToThingsIDidntWrite
-            // BookProcessor::findJavaMentions
-            // BookProcessor::validateIncludes
-    );
+            this::findInlineDependencyWithNoSpaces,
+            this::findPoms, this::findReferencesToThingsIDidntWrite,
+            this::findJavaMentions, this::validateIncludes);
     var adocs = findAdocs(bookRoot);
     IO.println(adocs.stream().map(Path::toString).collect(Collectors.joining(System.lineSeparator())));
     for (var adoc : adocs) {
@@ -95,7 +87,12 @@ void main() throws IOException {
         IO.println("=".repeat(100));
         IO.println(adoc);
         for (var processor : processors) {
-            processor.accept(adoc, body);
+            try {
+                processor.accept(adoc, body);
+            }//
+            catch (Throwable throwable) {
+                IO.println("Error: " + throwable.getMessage());
+            }
         }
     }
 }
