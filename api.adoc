@@ -1,3 +1,6 @@
+:code: ..
+
+
 = Protecting a Simple HTTP API
 
 Let's build an HTTP API.
@@ -19,7 +22,7 @@ The domain's a trivial one: customer data, like a CRM (customer relationship man
 
 [source,java]
 -----
-include::api/src/main/java/bootiful/api/Customer.java[]
+include::{code}/api/src/main/java/bootiful/api/Customer.java[]
 -----
 
 And of course there's a Spring Data JDBC repository to make working with that data easier...

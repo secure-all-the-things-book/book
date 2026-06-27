@@ -1,98 +1,86 @@
 //usr/bin/env jbang "$0" "$@" ; exit $?
 //JAVA 25
 //DEPS org.springframework.boot:spring-boot-starter:4.1.0
+//DEPS org.asciidoctor:asciidoctorj:3.0.0
 
-import org.springframework.util.Assert;// X remove useless captions
+import org.asciidoctor.Asciidoctor;
+import org.asciidoctor.Attributes;
+import org.asciidoctor.Options;
+import org.asciidoctor.SafeMode;
+import org.asciidoctor.log.LogHandler;
+import org.asciidoctor.log.LogRecord;
+import org.asciidoctor.log.Severity;
+import org.springframework.util.Assert;
 
-String bookFolderName = "secure-all-the-things-book";
-String home = System.getenv("HOME");
-String bookRoot = home + "/code/" + bookFolderName + "/book";
-String codeRoot = home + "/code/" + bookFolderName;
+record Errors(Collection<String> unresolvedIncludes,
+              Collection<String> unresolvedCallouts) {
+}
 
-List<Path> findAdocs(String rootPath) throws IOException {
-    try (var stream = Files.walk(Path.of(rootPath))) {
-        return stream
+interface ErrorClassifier
+        extends BiConsumer<Errors, LogRecord> {
+}
+
+void unresolvedCallout(Errors errors, LogRecord message) {
+    if (message.getMessage().contains("no callout found for"))
+        errors.unresolvedCallouts().add(context(message));
+}
+
+private String context(LogRecord record) {
+    return record.getCursor() + "::" + record.getMessage();
+}
+
+void unresolvedInclude(Errors errors, LogRecord message) {
+    if (message.getMessage().contains("include file not found:"))
+        errors.unresolvedIncludes().add(context(message));
+}
+
+Errors validate(File adoc, File codeRootFolder) {
+    var analysers = List.<ErrorClassifier>of(this::unresolvedCallout, this::unresolvedInclude);
+    var errors = new Errors(new ArrayList<>(), new ArrayList<>());
+    IO.println("inspecting " + adoc.getAbsolutePath() + " with {code} value " + codeRootFolder.getAbsolutePath());
+    try (var asciidoctor = Asciidoctor.Factory.create()) {
+        var handler = (LogHandler) record -> {
+            if (record.getSeverity() == Severity.ERROR || record.getSeverity() == Severity.WARN)
+                for (var analyser : analysers)
+                    analyser.accept(errors, record);
+        };
+        asciidoctor.registerLogHandler(handler);
+        var attributes = Attributes.builder()
+                .attribute("code", codeRootFolder.getAbsolutePath())
+                .build();
+        var options = Options.builder()
+                .safe(SafeMode.UNSAFE)          // needed so include:: directives are processed
+                .baseDir(adoc.getParentFile())
+                .toFile(false)                  // render to string, not to disk
+                .attributes(attributes)
+                .build();
+        asciidoctor.convertFile(adoc, options); // we don't care about the result
+    }
+    return errors;
+}
+
+void main() throws Exception {
+    var root = new File("../..").getCanonicalFile();
+    IO.println("root folder is " + root.getAbsolutePath());
+    try (var stream = Files.walk(root.toPath())) {
+        var adocs = stream
                 .filter(Files::isRegularFile)
-                .filter(p -> p.getFileName().toString().endsWith(".adoc"))
-                .collect(Collectors.toList());
+                .filter(p -> p.toString().endsWith(".adoc"))
+                .toList();
+        for (var input : adocs)
+            validateAdoc(input.toFile(), root);
     }
 }
 
-void findInlineDependencyWithNoSpaces(Path path, String doc) {
-    var m = Pattern.compile("`.*`:`.*`").matcher(doc);
-    var deps = new ArrayList<String>();
-    while (m.find())
-        deps.add(m.group());
-    IO.println(String.join(System.lineSeparator(), deps));
-}
+private void validateAdoc(File input, File root) {
+    Assert.state(input.exists(), "input file must exist");
+    Assert.state(root.exists(), "code folder must exist");
 
-void findInlineDependency(Path path, String doc) {
-    var m = Pattern.compile("`.*`\\s*:\\s*`.*`").matcher(doc);
-    var deps = new ArrayList<String>();
-    while (m.find()) deps.add(m.group());
-    IO.println(String.join(System.lineSeparator(), deps));
-}
+    var errors = validate(input, root);
 
-void findJavaMentions(Path path, String adocBody) {
-    var m = Pattern.compile(".*\\.java").matcher(adocBody);
-    var javas = new ArrayList<String>();
-    while (m.find()) javas.add("\t" + m.group());
-    IO.println(String.join(System.lineSeparator(), javas));
-}
+    for (var entry : errors.unresolvedCallouts())
+        IO.println("missing callouts: " + entry);
 
-void findReferencesToThingsIDidntWrite(Path path, String body) {
-    var words = new String[]{"kotlin", "graal"};
-    for (var word : words) {
-        var m = Pattern.compile("kotlin", Pattern.MULTILINE | Pattern.CASE_INSENSITIVE).matcher(body);
-        var results = new ArrayList<String>();
-        while (m.find()) results.add(m.group());
-        IO.println(results.size());
-        for (String k : results) IO.println(k);
-    }
-}
-
-void validateIncludes(Path path, String body) {
-    var m = Pattern.compile("^include.*", Pattern.MULTILINE).matcher(body);
-    while (m.find()) {
-        var include = m.group();
-        var pathWithColons = include.substring("include".length()).split("\\[")[0];
-        Assert.state(pathWithColons.startsWith("::"), "the expression must start with ::");
-        var p = pathWithColons.substring(2);
-        if (p.startsWith("{code}")) {
-            p = codeRoot + p.substring("{code}".length());
-            Assert.state(Files.exists(Path.of(p)), "the include path must validate");
-        }
-    }
-}
-
-void findPoms(Path path, String body) {
-    var toFind = new String[]{"pom\\.xml", "<dependency"};
-    for (var f : toFind) {
-        var m = Pattern.compile(f, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE).matcher(body);
-        while (m.find()) {
-            IO.println("found: %s %n".formatted(m.group()));
-        }
-    }
-}
-
-void main() throws IOException {
-    var processors = List.<BiConsumer<Path, String>>of(
-            this::findInlineDependencyWithNoSpaces,
-            this::findPoms, this::findReferencesToThingsIDidntWrite,
-            this::findJavaMentions, this::validateIncludes);
-    var adocs = findAdocs(bookRoot);
-    IO.println(adocs.stream().map(Path::toString).collect(Collectors.joining(System.lineSeparator())));
-    for (var adoc : adocs) {
-        var body = Files.readString(adoc, StandardCharsets.UTF_8);
-        IO.println("=".repeat(100));
-        IO.println(adoc);
-        for (var processor : processors) {
-            try {
-                processor.accept(adoc, body);
-            }//
-            catch (Throwable throwable) {
-                IO.println("Error: " + throwable.getMessage());
-            }
-        }
-    }
+    for (var entry : errors.unresolvedIncludes())
+        IO.println("missing include: " + entry);
 }
