@@ -1,0 +1,46 @@
+:tilde: ~
+:author: Josh Long
+:email:  josh@joshlong.com
+:revnumber: 1.0
+:revdate: {docdate}
+:revyear: 2027
+:keywords: "Secure All The Things!"
+:doctype: book
+:media: screen
+ifeval::["{media}" != "prepress"]
+:front-cover-image: image:cover.png[Front Cover,1050,1600]
+endif::[]
+:toc:
+:toc-placement: macro
+:icons: font
+:lang: en
+:language: javadocript
+:experimental:
+:pdf-fontsdir: ./styles/pdf/fonts
+:pdf-stylesdir: ./styles/pdf
+:pdf-style: screen
+:leveloffset: 1
+// ifndef::ebook-format[:leveloffset: 1]
+toc::[]
+:sectnums!:
+[frontmatter]
+= Frontmatter
+
+include::frontmatter.adoc[]
+
+= The Spring Authorization Server
+include::oauth.adoc[]
+include::authorization-server.adoc[]
+include::persistence.adoc[]
+include::federated-oauth.adoc[]
+
+= OAuth all the Things
+
+include::api.adoc[]
+include::gateway.adoc[]
+include::processor.adoc[]
+
+[appendix]
+= Appendix
+
+include::java.adoc[]
