@@ -1,9 +1,6 @@
 :code: ..
 
-= The Processor
-
-// in this section we'll look at how to use OAuth to secure a headless backoffice process
-// the approach we'll take could be easily applied to other contexts, like Spring's WebSocket support using the `BeforeSocketHandshakeInterceptor`
+= Messaging
 
 This chapter is my favorite one.
 Not because it's going to be the most useful, but because it's the one that took the longest for me to figure out.
