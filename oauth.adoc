@@ -77,16 +77,32 @@ Once you've authenticated, the OAuth Authorization Server issues a token which i
 
 The OAuth client can now make requests on behalf of the user to APIs (these are called _Resource Servers_) using that OAuth token.
 
-These _Resource Servers_ will need receive the request and need to validate them.
+These _Resource Servers_ will receive requests and need to validate them.
 If the token is a stateless JSON Web Token (JWT) then the token is signed and can be validated cryptographically without talking to the Authorization Server for each request. this works because the resource server has obtained the authorization server's public cryptographic keys on startup. the resource server validates thet oken _in-memory_ using thse public keys. it verifies the signature, the expieration date, and the issuer completely offline.
 
 Otherwise if the token is stateful, an opaque reference token), then the resource server _must_ contact the Authorization Server on every single reqeuest.
 
+the tokens contain information about what rights (_claims_) the user has. they support _authorization_.
+
 == OpenID Connect (OIDC)
 
+OAuth was a huge leap forward for a lot of reasons, but it didn't handle every intereting use case. one of the first things people did when they successfully authenticated was to use the token to ask questions about the user. to _identify_ them.
+So, if an application got an access token for Google's APIs, the application might use that token to talk to the proprietary Google APIs and learn about the user and use that to _sign in_ the user int heir own applications.
+Similarly, if an application got an access token for the Facerbook APIs, an application might talk to the proprietary Facebook APIs and use that to get an understanding of _who_ was making the reqeust.
+Common things like username or email, first name and last name, etc.
+This pattern became the basis of the early _Sign In with <X>_ capabilities all around the interenet.
+The implicationm was that these services - Google, Facebook, etc. - will have done the work to confirm that the email belongs to the person.
+They might've even done the work to validate that the person _was_ actually who they claimed by checking their goverment identifications. therefore these applications could trust that if a Facebook API returned an email, it _was_ that person's email.
+And likewise if two different APIs - Google and Facebook - returned the _same_ email, then it actually was the same person across two different ecosystems.
+This became valuable and allowed the internet to focus on building interesting things, and not trying to solve identify ocver and over and over again.
+People were using OAuth as a way to do _authentication_, too.
 
+This became really common.
+The trouble of course was that each API furnished these details - the email, the username, the first and last name - in a nonstandard way. it became pretty self-evident after OAuth 2.0 that there was a gap.
+Enter OpenID Connect (OIDC).
 
-
+OIDC was launched in 2014. OIDC's cration was a massive collaborative effort involving engineers from major tech giants, including Google, Microsoft, Salesforce, Ping Identity, and Yahoo.
+Key individual contributors and authors included Nat Sakimura, John Bradley, Michael B. Jones, and Breno de Medeiros
 
 == OAuth is a big Improvement
 
