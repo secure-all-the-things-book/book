@@ -10,6 +10,33 @@ All rights reserved.
 ISBN: {isbn}
 Version {revnumber}.
 
+No part of this book may be reproduced, stored in a retrieval system, or transmitted in any form or by any means—electronic, mechanical, photocopying, recording, or otherwise—without the prior written permission of the publisher, except for brief quotations embodied in reviews and as otherwise permitted under applicable copyright law.
+
+This restriction applies to the text of this work; the code examples are licensed separately, as described below.
+
+Use of Code Examples The code examples in this book are free to use.
+
+You may use, copy, modify, and distribute them for any purpose, including in your own programs, documentation, or written works (such as another book that uses them as samples), without requiring permission and without attribution.
+
+This permission applies only to the code examples and not to the text, figures, or other content of this book, which remain protected as described above.
+
+Disclaimer of Liability While the author and publisher have used good faith efforts to ensure that the information and instructions in this work are accurate, they disclaim all responsibility for errors or omissions, including without limitation responsibility for damages resulting from the use of or reliance on this work.
+
+Use of the information and instructions contained in this work is at your own risk.
+
+If any code samples or other technology this work contains or describes is subject to open source licenses or the intellectual property rights of others, it is your responsibility to ensure that your use thereof complies with such licenses and/or rights.
+
+Use of AI Tools Portions of this work, including code and text, were created or assisted with the use of artificial intelligence tools.
+
+While such content has been reviewed and edited by the author, the author and publisher make no warranties regarding its accuracy, completeness, or fitness for any purpose, and disclaim all liability arising from its use.
+
+Readers applying AI tools to the material in this work do so at their own risk.
+
+Trademarks, service marks, product names, and company names referenced in this work are the property of their respective owners and are used for identification and editorial purposes only.
+Their use does not imply endorsement or affiliation.
+
 While the author has used reasonable faith efforts to ensure that the information and instructions in this work are accurate, the author disclaims all responsibility for errors or omissions, including without limitation, responsibility for damages resulting from the use of or reliance on this work.
+
 The use of the information and instructions contained in this work is at your own risk.
+
 If any code samples or other technology this work contains or describes is subject to open source licenses or the intellectual property rights of others, it is your responsibility to ensure that your use thereof complies with such licenses and/or rights.
