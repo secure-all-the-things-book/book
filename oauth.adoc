@@ -68,43 +68,43 @@ If you've ever clicked on a "Log in with Facebook" or "Log in with Google" or "L
 Instead of creating a new username and password for that website, you’re granting it permission to access a certain piece of information from platforms like Facebook, Google, or Apple, respectively.
 That information is usually just enough identity information to be able to put together a profile so that the service you're logging in to knows what to call you and how to correlate and associate requests with you.
 
-People incorporate OAuth into their applications in all manner of different ways, but the basics are the same.
+People incorporate OAuth into their applications in all manners of different ways, but the basics are the same.
 You - in an _OAuth Client_ (a user-facing software client like a web browser, iPhone, Android, etc.) attempt to access a resource that requires a token.
 
-the resource redirects you to an _OAuth Authorization Server_ (like Okta, Keycloak, Auth.0, Active Directory, Clerk, etc.) where you authenticate.
+The resource redirects you to an _OAuth Authorization Server_ (like Okta, Keycloak, Auth0, Active Directory, Clerk, etc.) where you authenticate.
 It is this OAuth Authorization Server that knows who you are or can talk to something that does know who you are.
-Once you've authenticated, the OAuth Authorization Server issues a token which it will send back tot he OAuth client, in one of a few different possible ways.
+Once you've authenticated, the OAuth Authorization Server issues a token which it will send back to the OAuth client, in one of a few different possible ways.
 
 The OAuth client can now make requests on behalf of the user to APIs (these are called _Resource Servers_) using that OAuth token.
 
 These _Resource Servers_ will receive requests and need to validate them.
-If the token is a stateless JSON Web Token (JWT) then the token is signed and can be validated cryptographically without talking to the Authorization Server for each request. this works because the resource server has obtained the authorization server's public cryptographic keys on startup. the resource server validates thet oken _in-memory_ using thse public keys. it verifies the signature, the expieration date, and the issuer completely offline.
+If the token is a stateless JSON Web Token (JWT), then the token is signed and can be validated cryptographically without talking to the Authorization Server for each request. This works because the resource server has obtained the Authorization Server's public cryptographic keys on startup. The resource server validates the token _in-memory_ using these public keys. It verifies the signature, the expiration date, and the issuer completely offline.
 
-Otherwise if the token is stateful, an opaque reference token), then the resource server _must_ contact the Authorization Server on every single reqeuest.
+Otherwise, if the token is stateful (an opaque reference token), then the resource server _must_ contact the Authorization Server on every single request.
 
-the tokens contain information about what rights (_claims_) the user has. they support _authorization_.
+The tokens contain information about what rights (_claims_) the user has. They support _authorization_.
 
 == OpenID Connect (OIDC)
 
-OAuth was a huge leap forward for a lot of reasons, but it didn't handle every intereting use case. one of the first things people did when they successfully authenticated was to use the token to ask questions about the user. to _identify_ them.
-So, if an application got an access token for Google's APIs, the application might use that token to talk to the proprietary Google APIs and learn about the user and use that to _sign in_ the user int heir own applications.
-Similarly, if an application got an access token for the Facerbook APIs, an application might talk to the proprietary Facebook APIs and use that to get an understanding of _who_ was making the reqeust.
+OAuth was a huge leap forward for a lot of reasons, but it didn't handle every interesting use case. One of the first things people did when they successfully authenticated was to use the token to ask questions about the user, to _identify_ them.
+So, if an application got an access token for Google's APIs, the application might use that token to talk to the proprietary Google APIs and learn about the user and use that to _sign in_ the user in their own applications.
+Similarly, if an application got an access token for the Facebook APIs, an application might talk to the proprietary Facebook APIs and use that to get an understanding of _who_ was making the request.
 Common things like username or email, first name and last name, etc.
-This pattern became the basis of the early _Sign In with <X>_ capabilities all around the interenet.
-The implicationm was that these services - Google, Facebook, etc. - will have done the work to confirm that the email belongs to the person.
-They might've even done the work to validate that the person _was_ actually who they claimed by checking their goverment identifications. therefore these applications could trust that if a Facebook API returned an email, it _was_ that person's email.
-And likewise if two different APIs - Google and Facebook - returned the _same_ email, then it actually was the same person across two different ecosystems.
-This became valuable and allowed the internet to focus on building interesting things, and not trying to solve identify ocver and over and over again.
+This pattern became the basis of the early _Sign In with <X>_ capabilities all around the internet.
+The implication was that these services - Google, Facebook, etc. - will have done the work to confirm that the email belongs to the person.
+They might've even done the work to validate that the person _was_ actually who they claimed by checking their government identifications. Therefore, these applications could trust that if a Facebook API returned an email, it _was_ that person's email.
+And likewise, if two different APIs - Google and Facebook - returned the _same_ email, then it actually was the same person across two different ecosystems.
+This became valuable and allowed the internet to focus on building interesting things, and not trying to solve identity over and over and over again.
 People were using OAuth as a way to do _authentication_, too.
 
 This became really common.
-The trouble of course was that each API furnished these details - the email, the username, the first and last name - in a nonstandard way. it became pretty self-evident after OAuth 2.0 that there was a gap.
+The trouble, of course, was that each API furnished these details - the email, the username, the first and last name - in a nonstandard way. It became pretty self-evident after OAuth 2.0 that there was a gap.
 Enter OpenID Connect (OIDC).
 
-OIDC was launched in 2014. OIDC's cration was a massive collaborative effort involving engineers from major tech giants, including Google, Microsoft, Salesforce, Ping Identity, and Yahoo.
-Key individual contributors and authors included Nat Sakimura, John Bradley, Michael B. Jones, and Breno de Medeiros
+OIDC was launched in 2014. OIDC's creation was a massive collaborative effort involving engineers from major tech giants, including Google, Microsoft, Salesforce, Ping Identity, and Yahoo.
+Key individual contributors and authors included Nat Sakimura, John Bradley, Michael B. Jones, and Breno de Medeiros.
 
-== OAuth is a big Improvement
+== OAuth Is a Big Improvement
 
 OAuth introduced a way to provide tokens instead of credentials, granting limited access to the user's data.
 If an attacker steals the token, they would only have access for a limited time and only to the data to which their token was entitled.
@@ -115,7 +115,7 @@ There are many scenarios where it makes sense to use OAuth.
 * Third-party applications and services: applications that want to access services like Google Drive, Twitter feeds, or Facebook posts.
 * Mobile Applications: smartphone applications that access web services but don’t want to store passwords.
 * Content Aggregation: an app that pulls data from multiple sources (e.g., various email accounts).
-* Federation: if you want need to maintain secure integrations with a number of OAuth platforms, it's possible to use an OAuth IDP like Spring Authorization Server to act as a facade.
+* Federation: if you need to maintain secure integrations with a number of OAuth platforms, it's possible to use an OAuth IDP like Spring Authorization Server to act as a facade.
 
 Before OAuth came onto the scene, the most common method of granting third-party applications access was by sharing usernames and passwords.
 
@@ -127,7 +127,7 @@ This posed a series of challenges:
 
 OAuth changed this by not requiring users to share their passwords, letting users specify what data the application can access (scope), and providing a way to revoke access without changing user passwords.
 
-== Evolution of OAuth:
+== Evolution of OAuth
 
 OAuth has evolved over the years to address shortcomings and to better meet the requirements of developers and organizations.
 There are two main versions of OAuth:
@@ -149,14 +149,14 @@ OAuth is often used for token-based authentication, while SAML is used for enter
 SAML tokens are XML-based while OAuth tokens are JSON Web Tokens (JWTs) and are smaller and more efficient.
 SAML has a steeper learning curve and is more complex, while OAuth is simpler, especially in its 2.0 version.
 
-== Towards a passwordless future
+== Towards a Passwordless Future
 
-one of the key improvemtns of OAuth is that it centralizes authentication.
+One of the key improvements of OAuth is that it centralizes authentication.
 Authentication is a tough problem, and there are a million things to get right for it to even begin to be considered secure.
-Okta, Google and Meta and Github and the Spring team have a vested effort in committing people and time to this ongoing effort so that you don't have to.
+Okta, Google, Meta, GitHub, and the Spring team have a vested effort in committing people and time to this ongoing effort so that you don't have to.
 Done correctly, a good OAuth integration can reduce the number of passwords you need to maintain to live on the internet by a considerable amount.
 
-in this book, we're going to be focusing on the Spring Authorization Server, which - once at the heart of your SSO solution - can greatly simplify the identity for your organization, reducing it down to one credential.
+In this book, we're going to be focusing on the Spring Authorization Server, which - once at the heart of your SSO solution - can greatly simplify identity for your organization, reducing it down to one credential.
 
 But what about no credentials?
 Or, better, what about more secure, alternative credentials?
