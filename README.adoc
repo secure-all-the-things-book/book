@@ -24,23 +24,33 @@ endif::[]
 toc::[]
 :sectnums!:
 [frontmatter]
-
 = Frontmatter
+
 include::frontmatter.adoc[]
 
 = The Spring Authorization Server
+
 include::oauth.adoc[]
 include::authorization-server.adoc[]
 include::implementing-authorization-server.adoc[]
 include::persistence.adoc[]
 include::federated-oauth.adoc[]
 
-= OAuth all the Things
-
+= Secure Your Services
+// include::web.adoc[]
 // include::gateway.adoc[]
-// include::processor.adoc[]
+// include::graphql.adoc[]
+// include::how-to-build-your-own-resource-server.adoc[]
+
+=
+// include::grpc.adoc[]
+// include::soap.adoc[]
+// include::mcp.adoc[]
+
+= Secure Everything Else
+// include::messaging.adoc[]
+// include::shell.adoc[]
 
 [appendix]
 = Appendix
-
-// include::java.adoc[]
+include::java.adoc[]
