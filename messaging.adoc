@@ -1,3 +1,5 @@
+:code: ..
+
 = The Processor
 
 // in this section we'll look at how to use OAuth to secure a headless backoffice process
@@ -46,11 +48,11 @@ It's convenient then that we can easily plug this stuff in ourselves.
 Let's talk again about Spring Integration. we looked at it ever so briefly when we introduced the API, but let's review some basics.
 
 Remember this code from the API we built earlier?
-
-[source,java]
-----
-include::api/src/main/java/bootiful/api/EmailRequestsIntegrationFlowConfiguration.java[]
-----
+//
+// [source,java]
+// ----
+// include::{code}/message/messaging/src/main/java/bootiful/api/EmailRequestsIntegrationFlowConfiguration.java[]
+// ----
 
 It's a bean of type `IntegrationFlow`, from the Spring Integration project.
 The bean describes how we handle messages intended for a RabbitMQ broker: messages come, then we turn it into JSON, then we send it over AMQP.
@@ -125,7 +127,7 @@ If we define them as beans, Spring AMQP will automaticall create the real struct
 
 [source,java]
 ----
-include::processor/src/main/java/bootiful/processor/AmqpConfiguration.java[]
+include::{code}/messaging/messaging/src/main/java/com/example/messaging/AmqpConfiguration.java[]
 ----
 
 You'll notice that this code uses a constant variable I've defined.
@@ -137,7 +139,7 @@ There are a few things that I've defined as constants: a header name, a `Message
 
 [source,java]
 ----
-include::processor/src/main/java/bootiful/processor/Constants.java[]
+include::{code}/messaging/messaging/src/main/java/com/example/messaging/Constants.java[]
 ----
 
 === The Integration
@@ -159,7 +161,7 @@ Let's see it all in action.
 
 [source,java]
 ----
-include::processor/src/main/java/bootiful/processor/IntegrationConfiguration.java[]
+include::{code}/messaging/messaging/src/main/java/com/example/messaging/IntegrationConfiguration.java[]
 ----
 
 <.> the first `IntegrationFlow` defines an AMQP Inbound adapter which listens for new `Messages` on our auto configured RabbitMQ connection.
@@ -182,7 +184,7 @@ The `JwtAuthenticationInterceptor` leaves nothing to the imagination:
 
 [source,java]
 ----
-include::processor/src/main/java/bootiful/processor/JwtAuthenticationInterceptor.java[]
+include::{code}/messaging/messaging/src/main/java/com/example/messaging/JwtAuthenticationInterceptor.java[]
 ----
 
 <.> We've defined this bean elsewhere and injected it here
