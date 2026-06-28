@@ -95,14 +95,14 @@ It has a panel to greet the signed in user and another to show a grid of `custom
 
 [source,html]
 ----
-include::{code}/gateway/static/index.html[]
+include::{code}/gateway/ui/index.html[]
 ----
 
 Both the user name and the `customer` records we'll load by talking to the API from JavaScript.
 
 [source,html]
 ----
-include::{code}/gateway/static/app.js[]
+include::{code}/gateway/ui/app.js[]
 ----
 
 <.> the first two functions of the file do the work of interacting with our API using the non-blocking, but oh-so-verbose, `async`/`await` syntax.

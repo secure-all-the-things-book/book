@@ -29,8 +29,8 @@ Grab (`git clone`) the https://github.com/spring-tips/spring-authorization-serve
 * in `api`, run `run.sh`
 * in `processor`, run `run.sh`
 * in `static`, run `run.sh`
-* visit `http://127.0.0.1:8082` (important: use the IP, _not_ `localhost`!) in the browser.
-* login with `jlong`/`password` (yes, I know it's a terrible password, don't `@` me!), and then consent when prompted.
+* visit `http://127.0.0.1:8080` (important: use the IP, _not_ `localhost`!) in the browser.
+* login with `josh@joshlong.com`/`password` (yes, I know it's a terrible password, don't `@` me!), and then consent when prompted.
 * you'll see a list of customers, click on the `email` button to kick off work in the `processor`.
 You should see indications in the console that your message has been sent.
 
@@ -102,8 +102,8 @@ include::{code}/authorization-server/authorization-server/snippets/UserDetailsCo
 
 Thus configured we've got two users:
 
-* `jlong` with password `password` and roles `USER`
-* `rwinch` with password `p@ssw0rd` and roles `USER` and `ADMIN`
+* `josh@joshlong.com` with password `password` and roles `USER`
+* `rwinch@invisible-domain.bar` with password `p@ssw0rd` and roles `USER` and `ADMIN`
 
 This implementation is fine for development as it's all in-memory.
 In a production system, you'll probably want something more durable.
