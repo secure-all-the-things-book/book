@@ -1,6 +1,5 @@
 :code: ..
 
-
 = Protecting a Simple HTTP API
 
 Let's build an HTTP API.

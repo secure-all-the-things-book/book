@@ -95,7 +95,7 @@ But something needs to ensure that there's a file to read in the first place, so
 
 [source,java,indent=0]
 ----
-include::{code}/java/java/src/test/java/com/example/closeable/Utils.java[]
+include::{code}/java/java/src/test/java/com/example/java/closeable/Utils.java[]
 ----
 
 <1> the contents of the file, using a handy multiline Java `String`

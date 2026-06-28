@@ -1,3 +1,5 @@
+:code: ..
+
 == The Gateway Client
 
 In our super secure OAuth onion, this next microservice, the `gateway`, is the outermost layer.
@@ -26,15 +28,14 @@ Let's look at the Java code first.
 
 [source,java]
 -----
-include::gateway/src/main/java/bootiful/gateway/SecurityConfiguration.java[]
+include::{code}/gateway/gateway-reactive/src/main/java/com/example/gateway_reactive/SecurityConfiguration.java[]
 -----
-
-<1> you could probably get away with not defining this bean at all _if_ you were willing to deal with default behavior of CSRF tokens, which I am not.
+<.> you could probably get away with not defining this bean at all _if_ you were willing to deal with default behavior of CSRF tokens, which I am not.
 In the interest of simplicity, I'm disabling them, but in so doing I am also disabling all the other things Spring Security assumed I wanted.
 So we will also go through and re-enable those things.
-<2> We want all HTTP requests to be authenticated...
-<3> ...and to disable the CSRF support...
-<4> ...and to re-enable OAuth 2 OIDC login support and the OAuth 2 client support.
+<.> We want all HTTP requests to be authenticated...
+<.> ...and to disable the CSRF support...
+<.> ...and to re-enable OAuth 2 OIDC login support and the OAuth 2 client support.
 The OIDC login functionality is what triggers the OAuth dance we've talked about.
 The OAuth 2 client support is what tells Spring Security, running in this process, as which OAuth 2 client requests for OIDC login should be done.
 We'll need to specify the particulars in the property configuration later.
@@ -53,23 +54,23 @@ Finally, the request, after it has passed through any and all filters, is sent t
 
 [source,java]
 -----
-include::gateway/src/main/java/bootiful/gateway/GatewayConfiguration.java[]
+include::{code}/gateway/gateway-reactive/src/main/java/com/example/gateway_reactive/GatewayConfiguration.java[]
 -----
 
-<1> the first route matches all requests to `/api/**`, notes and forwards any OAuth JWTs to the backend service, and changes the path of the request from `gateway:8082/api/foo` to `api:8081/foo`, dropping the `/api/` bit.
-<2> the second route takes every other request and sends it unchecked on to the HTTP endpoint service up the static HTMl 5 and JavaScript assets.
+<.> the first route matches all requests to `/api/**`, notes and forwards any OAuth JWTs to the backend service, and changes the path of the request from `gateway:8082/api/foo` to `api:8081/foo`, dropping the `/api/` bit.
+<.> the second route takes every other request and sends it unchecked on to the HTTP endpoint service up the static HTMl 5 and JavaScript assets.
 
 That's just about all the Java code for this service, but its role and importance in the architecture can not be overstated.
 Let's look at the property file that ties it all together.
 
 [source,properties]
 -----
-include::gateway/src/main/resources/application.properties[]
+include::{code}/gateway/gateway-reactive/src/main/resources/application.properties[]
 -----
 
-<1> this process will run on port `8082`.
-<2> it will use the issuer URI to validate JWTs if it detects them
-<3> otherwise it will use this configuration to, acting as a client, inintiate an OIDC login to allow you to come up with a valid token.
+<.> this process will run on port `8082`.
+<.> it will use the issuer URI to validate JWTs if it detects them
+<.> otherwise it will use this configuration to, acting as a client, inintiate an OIDC login to allow you to come up with a valid token.
 
 The last several lines are where we tell the OAuth client what it should ask for from our OAuth IDP (the Spring Authorization Server).
 You'd write similar configuration for any OAuth IDP, not just the Spring Authorization Server.
@@ -94,14 +95,14 @@ It has a panel to greet the signed in user and another to show a grid of `custom
 
 [source,html]
 ----
-include::static/index.html[]
+include::{code}/gateway/static/index.html[]
 ----
 
 Both the user name and the `customer` records we'll load by talking to the API from JavaScript.
 
 [source,html]
 ----
-include::static/app.js[]
+include::{code}/gateway/static/app.js[]
 ----
 
 <.> the first two functions of the file do the work of interacting with our API using the non-blocking, but oh-so-verbose, `async`/`await` syntax.

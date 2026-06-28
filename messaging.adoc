@@ -41,7 +41,7 @@ Well get to see how the resource server support does some of its work.
 Its good to know this because, outside of an HTTP environment, there's no one-sized fits all approach.
 It's convenient then that we can easily plug this stuff in ourselves.
 
-== (Re-) Introducing Spring Integration
+==  Spring Integration
 
 Let's talk again about Spring Integration. we looked at it ever so briefly when we introduced the API, but let's review some basics.
 
@@ -52,7 +52,9 @@ Remember this code from the API we built earlier?
 include::api/src/main/java/bootiful/api/EmailRequestsIntegrationFlowConfiguration.java[]
 ----
 
-It's a bean of type `IntegrationFlow`, from the Spring Integration project. The bean describes how we handle messages intended for a RabbitMQ broker: messages come, then we turn it into JSON, then we send it over AMQP. Simple.
+It's a bean of type `IntegrationFlow`, from the Spring Integration project.
+The bean describes how we handle messages intended for a RabbitMQ broker: messages come, then we turn it into JSON, then we send it over AMQP.
+Simple.
 
 Spring Integration is an old project, from 2007. The core conceit fo Spring Integration is that as we move forward in time the body of systems and services with which we need to integrate - to maximally retain value - grows, and the protocols and paradigms required for integration also grow.
 Spring Integration is an enterprise application technnology.
@@ -95,26 +97,39 @@ They're otherwise usually stateless.
 In a way, Spring Integration encourages a lot of the same discipline and conventions as any functional programming language might.
 You're encouraged to write your business logic in terms of granular, composable, and reusable functions.
 
-Where do these messages come from, and where do they go? Well, the real world of course! They have to come from somewhere. It is Spring Integration's job to connect our code to events in the real world and translate them into `Message` objects: a microwave turned on (MQTT), a new file appeared in an FTP service, a new row appeared in a SQL database, a new email was sent to an inbox, a message arrived on a JMS destination, etc. It does this work with adapters which _adapt_ events into `Message` objects. Each `Message` typically contains a payload (the inbound file adapter might contain a `java.io.File` payload, for example) and headers telling us about the payload (the folder in which the file was found, or the timestamp of when the message was produced).
+Where do these messages come from, and where do they go?
+Well, the real world of course!
+They have to come from somewhere.
+It is Spring Integration's job to connect our code to events in the real world and translate them into `Message` objects: a microwave turned on (MQTT), a new file appeared in an FTP service, a new row appeared in a SQL database, a new email was sent to an inbox, a message arrived on a JMS destination, etc.
+It does this work with adapters which _adapt_ events into `Message` objects.
+Each `Message` typically contains a payload (the inbound file adapter might contain a `java.io.File` payload, for example) and headers telling us about the payload (the folder in which the file was found, or the timestamp of when the message was produced).
 
-Once we have a `Message` ,we can do all sorts of things to it. We could split it into smaller messages, route it to other handlers, add information to it, filter it, etc.
+Once we have a `Message` ,we can do all sorts of things to it.
+We could split it into smaller messages, route it to other handlers, add information to it, filter it, etc.
 
 And then when we're finally done with it, we use an outbound adapter - which does the reverse of an inbound adapter -to send the message onward to some place in the real world.
 
-So, to review the review: events come via  inbound adapters, they're turned into `Message` objects with headers and payloads. In this form they're processed, and ultimately sent out via outbound adapters.
+So, to review the review: events come via inbound adapters, they're turned into `Message` objects with headers and payloads.
+In this form they're processed, and ultimately sent out via outbound adapters.
 
 Now back to our regularly scheduled programming.
 
 == Defining RabbitMQ Infrastructure
 
-First thing's first: we're using RabbitMQ. In RabbitMQ,  you send messages to an exchange which then can route it anyway it wants. In our case, it's going to be sent to a single queue, which is where consumers will know to look for it. So, we have an exchange and a queue, and they're bound together through something called a binding. We'll use the Spring AMQP project to make short work of defining these things. If we define them as beans, Spring AMQP will automaticall create the real structures on the RabbitMQ broker.
+First thing's first: we're using RabbitMQ.
+In RabbitMQ, you send messages to an exchange which then can route it anyway it wants.
+In our case, it's going to be sent to a single queue, which is where consumers will know to look for it.
+So, we have an exchange and a queue, and they're bound together through something called a binding.
+We'll use the Spring AMQP project to make short work of defining these things.
+If we define them as beans, Spring AMQP will automaticall create the real structures on the RabbitMQ broker.
 
 [source,java]
 ----
 include::processor/src/main/java/bootiful/processor/AmqpConfiguration.java[]
 ----
 
-You'll notice that this code uses a constant variable I've defined. There are a few others...
+You'll notice that this code uses a constant variable I've defined.
+There are a few others...
 
 == A Few Well Known Constants
 
@@ -129,23 +144,38 @@ include::processor/src/main/java/bootiful/processor/Constants.java[]
 
 Now we're into the meat of the example, the actual Spring Integration code.
 
-In Spring Integration, an `IntegrationFlow` is the definition of a processing pipeline. You may have more than one  `IntegrationFlow` in your application. `IntegrationFlow` objects   chain together different components that act on the `Message` objects within the flow. You can route messages from one `IntegrationFlow` to another using `MessageChannel` instances.
+In Spring Integration, an `IntegrationFlow` is the definition of a processing pipeline.
+You may have more than one  `IntegrationFlow` in your application. `IntegrationFlow` objects chain together different components that act on the `Message` objects within the flow.
+You can route messages from one `IntegrationFlow` to another using `MessageChannel` instances.
 
-Conceptually, all we want to do is take a message from the inbound AMQP (that's the protocol that RabbitMQ speaks) in and then print out the message.  One might send an email or do something useful here, but we'll leave that as an exercise for another day... And yet, I've written it a little more obtusely: we have one `IntegrationFlow` that takes the message rom AMQP and then stuffs the message into a `MessageChannel`. It pops out the other side and _then_ we print out the message's payload and headers. Why the indirection? Why add the `MessageChannel` into the mix, I hear you query. `MessageChannel` objects can have interceptors that can, in effect, _veto_ messages. So we'll configure some interceptors to act on the message, validate the attached JWT token, and if it doesn't match, to reject the message _before_ it gets to whatever important business logic we've got downstream of thee `MessageChannel`.
+Conceptually, all we want to do is take a message from the inbound AMQP (that's the protocol that RabbitMQ speaks) in and then print out the message.
+One might send an email or do something useful here, but we'll leave that as an exercise for another day... And yet, I've written it a little more obtusely: we have one `IntegrationFlow` that takes the message rom AMQP and then stuffs the message into a `MessageChannel`.
+It pops out the other side and _then_ we print out the message's payload and headers.
+Why the indirection?
+Why add the `MessageChannel` into the mix, I hear you query. `MessageChannel` objects can have interceptors that can, in effect, _veto_ messages.
+So we'll configure some interceptors to act on the message, validate the attached JWT token, and if it doesn't match, to reject the message _before_ it gets to whatever important business logic we've got downstream of thee `MessageChannel`.
 
 Let's see it all in action.
-
-
 
 [source,java]
 ----
 include::processor/src/main/java/bootiful/processor/IntegrationConfiguration.java[]
 ----
-<.> the first `IntegrationFlow` defines an AMQP Inbound adapter which listens  for new `Messages` on our auto configured RabbitMQ connection. As soon as a message comes in, it gets sent to the next step in the `INtegrationFlow`. IN this case, that next step is to travel through an injected `MessageChannel` to another `IntegrationFlow`.
+
+<.> the first `IntegrationFlow` defines an AMQP Inbound adapter which listens for new `Messages` on our auto configured RabbitMQ connection.
+As soon as a message comes in, it gets sent to the next step in the `INtegrationFlow`.
+IN this case, that next step is to travel through an injected `MessageChannel` to another `IntegrationFlow`.
 <.> the second `IntegrationFlow` takes whatevers been stuffed into the `MessageChannel` and passews it to the next step, which is a simple handler that inspects the message payload and headers.
-<.> both `IntegrationFlow` objects are connected by the `MessageChannel` whoe bean ID is `Constants.REQUESTS_MESSAGE_CHANNEL`, and whose definition we see here. It's a bit complicated but this is where we do the work of validating the JWT token.
-<.> most of the important woerk is done in these interceptors. Each interceptr can inspect, transform, or reject the `Message` objects flowign through the `MessageChannel` on which they're configured. I wrote this first interceptor. We'll look at it shortyl, but suffice it to say that it in turn is using the injected `JwtAuthenticationProvider` that is provided by Spring Security and whose configuration we'll examine momentarily to do the work of validating the JWT token against the Spring Authorization Server. If the token is valid, the interceptor creates a new message with a valid Spring Security `Authentication` in the header. If the token is not valid, then the interceptor will create a new message with a null value for the header.
-<.> this next interceptor hoists the `Authentication` from the message header and puts it into the Spring Security `SecurityContextHolder`, which is a well-known `ThreadLocal`-like holder of the current thread's authenticated user. Now, all the other machinery in Spring Security that consults this thread local will work correctly.
+<.> both `IntegrationFlow` objects are connected by the `MessageChannel` whoe bean ID is `Constants.REQUESTS_MESSAGE_CHANNEL`, and whose definition we see here.
+It's a bit complicated but this is where we do the work of validating the JWT token.
+<.> most of the important woerk is done in these interceptors.
+Each interceptr can inspect, transform, or reject the `Message` objects flowign through the `MessageChannel` on which they're configured.
+I wrote this first interceptor.
+We'll look at it shortyl, but suffice it to say that it in turn is using the injected `JwtAuthenticationProvider` that is provided by Spring Security and whose configuration we'll examine momentarily to do the work of validating the JWT token against the Spring Authorization Server.
+If the token is valid, the interceptor creates a new message with a valid Spring Security `Authentication` in the header.
+If the token is not valid, then the interceptor will create a new message with a null value for the header.
+<.> this next interceptor hoists the `Authentication` from the message header and puts it into the Spring Security `SecurityContextHolder`, which is a well-known `ThreadLocal`-like holder of the current thread's authenticated user.
+Now, all the other machinery in Spring Security that consults this thread local will work correctly.
 <.> the final interceptor does the actual check, rejecting the message if the current thread doesn't have a valid, authenticated `Authentication`.
 
 The `JwtAuthenticationInterceptor` leaves nothing to the imagination:
@@ -154,6 +184,7 @@ The `JwtAuthenticationInterceptor` leaves nothing to the imagination:
 ----
 include::processor/src/main/java/bootiful/processor/JwtAuthenticationInterceptor.java[]
 ----
+
 <.> We've defined this bean elsewhere and injected it here
 <.> in which header shall we place the authentication once we've validated the token?
 <.> extract the token from the header

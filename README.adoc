@@ -38,7 +38,7 @@ include::federated-oauth.adoc[]
 
 = Secure Your Services
 // include::web.adoc[]
-// include::gateway.adoc[]
+include::gateway.adoc[]
 // include::graphql.adoc[]
 // include::how-to-build-your-own-resource-server.adoc[]
 
@@ -54,3 +54,4 @@ include::federated-oauth.adoc[]
 [appendix]
 = Appendix
 include::java.adoc[]
+include::beans-to-boot.adoc[]
