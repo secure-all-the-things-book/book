@@ -17,101 +17,80 @@ Really, there are _two_ questions before us: why should existing applications mo
 It's 2026 as I write this, and if you've got software in production, you probably have an OAuth authorization server deployed somewhere.
 We are spoilt for choice these days!
 
-I asked an AI to help me list some of the popular OAuth authorization servers because there are too many to count.
-Here are widely used OAuth 2.0 / OpenID Connect authorization servers across enterprise and startup contexts:
+The space is crowded.
+On the commercial side you've got Okta (and the Auth0 product they acquired), Microsoft Entra ID, Amazon Cognito, Google's Identity Platform, and Ping Identity (which now includes ForgeRock), alongside a newer cohort of developer-first SaaS shops like Clerk, WorkOS, Stytch, Frontegg, and Descope.
+On the self-hosted side, Keycloak is the eight-hundred-pound gorilla, with Ory, Authentik, Zitadel, Dex, and Apereo CAS each holding meaningful turf.
+There are dozens more.
 
-=== Commercial / Cloud (SaaS)
+Most of them would work just fine in place of the Spring Authorization Server.
+I love the Spring Authorization Server precisely because it works just fine in place of most of _them_, and it works in a way that's natural for anyone already living in the Spring ecosystem.
 
-* Okta (and Auth0, owned by Okta)
-* Microsoft Entra ID (formerly Azure AD)
-* Amazon Cognito
-* Google Cloud Identity Platform / Firebase Auth
-* Ping Identity (PingFederate, PingOne)
-* ForgeRock (now part of Ping)
-* Frontegg
-* Stytch
-* WorkOS
-* Clerk
-* Descope
-* AWS IAM Identity Center / Cognito
-* Azure Entra External ID (B2C)
-
-=== Open Source / Self-Hosted
-
-* Spring Authorization Server
-* Keycloak (Red Hat)
-* Ory (Hydra for OAuth/OIDC, plus Kratos, Keto)
-* Authentik
-* Authelia
-* Zitadel
-* Gluu
-* WSO2 Identity Server
-* Dex (CoreOS, common in Kubernetes setups)
-* Casdoor
-* SuperTokens
-* Apereo CAS
-
-Most of these would work just fine in place of the Spring Authorization Server.
-But I love the Spring Authorization Server precisely because it works just fine in place of most of these solutions, too, and it works in a way that's natural for users in the Spring ecosystem.
-
-Let's look at the technical and legal facets that impact our decision.
+Let's look at the technical and legal facets that drive that choice.
 
 === Technical
 
-In our case, we want full control over the running result.
-We want to be able to configure, deploy, and architect every aspect of the solution.
-We want to scale it up and out using the same conventions with which we scale up and out any standard Spring Boot application.
-We want to own the persistence, the configured machinery, and more.
-Spring Boot's autoconfiguration gives us an ideal way to attack this problem with the Spring Authorization Server.
-We can stand up an OAuth IDP with some sensible defaults and customize the aspects that don't work for us in the usual way.
-The Spring Authorization Server stands alone in this regard; it's infinitely customizable and expandable.
+The pitch is simple: it's a Spring Boot starter.
+
+If you've ever deployed a Spring Boot application, you already know how to deploy the Spring Authorization Server.
+The same configuration model, the same Actuator endpoints, the same Micrometer metrics, the same container image story, the same CI/CD pipeline.
+Your team's existing muscle memory transfers over.
+
+Owning the IDP unlocks a few things that are awkward, expensive, or simply not possible with a SaaS:
+
+* *Your data stays where you put it.* Users persist into the same database your application already uses - the same Postgres instance, the same backup story, the same migration tooling, no data leaving your network. That matters in regulated industries, and it matters anywhere a vendor's data-residency story doesn't line up with yours.
+* *Custom claims from your business systems.* You can mint tokens that carry the exact claims your services need - tenant ID, role hierarchy, feature flags - read straight from your domain model, without paying a SaaS for a "rules engine" and writing JavaScript inside a vendor's UI.
+* *Federation on your terms.* Hook up to your existing LDAP, your Active Directory, your social providers, your customer's SAML IDP - and present a single, consistent OAuth surface to your application code.
+* *The same scaling story as the rest of your fleet.* Horizontal scaling, blue-green deploys, traffic shaping, observability - all the things you already do with Spring Boot apply to your auth layer.
+
+When something doesn't fit, you reach for the same autoconfiguration override pattern you use everywhere else in Spring Boot - declare a bean of the type you want to replace, and Spring Boot backs off its default.
+There's no support ticket, no quarterly contract renegotiation, no rate limit on your own data.
 
 === Legal
 
-Here's where things get more interesting, and where it's _super_ important to remember that _I am not a lawyer_ nor am I a chiseled security veteran with a perspective on all the issues here.
-This _is not legal advice_!
-I don't even know what I don't know.
-But I'll tell you some of what I do know.
-User management is a minefield.
-What happens when something goes wrong?
-When there's been a data breach?
-Technically, the Spring Authorization Server _probably can_ do anything and _probably can_ be configured and used in such a way that it complies with all local regulations.
-Maybe.
-Do you have the processes in place to support that usage?
-I know that when a regulator comes knocking on my door, I want to be in a place where I can say we did everything right.
+Quick disclaimer, then the substance: _I am not a lawyer_, I am not your security consultant, and nothing in this book is legal or compliance advice.
+I work on the Spring team and I'm here to teach you the technology.
+I'll point at good practices where I can, but I can't cover every jurisdiction, every industry regulation, and every threat model, so I'm not going to try.
 
-* Backups
-* multifactor authentication
-* used HSMs for signing keys
-* comprehensive monitoring
-* _always_ patched (at least as often as every hour!)
-* built a mature incident response program
-* (and so much more)
+Here's why that matters.
+User management is a minefield, and when something goes wrong - and eventually, in some form, it will - regulators will ask whether you did everything reasonable to prevent it.
+Could the Spring Authorization Server be configured and operated in a way that complies with HIPAA, PCI-DSS, GDPR, SOC 2, or whatever else applies to you?
+Almost certainly yes.
+Will the out-of-the-box defaults get you there?
+No.
+Nobody's defaults get you there - not mine, not anyone else's.
+That isn't the job of an OAuth server.
 
-It's possible to do all this with the Spring Authorization Server.
-It's also possible to use Spring Authorization Server in such a way that it _won't_ stand up to scrutiny come an audit.
-The choice is yours.
+To actually pass an audit, you need operational things like:
 
-In this book, I will _not_ be telling you how to withstand every audit.
-I'll try to show you good practices where I can, but it's just not possible to cover all jurisdictions and all use cases, so I won't even try.
+* backups
+* multi-factor authentication
+* HSMs (or a KMS) for signing keys
+* comprehensive monitoring and alerting
+* a patching cadence, and the discipline to keep to it
+* a documented incident response program
+* (and a lot more besides)
 
-If this seems like a cop-out to you, it is!
-This is a book about leverage security technology to integrate security into Spring Boot-based systems and services, but can not be a book about security best practices in general.
-All solutions in this space have to caveat their use support to varying degrees.
-Even with fully managed providers like Okta - which provide compliance artifacts such as SOC 2 reports, ISO 27001 certifications, security white papers, audit logs, and documentation supporting regulatory frameworks - regulators will generally hold your organization accountable for how you configure the service, who has access to it, your business processes, your regulatory obligations, and your overall compliance program.
+The Spring Authorization Server can participate in all of that, and I'll point at the hooks where it does.
+The operational discipline around it is on you.
+
+And before you assume a managed SaaS makes this go away: it doesn't.
+Providers like Okta supply genuinely useful compliance artifacts - SOC 2 reports, ISO 27001 certifications, audit logs, security whitepapers.
+But regulators still hold _your_ organization accountable for how you configure the service, who has access to it, your business processes, your regulatory obligations, and your overall compliance program.
+The vendor's compliance posture is a useful input.
+It is not a substitute for your own.
 
 == The Spring Security OAuth Ship of Theseus
 
 The Spring Authorization Server is one of my favorite new projects.
 It's a full-blown OAuth identity provider (IDP), distributed as Spring Boot autoconfiguration.
 
-But getting to this oh-so-approachable place took _decades_! It started way back in 2011, when the Spring team volunteered to take on, and evolve, an awesome third party opensource community project. We wanted  to support the project and use it for some of the use cases we had in the popular opensource cloud platform, Cloud Foundry, where it eventually became the component https://github.com/cloudfoundry/uaa[UAA].
+But getting to this oh-so-approachable place took more than a decade! It started way back in 2011, when the Spring team volunteered to take on, and evolve, an awesome third-party open-source community project. We wanted to support the project and use it for some of the use cases we had in the popular open-source cloud platform, Cloud Foundry, where it eventually became the https://github.com/cloudfoundry/uaa[UAA] component.
 
-This project had three interesting pieces: _OAuth Resource Server_ support, _OAuth Client_ support, and _OAuth Authorization Server_. We took it on and even had legends like the great Dr. Dave Syer (cofounder of Spring Boot and Spring Cloud, for a start), work on it. The project worked, but by 2015 it was starting to get long in the tooth. It was built before Spring Boot. It didn't support OIDC and other improvements in the OAuth space. It didn't work in a reactive world. Generally, it needed an overhaul.
+This project had three interesting pieces: _OAuth Resource Server_ support, _OAuth Client_ support, and _OAuth Authorization Server_. We took it on and even had legends like the great Dr. Dave Syer (cofounder of Spring Boot and Spring Cloud, for a start) work on it. The project worked, but by 2015 it was starting to get long in the tooth. It was built before Spring Boot. It didn't support OIDC and other improvements in the OAuth space. It didn't work in a reactive world. Generally, it needed an overhaul.
 
-So we embarked upon a project to rebuild and reintroduce  OAuth support in Spring Security. This time, we said, the OAuth support would live as part of Spring Security itself, not a seaparate project.  The first piece to debut, in the Spring Security 5.0 and Spring Boot 2.0 generation, was the OAuth client and OIDC support. Then we introduced resource server support. And we said that we didn't feel the need to build an OAuth Authorization Server as the market had many good choices already.
+So we embarked upon a project to rebuild and reintroduce OAuth support in Spring Security. This time, we said, the OAuth support would live as part of Spring Security itself, not a separate project. The first piece to debut, in the Spring Security 5.0 and Spring Boot 2.0 generation, was the OAuth Client and OIDC support. Then we introduced resource server support. And we said that we didn't feel the need to build an OAuth Authorization Server, as the market had many good choices already.
 
-In a Github Issue on `spring-security`, wherein we declined to build this, the community told us we were wrong. https://github.com/spring-projects/spring-security/issues/6320#issuecomment-614218694[Loudly]. This issue was one of the most vibrant in the Spring ecosystem's history! Clearly, there was demand. And so in 2020, work began in earnest, eventually landing as a fully supported, easily autoconfigured project in Spring Boot that you can use today.
+In a GitHub issue on `spring-security` wherein we declined to build this, the community told us we were wrong. https://github.com/spring-projects/spring-security/issues/6320#issuecomment-614218694[Loudly]. This issue was one of the most vibrant in the Spring ecosystem's history! Clearly, there was demand. And so in 2020, work began in earnest, eventually landing as a fully supported, easily autoconfigured project in Spring Boot that you can use today.
 
 The Spring Authorization Server originally lived as a separate project, with its own lifecycles and release cadences and so on, but once it stabilized, it was moved under Spring Security with the Spring Security 7 release in late 2025.
 
@@ -119,23 +98,26 @@ The Spring Security OAuth project is dead. Long live Spring Security's OAuth sup
 
 == One Less `users` Microservice For All
 
-Having an easy component for your IDP integration is _liberating_.
-If nothing else, it's one less `users` microservice for you to build.
-But, at its best, it's a unifying force for your organization's notions of identity and policy, all centralized.
+Having a real IDP at the center of your architecture is _liberating_.
 
-If you implement it correctly, it's one less `users` microservice for _all_ of your systems, not just the one you're working on now!
-You'll have one less bespoke token management system, too.
-OAuth offers a very nice opportunity to make your application more efficient and scalable.
-In a typical monolithic application, password validation is done in the same node where the rest of the business logic lives.
-CPU-intensive encryption will starve the rest of the requests of capacity.
-You'll also have outsourced some of the expensive CPU-centric processing that your program will probably have to do a single place in the system, where it can be scaled independently.
+The obvious win is consolidation.
+Every team that would otherwise have built its own `users` table, its own password reset flow, its own session story, and its own permission system can stop.
+There's one identity surface for the whole organization: one place to onboard a new employee, one place to revoke them when they leave, one place to add SSO into a customer's IDP.
+You'll have one less bespoke token-management system, too.
 
-It's Spring, so it of course supports the new-and-novel, but it's also built like all Spring Boot autoconfiguration, with hooks and customization in mind at every step.
+The less obvious win is isolation.
+Password hashing is expensive _on purpose_ - bcrypt, scrypt, and argon2 are designed to burn CPU so attackers can't brute-force them.
+In a typical monolith, that CPU is competing with every business-logic request you're serving.
+Move authentication into a dedicated authorization server and the expensive work happens on a node you can scale, monitor, and harden independently of everything else.
 
-I love it and I love it for helping me to love OAuth.
-If you only knew the agony I've been subjected to in learning and welding OAuth over the years, then you'll know what a thing that is for me to say.
-And I want you, dear reader, to love OAuth.
-And the way to do that is to, basically, _not_ care about OAuth.
+And because it's Spring, it composes with the rest of Spring Security, Spring Boot autoconfiguration, and the broader ecosystem - the hooks and customization points are there at every step.
 
-And so we're going to take a journey to production together, with the Spring Authorization Server at our backs, and learn how to wield OAuth (via the amazing Spring Authorization Server) for some common  patterns.
+If you knew the agony I've been subjected to learning and wielding OAuth over the years, you'd understand what it means when I say I love this project.
+It's the first OAuth experience I've had that doesn't feel like work.
+
+And, dear reader, I want you to love OAuth too.
+The trick is to _stop having to think about OAuth_ - to set it up well once, and get back to building the thing you actually meant to build.
+That's what the rest of this book is about.
+
+So let's take that journey to production together, with the Spring Authorization Server at our backs.
 
