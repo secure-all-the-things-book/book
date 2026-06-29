@@ -1,122 +1,122 @@
 :code: ..
 
 = Protecting a Simple HTTP API
-
-Let's build an HTTP API.
-Honestly, this is just a pretense to have something to secure with the Spring Security OAuth support, so we'll make this quick.
-First, go to the https://start.spring.io[Spring Initializr], and then add the following dependencies: `
-
-* `Spring for RabbitMQ`
-* `Spring Integration`
-* `Spring Web`
-* `OAuth2 Resource Server`
-* `Spring Data JDBC`
-* `PostgreSQL Driver`
-
-I gave the newly minted project a group of `bootiful` and named it `api`.
-
-Click `Generate`, unzip the newly minted `.zip` file, and then open the project in your IDE.
-
-The domain's a trivial one: customer data, like a CRM (customer relationship manager). Each `Customer` entity has an `id` field, a `name` field, and an `email`.
-
-[source,java]
------
-include::{code}/api/api/src/main/java/bootiful/api/Customer.java[]
------
-
-And of course there's a Spring Data JDBC repository to make working with that data easier...
-
-[source,java]
------
-include::api/src/main/java/bootiful/api/CustomerRepository.java[]
------
-
-The Spring Data JDBC repository talks to a SQL table, called `customer`, whose definition we must specify.
-
-[source,sql]
------
-include::api/src/main/resources/schema.sql[]
------
-
-Let's insert some `customer` records, just for good measure, so that we have something to look at, and so that the system is in a well-known state.
-
-[source,sql]
------
-include::api/src/main/resources/data.sql[]
------
-
-And if we write data in a database but have no HTTP controller by which to examine the data, did we actually write any data at all? Philosophers disagree, but just to be safe let's build an HTTP controller with good ol' Spring MVC.
-
-[source,java]
------
-include::api/src/main/java/bootiful/api/CustomerHttpController.java[]
------
-
-Remember we're going to be securing this with Spring Security's OAuth support, and just to be sure everything's worked, we'll have a simple HTTP endpoint that injects and then spits out the current authenticated user's username, so you can see who the system thinks is authenticated at the moment.
-
-This is particularly useful in the client, which is goign to want to at least acknowldge that the user has successfully authenticated with a message like, `Welcome <USER>`, where `<USER>` might be `jlong`. You might also leak other inforamation to the client, like the first name and last name.
-
-[source,java]
------
-include::api/src/main/java/bootiful/api/MeHttpController.java[]
------
-
-And, finally, we've got a little integration that sends a message using the AMQP protocol via RabbitMQ to another service called `processor`.
-We'll introduce that thing later.
-The idea is that you'll be able to click a button to get some sort of email sent to each user. We're not going to actually send an email.
-I haven't really thought out what sort of email we would send if we were!
-Just use your imagination.
-
-The significant bit here is that sending email is one of those things you don't necessarily want to do in the hot path of handling HTTP requests. It should be farmed out to another node in the system which can be dedicated to scaling up and down as is required to handle the email-sending load, and to scale independently of the front-office HTTP traffic load.
-Sending email may  take a while, be error-prone, etc. It's the kind of dirty integration stuff that Spring Integration is purpose built for. So we'll use Spring Integration.
-
-
-TIP: This is what we used to call a backoffice process.
-I'm calling it `processor`, because I'm amazing with names, like everyone on the Spring team is.
-We named our MVC framework Spring MVC, our data framework Spring Data, our batch framework Spring Batch... Well, you get the idea.
-(Don't ask about Spring Boot, tho!)
-
-Requests originate here, in this controller.
-Each request contains a `Customer` payload, and header, `jwt`, which contains the JWT associated with the current authenticated user.
-We'll use that JWT later to validate the request is from a trusted, authenticated, user.
-
-[source,java]
------
-include::api/src/main/java/bootiful/api/EmailController.java[]
------
-
-And there's a bit of Spring Integration plumbing to route those requests to our RabbitMQ broker running in a separate process.
-This `IntegrationFlow` looks at requests (which come in the shape of a `Message<T>` object, which has headers and a payload) coming in from the injected `MessageChannel`, transforms them into JSON data, and then sends them, along with a JWT token associated to the current authenticated user, on to the broker, where it'll eventually get delivered to the consumer, `processor`.
-
-[source,java]
------
-include::api/src/main/java/bootiful/api/EmailRequestsIntegrationFlowConfiguration.java[]
------
-
-<1> inbound adapters translate events from the real world into Spring Framework `Message<T>` objects.
-Outbound adapters translate `Message<T>` objects into events in the real world.
-This adapter lets us interface with RabbitMQ via the AMQP protocol.
-<2> In this case, messages pass through the `MessageChannel`...
-<3> ...and into the next stage in the flow, a transformer, which will translate the `Message<Customer>` into a `Message<String>`, with a JSON payload
-<4> and from there, it gets routed to the outbound AMQP adapter, which will translate the Spring Framework `Message<String>` into a request sent over AMQP to the RabbitMQ broker
-
-We're using Spring Security's Resource Server support to protect requests to the API, rejecting requests that don't have a valid OAuth 2 token.
-It does this by connecting to the OAuth 2 IDP (our amazing Spring Authorization Server instance) and validating the JWT.
-
-The Spring Security Resource Server support, the Spring Data support, the Spring Integration AMQP support, all of it requires configuration, which brings us to our `application.properties`.
-
-[source,properties]
-----
-include::api/src/main/resources/application.properties[]
-----
-<1> the issuer URI is the address of the Spring Authorization Server against which Spring Security can validate a JWT token
-<2> we need to connect to the RabbitMQ instance..
-<3> and the PostgresSQL database...
-<4> the Spring Authorization Server is already running on port `8080`, so we'll need to run this Java application on port `8081`.
-(Remember that!)
-
-WARNING: I've hardcoded database connectivity credentials and RabbitMQ credentials and so on. It's worth restating: don't do this in a production application. Use environment variables or the Spring Cloud Config Server or Spring Cloud Vault or any of the infinitely more secure approaches than hardcoding credentials in plaintext on a public Git repository!
-
+//
+// Let's build an HTTP API.
+// Honestly, this is just a pretense to have something to secure with the Spring Security OAuth support, so we'll make this quick.
+// First, go to the https://start.spring.io[Spring Initializr], and then add the following dependencies: `
+//
+// * `Spring for RabbitMQ`
+// * `Spring Integration`
+// * `Spring Web`
+// * `OAuth2 Resource Server`
+// * `Spring Data JDBC`
+// * `PostgreSQL Driver`
+//
+// I gave the newly minted project a group of `bootiful` and named it `api`.
+//
+// Click `Generate`, unzip the newly minted `.zip` file, and then open the project in your IDE.
+//
+// The domain's a trivial one: customer data, like a CRM (customer relationship manager). Each `Customer` entity has an `id` field, a `name` field, and an `email`.
+//
+// [source,java]
+// -----
+// include::{code}/api/api/src/main/java/bootiful/api/Customer.java[]
+// -----
+//
+// And of course there's a Spring Data JDBC repository to make working with that data easier...
+//
+// [source,java]
+// -----
+// include::api/src/main/java/bootiful/api/CustomerRepository.java[]
+// -----
+//
+// The Spring Data JDBC repository talks to a SQL table, called `customer`, whose definition we must specify.
+//
+// [source,sql]
+// -----
+// include::api/src/main/resources/schema.sql[]
+// -----
+//
+// Let's insert some `customer` records, just for good measure, so that we have something to look at, and so that the system is in a well-known state.
+//
+// [source,sql]
+// -----
+// include::api/src/main/resources/data.sql[]
+// -----
+//
+// And if we write data in a database but have no HTTP controller by which to examine the data, did we actually write any data at all? Philosophers disagree, but just to be safe let's build an HTTP controller with good ol' Spring MVC.
+//
+// [source,java]
+// -----
+// include::api/src/main/java/bootiful/api/CustomerHttpController.java[]
+// -----
+//
+// Remember we're going to be securing this with Spring Security's OAuth support, and just to be sure everything's worked, we'll have a simple HTTP endpoint that injects and then spits out the current authenticated user's username, so you can see who the system thinks is authenticated at the moment.
+//
+// This is particularly useful in the client, which is goign to want to at least acknowldge that the user has successfully authenticated with a message like, `Welcome <USER>`, where `<USER>` might be `jlong`. You might also leak other inforamation to the client, like the first name and last name.
+//
+// [source,java]
+// -----
+// include::api/src/main/java/bootiful/api/MeHttpController.java[]
+// -----
+//
+// And, finally, we've got a little integration that sends a message using the AMQP protocol via RabbitMQ to another service called `processor`.
+// We'll introduce that thing later.
+// The idea is that you'll be able to click a button to get some sort of email sent to each user. We're not going to actually send an email.
+// I haven't really thought out what sort of email we would send if we were!
+// Just use your imagination.
+//
+// The significant bit here is that sending email is one of those things you don't necessarily want to do in the hot path of handling HTTP requests. It should be farmed out to another node in the system which can be dedicated to scaling up and down as is required to handle the email-sending load, and to scale independently of the front-office HTTP traffic load.
+// Sending email may  take a while, be error-prone, etc. It's the kind of dirty integration stuff that Spring Integration is purpose built for. So we'll use Spring Integration.
+//
+//
+// TIP: This is what we used to call a backoffice process.
+// I'm calling it `processor`, because I'm amazing with names, like everyone on the Spring team is.
+// We named our MVC framework Spring MVC, our data framework Spring Data, our batch framework Spring Batch... Well, you get the idea.
+// (Don't ask about Spring Boot, tho!)
+//
+// Requests originate here, in this controller.
+// Each request contains a `Customer` payload, and header, `jwt`, which contains the JWT associated with the current authenticated user.
+// We'll use that JWT later to validate the request is from a trusted, authenticated, user.
+//
+// [source,java]
+// -----
+// include::api/src/main/java/bootiful/api/EmailController.java[]
+// -----
+//
+// And there's a bit of Spring Integration plumbing to route those requests to our RabbitMQ broker running in a separate process.
+// This `IntegrationFlow` looks at requests (which come in the shape of a `Message<T>` object, which has headers and a payload) coming in from the injected `MessageChannel`, transforms them into JSON data, and then sends them, along with a JWT token associated to the current authenticated user, on to the broker, where it'll eventually get delivered to the consumer, `processor`.
+//
+// [source,java]
+// -----
+// include::api/src/main/java/bootiful/api/EmailRequestsIntegrationFlowConfiguration.java[]
+// -----
+//
+// <1> inbound adapters translate events from the real world into Spring Framework `Message<T>` objects.
+// Outbound adapters translate `Message<T>` objects into events in the real world.
+// This adapter lets us interface with RabbitMQ via the AMQP protocol.
+// <2> In this case, messages pass through the `MessageChannel`...
+// <3> ...and into the next stage in the flow, a transformer, which will translate the `Message<Customer>` into a `Message<String>`, with a JSON payload
+// <4> and from there, it gets routed to the outbound AMQP adapter, which will translate the Spring Framework `Message<String>` into a request sent over AMQP to the RabbitMQ broker
+//
+// We're using Spring Security's Resource Server support to protect requests to the API, rejecting requests that don't have a valid OAuth 2 token.
+// It does this by connecting to the OAuth 2 IDP (our amazing Spring Authorization Server instance) and validating the JWT.
+//
+// The Spring Security Resource Server support, the Spring Data support, the Spring Integration AMQP support, all of it requires configuration, which brings us to our `application.properties`.
+//
+// [source,properties]
+// ----
+// include::api/src/main/resources/application.properties[]
+// ----
+// <1> the issuer URI is the address of the Spring Authorization Server against which Spring Security can validate a JWT token
+// <2> we need to connect to the RabbitMQ instance..
+// <3> and the PostgresSQL database...
+// <4> the Spring Authorization Server is already running on port `8080`, so we'll need to run this Java application on port `8081`.
+// (Remember that!)
+//
+// WARNING: I've hardcoded database connectivity credentials and RabbitMQ credentials and so on. It's worth restating: don't do this in a production application. Use environment variables or the Spring Cloud Config Server or Spring Cloud Vault or any of the infinitely more secure approaches than hardcoding credentials in plaintext on a public Git repository!
+//
 With all that in place, you should be able to start the application.
 It's got a REST endpoint.
 You can try it out by hitting the new `/customers` endpoint that we created.
@@ -169,7 +169,7 @@ Here's the equivalent using ye ole `RestTemplate`:
 
 [source,java]
 ----
-include::api/src/main/java/bootiful/api/ClientCredentialsClient.java[]
+include::{code}/web/client/src/test/java/com/example/client/ClientCredentialsClient.java[]
 ----
 
 You can use this token to then issue a request to the HTTP server:
