@@ -37,17 +37,30 @@ include::{code}/beans-to-boot/beans-to-boot/compose.yml[]
 // psb start
 * use JdbcClient
 // psb start
-// psb tx1
+// tx1 start
 * what about tx?
 * oop says dry; extract single responsibility to another class
 * TransactionalDogRepository is a composite that wraps the target one
 * platformtxmanager
-// psb tx1
+// stop tx1
+// start tx1
 * transactiontemplate
+// stop tx1
+// start jdkproxy
 * still very tedious tho is there some way to programatically generate new implementations of the interface?
 * jdk proxies
 * now we can wrap our target with our new `transactional` method
-* its nie but things are getting out of hand. that said, our code is approachable enough for now. bear in mind were (barely) doing any persistence
+// stop jdkproxy
+// start cglibproxy
+* but what about concrete types w/ no interface?
+* after all its an antipattern, to have an interface for just one type
+* spring's proxyfactorybean
+* we can delete the interface. huzzah
+// stop cglibproxy
+// start
+* its nice but things are getting out of hand. that said, our code is approachable enough for now.
+* what if we wanted to do any kind of testing? wed have to duplicate all these beans
+* and all of this just for a single query to a db! we havent even started to think about building a web application, messaging, observability, etc.
 * lets see if spring can improve things
 * turn everything into beans
 * there is a lifecycle at play. i can control the beans construction and destuction. they can implement InitializingBean && DisposablBean
