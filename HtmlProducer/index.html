@@ -2847,17 +2847,15 @@ The <code>api</code> will refuse to send back data unless that token is specifie
 <span class="annotation">@Configuration</span>
 <span class="type">class</span> <span class="class">SecurityConfiguration</span> {
 
-    <i class="conum" data-value="1"></i><b>(1)</b>
-    <span class="annotation">@Bean</span>
-    SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
-        http
-                .authorizeExchange((authorize) -&gt; authorize.anyExchange().authenticated())<i class="conum" data-value="2"></i><b>(2)</b>
-                .csrf(ServerHttpSecurity.CsrfSpec::disable)<i class="conum" data-value="3"></i><b>(3)</b>
-                .oauth2Login(<span class="predefined-type">Customizer</span>.withDefaults())<i class="conum" data-value="4"></i><b>(4)</b>
-                .oauth2Client(<span class="predefined-type">Customizer</span>.withDefaults());
-        <span class="keyword">return</span> http.build();
-    }
-
+        <i class="conum" data-value="1"></i><b>(1)</b>
+        <span class="annotation">@Bean</span>
+        SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+                http.authorizeExchange((authorize) -&gt; authorize.anyExchange().authenticated())<i class="conum" data-value="2"></i><b>(2)</b>
+                        .csrf(ServerHttpSecurity.CsrfSpec::disable)<i class="conum" data-value="3"></i><b>(3)</b>
+                        .oauth2Login(<span class="predefined-type">Customizer</span>.withDefaults())<i class="conum" data-value="4"></i><b>(4)</b>
+                        .oauth2Client(<span class="predefined-type">Customizer</span>.withDefaults());
+                <span class="keyword">return</span> http.build();
+        }
 
 }</code></pre>
 </div>
@@ -2913,26 +2911,18 @@ Finally, the request, after it has passed through any and all filters, is sent t
 <span class="annotation">@Configuration</span>
 <span class="type">class</span> <span class="class">GatewayConfiguration</span> {
 
-    <span class="annotation">@Bean</span>
-    RouteLocator gateway(RouteLocatorBuilder rlb) {
-        <span class="type">var</span> apiPrefix = <span class="string"><span class="delimiter">&quot;</span><span class="content">/api/</span><span class="delimiter">&quot;</span></span>;
-        <span class="keyword">return</span> rlb
-                .routes()
-                <i class="conum" data-value="1"></i><b>(1)</b>
-                .route(rs -&gt; rs
-                        .path(apiPrefix + <span class="string"><span class="delimiter">&quot;</span><span class="content">**</span><span class="delimiter">&quot;</span></span>)
-                        .filters(f -&gt; f
-                                .tokenRelay()
-                                .rewritePath(apiPrefix + <span class="string"><span class="delimiter">&quot;</span><span class="content">(?&lt;segment&gt;.*)</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">/$</span><span class="char">\\</span><span class="content">{segment}</span><span class="delimiter">&quot;</span></span>)
-                        )
-                        .uri(<span class="string"><span class="delimiter">&quot;</span><span class="content">http://localhost:8081</span><span class="delimiter">&quot;</span></span>))
-                <i class="conum" data-value="2"></i><b>(2)</b>
-                .route(rs -&gt; rs
-                        .path(<span class="string"><span class="delimiter">&quot;</span><span class="content">/**</span><span class="delimiter">&quot;</span></span>)
-                        .uri(<span class="string"><span class="delimiter">&quot;</span><span class="content">http://localhost:8020</span><span class="delimiter">&quot;</span></span>)
-                )
-                .build();
-    }
+        <span class="annotation">@Bean</span>
+        RouteLocator gateway(RouteLocatorBuilder rlb) {
+                <span class="type">var</span> apiPrefix = <span class="string"><span class="delimiter">&quot;</span><span class="content">/api/</span><span class="delimiter">&quot;</span></span>;
+                <span class="keyword">return</span> rlb.routes()
+                        <i class="conum" data-value="1"></i><b>(1)</b>
+                        .route(rs -&gt; rs.path(apiPrefix + <span class="string"><span class="delimiter">&quot;</span><span class="content">**</span><span class="delimiter">&quot;</span></span>)
+                                .filters(f -&gt; f.tokenRelay().rewritePath(apiPrefix + <span class="string"><span class="delimiter">&quot;</span><span class="content">(?&lt;segment&gt;.*)</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">/$</span><span class="char">\\</span><span class="content">{segment}</span><span class="delimiter">&quot;</span></span>))
+                                .uri(<span class="string"><span class="delimiter">&quot;</span><span class="content">http://localhost:8081</span><span class="delimiter">&quot;</span></span>))
+                        <i class="conum" data-value="2"></i><b>(2)</b>
+                        .route(rs -&gt; rs.path(<span class="string"><span class="delimiter">&quot;</span><span class="content">/**</span><span class="delimiter">&quot;</span></span>).uri(<span class="string"><span class="delimiter">&quot;</span><span class="content">http://localhost:8020</span><span class="delimiter">&quot;</span></span>))
+                        .build();
+        }
 
 }</code></pre>
 </div>
@@ -4519,8 +4509,9 @@ Hopefully, this chapter has been persuasive, and you&#8217;re ready to turn the 
 <div class="paragraph">
 <p>let&#8217;s introduce a <em>trivial</em> example to enforce the idea. Were going to read <code>Dog</code> data from a SQL database, PostgreSQl, running on our machine. Well use the follwoing Docker Compose file to stand up the instance of our database.</p>
 </div>
-<div class="paragraph">
-<p>services:
+<div class="listingblock">
+<div class="content">
+<pre>services:
   postgres:
     image: 'postgres:latest'
     environment:
@@ -4528,9 +4519,11 @@ Hopefully, this chapter has been persuasive, and you&#8217;re ready to turn the 
       - 'POSTGRES_PASSWORD=secret'
       - 'POSTGRES_USER=myuser'
     ports:
-      - '5432:5432'</p>
+      - '5432:5432'</pre>
+</div>
 </div>
 <div class="ulist">
+<div class="title">run this in the usual way: <code>docker compose up -d</code></div>
 <ul>
 <li>
 <p>spring 'square' : psb, aop, di, autoconfig</p>
@@ -4660,7 +4653,7 @@ Hopefully, this chapter has been persuasive, and you&#8217;re ready to turn the 
 <div id="footer">
 <div id="footer-text">
 Version 1.0<br>
-Last updated 2026-06-30 06:58:24 UTC
+Last updated 2026-06-30 08:28:52 UTC
 </div>
 </div>
 </body>
