@@ -68,6 +68,11 @@ PGPASSWORD=secret psql -Umyuser -hlocalhost mydatabase
 * and all of this just for a single query to a db! we havent even started to think about building a web application, messaging, observability, etc.
 * lets see if spring can improve things
 * turn everything into beans
+* were wiring everything up with an `ApplicationContext`. The AC is the thign that glues a `BeanFactory` into an application's environment.. it's _context_.
+* the `BeanFactory` is the thing that does most of the work. its the thing that does depdnency injection.
+* ingest -> BeanDefinitions -> beans
+* u can inspect the BeanDefinitions with a `BeanFactoryPostProcessor`
+* u must never call `getBean(Class<?>)`. Use the beanName's and the method that gets the bean definitions.
 // stop springframework
 // start lifecycle
 * there is a lifecycle at play. i can control the beans construction and destuction. they can implement InitializingBean && DisposablBean
@@ -78,22 +83,39 @@ PGPASSWORD=secret psql -Umyuser -hlocalhost mydatabase
 * let's look at `BeanFactoryPostProcessors` and `BeanPostProcessors`
 * > ingest -> BeanDefintiions -> beans
 * BeanFactoryPostProcessor lets u see the BeanDefintions
-* what we want is BeanPostProcessor
+* we can demonstrate it. ive put it another configuration class. we can import configuration classes by adding `@Import` to the `DogConfiguration` configuration class.
+* neat. what we want to do is introduce transactions however. so lets use a `BeanPostProcessor`.
+* a BPP gets called right before the beans are put in service. we have a chance to enrich the object before its put into service.
 * extract the transactional support to this based on presence of marker interface `Tx`
-// start pp
-* obviously, if u have used spring at all before then u prolly know where this is going: we've already done this exact magic trick. let's refactor to use `@transactional`. just need to enable it with `@EnableTransactionManagment`
+* nice! now we can refactor the config and remove the explicit call to `Transactions.createProxy`.
+* _this_ is the power of a good framework. you can central cross-cutting concerns in a single place. this is the essence of aspect-oriented programming (AOP).
+// stop pp
+// start transactional
+* if u have used spring at all before then u prolly know where this is going: we've already done this exact magic trick. let's refactor to use `@transactional`. just need to enable it with `@EnableTransactionManagment`
+// stop transactional
+// start componentscan
 * nice but of course its tedious to define beans with full config every time. lets use implicit configuration and `@ComponentScan`
 * component scanning for our repository by adding `@Repository`
 * stereotype annotations are neat. u can create ur own, too
 * this is _implicit_ configuration
 * as opposed to the explicit configuration
+// stop componentscan
+// start beanRegistrar
 * Spring Framework 7 introduced `BeanRegistrar`s, too, btw. here's how that would look.
+* we turned almost all the beans into the BeanRegistrar format. we leave the DataSource in Java config and we still have component scanning for the DogRepository itself.
+* you can mix and match. no need to pick one over the other. they all end up as BeanDefinitions that get turned into beans, and those beans can be injected and reused in all the normal ways.
+// stop beanRegistrar
+// start environment
 * anyway weve done a lot here. but weve got harccoded configuration. let's extricate the values to properties (`application.properties`) and use the `Environment`
+// stop environment
+// start boot
 * it's nice! but theres a lot of boilerplate thatll prolly be the same from one appt o another.
 * lets use Spring Boot. same `ApplicationContext` but the code is much simpler. We can delete everything except the DogRepository and the `test` method
 * this works because of AutoConfiguration. you can create your own too. the autoconfig is activated by the presence of `starters`.
 * and, being honest, im not sure we ever needed to implement the repository ourselves. lol. lets just use the Sprig Dats JDBC project.
 * note that weve also now got good ascii art. we've got an actuator. weve got a web server.
 * we can use virutal threads!
-* remember the BEanDfinitions? we can turn this into a graalvm native image!
+* also itll automatically initialize the schema of the DB for us (schema.sql and data.sql)
+// start boot
+* remember the BEanDefinitions? we can turn this into a graalvm native image!
 * use spring boot's build plugin to create a docker image, too
