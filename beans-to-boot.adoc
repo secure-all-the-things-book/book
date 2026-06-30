@@ -24,13 +24,21 @@ include::{code}/beans-to-boot/beans-to-boot/compose.yml[]
 ----
 .run this in the usual way: `docker compose up -d`
 
-
+// raw start
 * spring 'square' : psb, aop, di, autoconfig
 * basic repository
 * core java
 * DataSource inline
+// raw stop
+
+// di start
 * use DI to extract it out; nothing fancy just polymorphism.
+// di start
+// psb start
 * use JdbcClient
+// psb start
+// psb tx
+
 * what about tx?
 * oop says dry; extract single responsibility to another class
 * TransactionalDogRepository is a composite that wraps the target one
