@@ -6,6 +6,21 @@ You know, I am assuming that by the time you're reading this that you have some 
 
 So, here we go. We're going to do the same sort of thing, but of course greatly udpated to reflect the amazing moemnt in which we fnd ourselves.
 
+when spring first came out we talked about the "spring triangle"  the three pillars that made the Spring Framework so useful for people:
+ * portable service abstractions
+ * dependency injection
+ * autoconfiguration
+
+more recently, with the introduction mof Spring Boot, we've added a new dimension of utility to the framework: autoconfiguration. So I guess its more like a "Spring square" now, come to think of it.
+
+At the core of Spring as a framework is the fact htat it needs to understand how your objects are wired together. But why? why bother telling it these things? Why not just wire things yourself?
+
+at the microlevel, this isnt an unreasonable quesiton. spring is just java and i can write java without spring, so why bother with Spring?
+
+let's introduce a _trivial_ example to enforce the idea. Were going to read `Dog` data from a SQL database, PostgreSQl, running on our machine. Well use the follwoing Docker Compose file to stand up the instance of our database.
+
+include::{code}/beans-to-boot/beans-to-boot/compose.yml[]
+
 * spring 'square' : psb, aop, di, autoconfig
 * basic repository
 * core java
