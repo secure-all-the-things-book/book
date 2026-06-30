@@ -566,9 +566,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 </li>
 <li><a href="#_implementing_the_spring_authorization_server">Implementing the Spring Authorization Server</a>
 <ul class="sectlevel2">
-<li><a href="#_try_it_out">Try it out!</a></li>
-<li><a href="#_docker_compose_and_our_middleware">Docker Compose and our Middleware</a></li>
-<li><a href="#_stand_up_a_spring_authorization_server_instance_for_great_good">Stand up a Spring Authorization Server Instance for Great Good</a></li>
+<li><a href="#_users">Users</a></li>
 </ul>
 </li>
 <li><a href="#_persistent_state_in_the_spring_authorization_server_with_postgresql_and_jdbc">Persistent State in the Spring Authorization Server with PostgreSQL and JDBC</a>
@@ -1135,127 +1133,6 @@ That&#8217;s what the rest of this book is about.</p>
 <h2 id="_implementing_the_spring_authorization_server">Implementing the Spring Authorization Server</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>We&#8217;re going to do a breadth-first not depth-first approach to using the Spring Authorization Server, so we&#8217;re going to look at several pieces.
-By the end of this, we&#8217;ll have explored:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>a Spring Authorization Server instance (called <code>authorization-server</code>)</p>
-</li>
-<li>
-<p>a backend HTTP API protected by Spring Security&#8217;s OAuth 2 Resource Server capability (called <code>api</code>)</p>
-</li>
-<li>
-<p>a headless RabbitMQ-powered microservice whose request handling is done with Spring Integration, and protected by Spring Security&#8217;s OAuth 2 Resource Server capability, <em>sort of</em>. (called <code>processor</code>)</p>
-</li>
-<li>
-<p>a static JavaScript application.
-I hesitate to even call it an application.
-It&#8217;s one page, <code>index.html</code> (called <code>static</code>)</p>
-</li>
-<li>
-<p>a Spring Cloud Gateway instance that&#8217;s acting as an OAuth 2 token relay and OAuth 2 client, originating new OAuth 2 tokens if they&#8217;re not present and then forwarding requests onward to the backend HTTP API and static JavaScript assets with the token in tow.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>We&#8217;ll start first with the main event, the Spring Authorization Server.
-Arguably, everything <em>after</em> that section would work equally well with any other OAuth 2 identity provider (IDP).
-But maybe you&#8217;ll see in reading this section that you don&#8217;t <em>need</em> any other OAuth 2 identity provider any more.
-Either way, read on!</p>
-</div>
-<div class="sect2">
-<h3 id="_try_it_out">Try it out!</h3>
-<div class="paragraph">
-<p>Now, before we get ahead of ourselves, let&#8217;s try it out!
-Grab (<code>git clone</code>) the <a href="https://github.com/spring-tips/spring-authorization-server">code here</a> to follow along.</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>in the root folder of the code, run <code>docker compose up</code></p>
-</li>
-<li>
-<p>in <code>authorization-service</code>, run <code>run.sh</code></p>
-</li>
-<li>
-<p>in <code>gateway</code>, run <code>run.sh</code></p>
-</li>
-<li>
-<p>in <code>api</code>, run <code>run.sh</code></p>
-</li>
-<li>
-<p>in <code>processor</code>, run <code>run.sh</code></p>
-</li>
-<li>
-<p>in <code>static</code>, run <code>run.sh</code></p>
-</li>
-<li>
-<p>visit <code><a href="http://127.0.0.1:8080" class="bare">http://127.0.0.1:8080</a></code> (important: use the IP, <em>not</em> <code>localhost</code>!) in the browser.</p>
-</li>
-<li>
-<p>login with <code>josh@joshlong.com</code>/<code>password</code> (yes, I know it&#8217;s a terrible password, don&#8217;t <code>@</code> me!), and then consent when prompted.</p>
-</li>
-<li>
-<p>you&#8217;ll see a list of customers, click on the <code>email</code> button to kick off work in the <code>processor</code>.
-You should see indications in the console that your message has been sent.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>There are lots of moving parts, but here&#8217;s what you need to know: we have a JavaScript/HTML 5 client, a backend HTTP API, and a headless backoffice process, all of which have been secured with the Spring Authorization Server.</p>
-</div>
-<div class="paragraph">
-<p>Shut everything down, and we&#8217;ll start from scratch.</p>
-</div>
-<div class="paragraph">
-<p>Refreshingly simple.
-Let&#8217;s dive right into the nitty-gritty.
-I want you building secure systems by the article&#8217;s end.
-My goal here is not to cover <em>every</em> possible use case, but to cover some of the typical use-cases and introduce progressively more moving parts so that, if at some point you don&#8217;t see what you need, you know where to reach you to build it yourself.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_docker_compose_and_our_middleware">Docker Compose and our Middleware</h3>
-<div class="paragraph">
-<p>I know I just told you to shut everything down, but you need to restart one thing: the Docker images for both PostgreSQL and RabbitMQ.
-I&#8217;ve described all of their configuration in a <code>docker-compose.yml</code> file in the root of this project.
-It looks like this.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">services</span>:
-  <span class="key">postgres</span>:
-    <span class="key">image</span>: <span class="string"><span class="content">'postgres:latest'</span></span>
-    <span class="key">environment</span>:
-      - <span class="string"><span class="content">'POSTGRES_DB=mydatabase'</span></span>
-      - <span class="string"><span class="content">'POSTGRES_PASSWORD=secret'</span></span>
-      - <span class="string"><span class="content">'POSTGRES_USER=myuser'</span></span>
-    <span class="key">ports</span>:
-      - <span class="string"><span class="content">'5432:5432'</span></span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>We&#8217;ll be connecting to either or both of the Docker images across many different services, so let&#8217;s start them up before we proceed.</p>
-</div>
-<div class="paragraph">
-<p>Go to the root of the project.</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="shell">docker compose up</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>RabbitMQ will be running on the usual port and have a user, <code>user</code>, and a password, <code>password</code>.
-PostgresSQL will be running on the usual port with the user <code>postgres</code>, schema called <code>postgres</code>, and the password <code>postgres</code>.
-Yes, I know these are terrible passwords&#8230;&#8203;</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_stand_up_a_spring_authorization_server_instance_for_great_good">Stand up a Spring Authorization Server Instance for Great Good</h3>
-<div class="paragraph">
 <p>Go to the <a href="https://start.spring.io">Spring Initializr (start.spring.io)</a>, specify a group ID and an artifact ID (I chose <code>bootiful</code> : <code>authorization-server</code>) and add  <code>OAuth2 Authorization Server</code> as a dependency.
 I&#8217;d add <code>GraalVM Native Support</code> for good measure, but you do you.
 Open the downloaded project in your IDE.
@@ -1266,12 +1143,13 @@ I ran the following command from the root of the newly unzipped archive: <code>i
 <p>You&#8217;ve got a new Spring Boot Authorization Server.
 We need to specify two things: <strong>users</strong>, and <strong>clients</strong>.</p>
 </div>
-<div class="sect3">
-<h4 id="_users">Users</h4>
+<div class="sect2">
+<h3 id="_users">Users</h3>
 <div class="paragraph">
 <p>Users are pretty straight forward, right?
-A user is the sum of the username, password, and associated information attached to the systems' notion of identity.
-The beating heart of our system.</p>
+A user is the sum of the username, password, and associated information attached to the system&#8217;s notion of <em>identity</em>.
+The beating heart of our system.
+The <em>tenant</em> in "multitenant."</p>
 </div>
 <div class="paragraph">
 <p>There are a lot of ways to get this done.
@@ -1305,8 +1183,8 @@ class UserDetailsConfiguration {
     UserDetailsService inMemoryUserDetailsManager() {
         var userBuilder = User.withDefaultPasswordEncoder();
         return new InMemoryUserDetailsManager(
-                userBuilder.roles("USER").username("jlong").password("password").build(),
-                userBuilder.roles("USER", "ADMIN").username("rwinch").password("p@ssw0rd").build()
+                userBuilder.roles("USER").username("josh@joshlong.com").password("pw").build(),
+                userBuilder.roles("USER", "ADMIN").username("rob@spring.security").password("p@ssw0rd").build()
         );
     }
 
@@ -1319,29 +1197,30 @@ class UserDetailsConfiguration {
 <div class="ulist">
 <ul>
 <li>
-<p><code>josh@joshlong.com</code> with password <code>password</code> and roles <code>USER</code></p>
+<p><code>josh@joshlong.com</code> with password <code>pw</code> and roles <code>USER</code></p>
 </li>
 <li>
-<p><code>rwinch@invisible-domain.bar</code> with password <code>p@ssw0rd</code> and roles <code>USER</code> and <code>ADMIN</code></p>
+<p><code>rwinch@spring.security</code> with password <code>p@ssw0rd</code> and roles <code>USER</code> and <code>ADMIN</code></p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
 <p>This implementation is fine for development as it&#8217;s all in-memory.
 In a production system, you&#8217;ll probably want something more durable.
-We&#8217;ll look at those possibilities in a bit.</p>
-</div>
+We&#8217;ll look at those possibilities in a bit.
+For now, let&#8217;s talk about OAuth clients!</p>
 </div>
 <div class="sect3">
 <h4 id="_oauth_clients">OAuth Clients</h4>
 <div class="paragraph">
-<p>An OAuth client defines how a program or process interacts with an OAuth IDP (like Spring Authorization Server).
-Clients correspond more or less to the programs that would like to be allowed to authenticate on behalf of users.</p>
+<p>An OAuth client defines how a program or process interacts with an OAuth Authorization Server (like Spring Authorization Server).
+Clients correspond more or less to the programs that would like to be allowed to act on behalf of users but need their permission - their <em>access tokens</em> - to do so.</p>
 </div>
 <div class="paragraph">
 <p>I have tried to conceive of a clear illustration of clients in a vacuum, but it&#8217;s not easy. so let&#8217;s examine a real life example: you stumble upon some website, say <a href="https://www.yelp.com/">Yelp</a>, a website that lets you contribute and read reviews about locations - restaurants, businesses, tourist spots, etc.
 You want to login to see your history.
-You <em>could</em> create a new account there, going through the whole sign up flow and entering redundant information, but this information could soon become stale.
+You <em>could</em> create a new account there, going through the whole signup flow and entering redundant information, but this information could soon become stale.
+Worse: you&#8217;ve probably already entered this somewhere else on the internet and done a better job of maintaining it there, too.
 Maybe you change house or email address, or whatever, and you&#8217;ve forgotten to go back to the site and change your information.
 Yelp know this, so they offer another path forward: <code>Continue with Google</code> and <code>Continue with Apple</code>.</p>
 </div>
@@ -1362,11 +1241,11 @@ Yelp know this, so they offer another path forward: <code>Continue with Google</
 <p>You know what to do here: you&#8217;re in familiar territory.
 It&#8217;s google.com!
 You know Google.
-And Google <em>definitely</em>  knows you!
+And if you&#8217;ve ever set up an account and stayed logged in while navigating the web, Google <em>almost certainly</em> knows you too!
 You&#8217;ve got an account here, you maintain that account, and you like that account.
 You use it for your daily email, after all.
 You&#8217;ve even got that reassuring little padlock icon in the browser&#8217;s location bar giving you the warm-n-fuzzies about this site&#8217;s authenticity: it is who it claims to be.
-So you enter your information, login, and you have to whatever mutli-factor auth things Google wants you to do.</p>
+So you enter your information, login, and you do whatever mutli-factor auth things Google wants you to do. You might get a prompt on another device, you might use a passkey, etc. Let&#8217;s suppose we get the prompt on another device.</p>
 </div>
 <div class="imageblock">
 <div class="content">
@@ -1398,18 +1277,18 @@ So you enter your information, login, and you have to whatever mutli-factor auth
 </div>
 </div>
 <div class="paragraph">
-<p>At the end of this dance, Google.com transmitted a <em>token</em> to the application running at Yelp.com.
+<p>At the end of this exchange, Google.com transmitted a <em>token</em> to the application running at Yelp.com.
 Armed with this, the application running at Yelp.com can now transmit requests to the Google.com APIs, asking it questions about you, like your email.
 It might also be able to read your Google calendar events, location data, etc.
 What precisely the application at Yelp.com has access to is a function of the <em>scopes</em> requested by the client.
 The application at Yelp.com stores the token and uses it to interact with Google on your behalf.
 Occasionally, Google.com will expire the token.
 Tokens, like milk, go stale!
-No worries: the application at Yelp.com has a <em>refresh</em> token it can use to refresh the token and get a new one.</p>
+No worries: the application at Yelp.com was also given a <em>refresh</em> token it can use to refresh the access token and get a new one.</p>
 </div>
 <div class="paragraph">
 <p>You&#8217;re glad you signed up at Yelp.com, but look at the time!
-It&#8217;s noon, the sun&#8217;s out and the kid wants to go play mini golf at the place you just found on Yelp.com.
+It&#8217;s noon, the sun&#8217;s out, and the kid wants to go play mini golf at the place you just found on Yelp.com.
 Gotta go!</p>
 </div>
 <div class="paragraph">
@@ -1417,11 +1296,11 @@ Gotta go!</p>
 By this point, Yelp.com&#8217;s expired your HTTP session, and you&#8217;re logged out.
 No problem.
 Click the <code>Continue with Google</code> button again, and this time you&#8217;ll just be dumped into Yelp.com, fully authenticated.
-Both Google and Yelp remember who you are and so there&#8217;s no ceremony this time.
+Both Google and Yelp remember who you are, and so there&#8217;s no ceremony this time.
 You got fast-path&#8217;d into an authenticated HTTP session on Yelp.com.
 Thus: OAuth is invaluable both for establishing a new account and for subsequently logging into it.
 You may have changed your home address on Google.com in the meantime, and now Yelp.com can see the new address information and offer you updated recommendations, too.
-So Yelp.com is kept up-to-date and all you had to do was keep Google.com up-to-date.</p>
+So Yelp.com is kept up to date, and all you had to do was keep Google.com up to date.</p>
 </div>
 <div class="paragraph">
 <p>From the perspective of Google, Yelp.com is an OAuth client.
@@ -1429,19 +1308,22 @@ All the particulars of how you went through that authentication flow - whether y
 </div>
 <div class="paragraph">
 <p>Clients must stipulate a client ID, and a client secret.
-The client Id and client secret are transmitted in the request initiating the authentication flow, signalling to Google that Yelp.com is making this request.
+The client ID and client secret are transmitted in the request initiating the authentication flow, signaling to Google that Yelp.com is making this request.
 Clients also stipulate what <em>scopes</em> they want.
 A scope is OAuth&#8217;s version of rights, permissions, authorities, or claims.
-They&#8217;re (basically) arbitrary strings that mean something to Google.com&#8217;s API.</p>
+They&#8217;re (basically) arbitrary strings that mean something to Google.com&#8217;s API about what you may and may not access.</p>
 </div>
 <div class="paragraph">
-<p>There is one scope, <code>openid</code>, which is part of the OIDC specification.
-This scope means that you want to log in as a user with the OAuth flow.
-This is a sort of special case; Yelp.com may not want to read Google Calendar data, or read your email.
-Those scopes would necessarily be unique to Google&#8217;s APIs.
+<p>There is one scope, <code>openid</code>, which is part of the OIDC specification and allows an OAuth client to authenticate users in a standard way.
+Specifically, it has two effects:
+ * an ID token that contains a JWT that client applications can consume to understand who the user is.
+ * it gives the client access to the <code>UserInfo</code> endpoint. This endpoint provides additional information about a given user.</p>
+</div>
+<div class="paragraph">
+<p>This is a sort of special case; Yelp.com may not want to read Google Calendar data, or read your email, or draft a spreadsheet for you in Google Drive.
+The  scopes to support those Google-y things would necessarily be unique to Google&#8217;s APIs.
 But signing a user into a site is a common enough thing and one that can be implemented usefully across all sorts of OAuth providers, so there&#8217;s a specification called OpenID Connect (OIDC), that builds on top of OAuth 2.0, prescribing standard scopes and , importantly, standard APIs by which a client may look up information associated with a user.
 Yelp.com might only just need enough information from Google.com to fill out a signup form for us: name, email, etc.
-In that case, it would just specify <code>openid</code> as a scope and call it good.
 In this way the Yelp.com client could even reuse the same code across other OIDC compliant providers, changing only the client ID and client secret and the issuer URI (the API&#8217;s root URL).
 Neat-o!</p>
 </div>
@@ -1513,10 +1395,10 @@ Indeed, if you want to, you can skip ahead and things should work fine.</p>
 <div class="paragraph">
 <p>Eventually, however, you&#8217;re going to realize you can&#8217;t leave things as they are - you&#8217;ll need durable state.
 As-is, everything is kept in-memory.
-It&#8217;s obviously non-starter to need to deploy a new Spring Authorization Server every time you add a new client, user, or otherwise.
+It&#8217;s obviously a non-starter to have to redeploy the Spring Authorization Server every time you add a new client, user, or otherwise.
 People will want self-service forms by which they can register new users, clients, etc.
 All existing OAuth tokens would become invalid once you restart the Spring Authorization Server, too!
-Indeed, all state related to any successful OAuth authorizations would be forgotten on every restart.
+All state related to any successful OAuth authorizations would be forgotten on every restart.
 The situation&#8217;s not good, and in the next section, we&#8217;re going to look at introducing persistence, with JDBC, to get around it.</p>
 </div>
 <div class="paragraph">
@@ -1689,11 +1571,12 @@ Define a bean of type <code>PasswordEncoder</code> for use in your program.</p>
 <span class="annotation">@Configuration</span>
 <span class="type">class</span> <span class="class">SecurityConfiguration</span> {
 
-    <i class="conum" data-value="1"></i><b>(1)</b>
-    <span class="annotation">@Bean</span>
-    PasswordEncoder passwordEncoder() {
-        <span class="keyword">return</span> PasswordEncoderFactories.createDelegatingPasswordEncoder();
-    }
+        <i class="conum" data-value="1"></i><b>(1)</b>
+        <span class="annotation">@Bean</span>
+        PasswordEncoder passwordEncoder() {
+                <span class="keyword">return</span> PasswordEncoderFactories.createDelegatingPasswordEncoder();
+        }
+
 }</code></pre>
 </div>
 </div>
@@ -1765,30 +1648,27 @@ So we&#8217;ll modify it accordingly, as shown in <code>src/main/resources/sql/s
 <span class="annotation">@Configuration</span>
 <span class="type">class</span> <span class="class">UsersConfiguration</span> {
 
-    <span class="annotation">@Bean</span>
-    JdbcUserDetailsManager jdbcUserDetailsManager(<span class="predefined-type">DataSource</span> dataSource) {
-        <span class="keyword">return</span> <span class="keyword">new</span> JdbcUserDetailsManager(dataSource);
-    }
+        <span class="annotation">@Bean</span>
+        JdbcUserDetailsManager jdbcUserDetailsManager(<span class="predefined-type">DataSource</span> dataSource) {
+                <span class="keyword">return</span> <span class="keyword">new</span> JdbcUserDetailsManager(dataSource);
+        }
 
-    <span class="annotation">@Bean</span>
-    ApplicationRunner usersRunner(PasswordEncoder passwordEncoder, UserDetailsManager userDetailsManager) {
-        <span class="keyword">return</span> args -&gt; {
-            <i class="conum" data-value="1"></i><b>(1)</b>
-            <span class="type">var</span> builder = User.builder().roles(<span class="string"><span class="delimiter">&quot;</span><span class="content">USER</span><span class="delimiter">&quot;</span></span>).passwordEncoder(passwordEncoder::encode);
-            <i class="conum" data-value="2"></i><b>(2)</b>
-            <span class="type">var</span> users = <span class="predefined-type">Map</span>.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">josh@joshlong.com</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">pw</span><span class="delimiter">&quot;</span></span>,
-                    <span class="string"><span class="delimiter">&quot;</span><span class="content">user@anotherone.site</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">p@ssw0rd</span><span class="delimiter">&quot;</span></span>);
-            users.forEach((username, password) -&gt; {
-                <span class="keyword">if</span> (!userDetailsManager.userExists(username)) {
-                    <span class="type">var</span> user = builder
-                            .username(username)
-                            .password(password)
-                            .build();
-                    userDetailsManager.createUser(user);
-                }
-            });
-        };
-    }
+        <span class="annotation">@Bean</span>
+        ApplicationRunner usersRunner(PasswordEncoder passwordEncoder, UserDetailsManager userDetailsManager) {
+                <span class="keyword">return</span> args -&gt; {
+                        <i class="conum" data-value="1"></i><b>(1)</b>
+                        <span class="type">var</span> builder = User.builder().roles(<span class="string"><span class="delimiter">&quot;</span><span class="content">USER</span><span class="delimiter">&quot;</span></span>).passwordEncoder(passwordEncoder::encode);
+                        <i class="conum" data-value="2"></i><b>(2)</b>
+                        <span class="type">var</span> users = <span class="predefined-type">Map</span>.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">josh@joshlong.com</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">pw</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">user@anotherone.site</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">p@ssw0rd</span><span class="delimiter">&quot;</span></span>);
+                        users.forEach((username, password) -&gt; {
+                                <span class="keyword">if</span> (!userDetailsManager.userExists(username)) {
+                                        <span class="type">var</span> user = builder.username(username).password(password).build();
+                                        userDetailsManager.createUser(user);
+                                }
+                        });
+                };
+        }
+
 }</code></pre>
 </div>
 </div>
@@ -1868,42 +1748,35 @@ import java.util.UUID;
 <span class="variable">@Configuration</span>
 class ClientsConfiguration {
 
-    <i class="conum" data-value="1"></i><b>(1)</b>
-    <span class="variable">@Bean</span>
-    RegisteredClientRepository registeredClientRepository(JdbcTemplate template) {
-        <span class="directive">return</span> new JdbcRegisteredClientRepository(template);
-    }
+        <i class="conum" data-value="1"></i><b>(1)</b>
+        <span class="variable">@Bean</span>
+        RegisteredClientRepository registeredClientRepository(JdbcTemplate template) {
+                <span class="directive">return</span> new JdbcRegisteredClientRepository(template);
+        }
 
-    <i class="conum" data-value="2"></i><b>(2)</b>
-    <span class="variable">@Bean</span>
-    ApplicationRunner clientsRunner(PasswordEncoder pwe,
-                                    RegisteredClientRepository repository) {
-        <span class="directive">return</span> _ -&gt; {
-            var clientId = <span class="string"><span class="delimiter">&quot;</span><span class="content">crm</span><span class="delimiter">&quot;</span></span>;
-            <span class="keyword">if</span> (repository.findByClientId(clientId) == <span class="predefined-constant">null</span>) {
-                var crmClientSecret = pwe.encode(<span class="string"><span class="delimiter">&quot;</span><span class="content">crm</span><span class="delimiter">&quot;</span></span>);
-                repository.save(
-                        RegisteredClient
-                                .withId(UUID.randomUUID().toString())
-                                .clientId(clientId)
-                                // you should get this <span class="keyword">from</span> an environment variable!
-                                .clientSecret(crmClientSecret) <i class="conum" data-value="1"></i><b>(1)</b>
-                                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                                .authorizationGrantTypes(grantTypes -&gt; grantTypes.addAll(<span class="class">Set</span>.of(
-                                        AuthorizationGrantType.CLIENT_CREDENTIALS,
-                                        AuthorizationGrantType.AUTHORIZATION_CODE,
-                                        AuthorizationGrantType.REFRESH_TOKEN,
-                                        AuthorizationGrantType.DEVICE_CODE
-                                )))
-                                .redirectUri(<span class="string"><span class="delimiter">&quot;</span><span class="content">http://127.0.0.1:8080/login/oauth2/code/crm</span><span class="delimiter">&quot;</span></span>)
-                                .scopes(scopes -&gt; scopes.addAll(<span class="class">Set</span>.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">user.read</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">user.write</span><span class="delimiter">&quot;</span></span>,
-                                        OidcScopes.PROFILE ,OidcScopes.EMAIL ,
-                                        OidcScopes.OPENID)))
-                                .build()
-                );
-            }
-        };
-    }
+        <i class="conum" data-value="2"></i><b>(2)</b>
+        <span class="variable">@Bean</span>
+        ApplicationRunner clientsRunner(PasswordEncoder pwe, RegisteredClientRepository repository) {
+                <span class="directive">return</span> _ -&gt; {
+                        var clientId = <span class="string"><span class="delimiter">&quot;</span><span class="content">crm</span><span class="delimiter">&quot;</span></span>;
+                        <span class="keyword">if</span> (repository.findByClientId(clientId) == <span class="predefined-constant">null</span>) {
+                                var crmClientSecret = pwe.encode(<span class="string"><span class="delimiter">&quot;</span><span class="content">crm</span><span class="delimiter">&quot;</span></span>);
+                                repository.save(RegisteredClient.withId(UUID.randomUUID().toString())
+                                        .clientId(clientId)
+                                        // you should get this <span class="keyword">from</span> an environment variable!
+                                        .clientSecret(crmClientSecret) <i class="conum" data-value="1"></i><b>(1)</b>
+                                        .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                                        .authorizationGrantTypes(grantTypes -&gt; grantTypes.addAll(
+                                                        <span class="class">Set</span>.of(AuthorizationGrantType.CLIENT_CREDENTIALS, AuthorizationGrantType.AUTHORIZATION_CODE,
+                                                                        AuthorizationGrantType.REFRESH_TOKEN, AuthorizationGrantType.DEVICE_CODE)))
+                                        .redirectUri(<span class="string"><span class="delimiter">&quot;</span><span class="content">http://127.0.0.1:8080/login/oauth2/code/crm</span><span class="delimiter">&quot;</span></span>)
+                                        .scopes(scopes -&gt; scopes.addAll(
+                                                        <span class="class">Set</span>.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">user.read</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">user.write</span><span class="delimiter">&quot;</span></span>, OidcScopes.PROFILE, OidcScopes.EMAIL, OidcScopes.OPENID)))
+                                        .build());
+                        }
+                };
+        }
+
 }</code></pre>
 </div>
 </div>
@@ -2276,23 +2149,24 @@ Mercifully, the Java Security APIs are pretty remarkable here.</p>
 <span class="annotation">@Component</span>
 <span class="type">class</span> <span class="class">Keys</span> {
 
-    RsaKeyPair generateKeyPair(<span class="predefined-type">String</span> keyId, Instant created) {
-        <span class="type">var</span> keyPair = generateRsaKey();
-        <span class="type">var</span> publicKey = (<span class="predefined-type">RSAPublicKey</span>) keyPair.getPublic();
-        <span class="type">var</span> privateKey = (<span class="predefined-type">RSAPrivateKey</span>) keyPair.getPrivate();
-        <span class="keyword">return</span> <span class="keyword">new</span> RsaKeyPair(keyId, created, publicKey, privateKey);
-    }
-
-    <span class="directive">private</span> <span class="predefined-type">KeyPair</span> generateRsaKey() {
-        <span class="keyword">try</span> {
-            <span class="type">var</span> keyPairGenerator = <span class="predefined-type">KeyPairGenerator</span>.getInstance(<span class="string"><span class="delimiter">&quot;</span><span class="content">RSA</span><span class="delimiter">&quot;</span></span>);
-            keyPairGenerator.initialize(<span class="integer">2048</span>);
-            <span class="keyword">return</span> keyPairGenerator.generateKeyPair();
-        }<span class="comment">//</span>
-        <span class="keyword">catch</span> (<span class="exception">Exception</span> ex) {
-            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="exception">IllegalStateException</span>(ex);
+        RsaKeyPair generateKeyPair(<span class="predefined-type">String</span> keyId, Instant created) {
+                <span class="type">var</span> keyPair = generateRsaKey();
+                <span class="type">var</span> publicKey = (<span class="predefined-type">RSAPublicKey</span>) keyPair.getPublic();
+                <span class="type">var</span> privateKey = (<span class="predefined-type">RSAPrivateKey</span>) keyPair.getPrivate();
+                <span class="keyword">return</span> <span class="keyword">new</span> RsaKeyPair(keyId, created, publicKey, privateKey);
         }
-    }
+
+        <span class="directive">private</span> <span class="predefined-type">KeyPair</span> generateRsaKey() {
+                <span class="keyword">try</span> {
+                        <span class="type">var</span> keyPairGenerator = <span class="predefined-type">KeyPairGenerator</span>.getInstance(<span class="string"><span class="delimiter">&quot;</span><span class="content">RSA</span><span class="delimiter">&quot;</span></span>);
+                        keyPairGenerator.initialize(<span class="integer">2048</span>);
+                        <span class="keyword">return</span> keyPairGenerator.generateKeyPair();
+                } <span class="comment">//</span>
+                <span class="keyword">catch</span> (<span class="exception">Exception</span> ex) {
+                        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="exception">IllegalStateException</span>(ex);
+                }
+        }
+
 }</code></pre>
 </div>
 </div>
@@ -2308,7 +2182,6 @@ It&#8217;s a record to hold both the generated public and private keys.</p>
 <span class="keyword">import</span> <span class="include">java.security.interfaces.RSAPrivateKey</span>;
 <span class="keyword">import</span> <span class="include">java.security.interfaces.RSAPublicKey</span>;
 <span class="keyword">import</span> <span class="include">java.time.Instant</span>;
-
 
 <i class="conum" data-value="1"></i><b>(1)</b>
 record RsaKeyPair(<span class="predefined-type">String</span> id, Instant created, <span class="predefined-type">RSAPublicKey</span> publicKey, <span class="predefined-type">RSAPrivateKey</span> privateKey) {
@@ -2335,11 +2208,12 @@ I just love Java records and want us to take a moment to appreciate them.</td>
 
 <span class="type">interface</span> <span class="class">RsaKeyPairRepository</span> {
 
-    <i class="conum" data-value="1"></i><b>(1)</b>
-    <span class="predefined-type">List</span>&lt;RsaKeyPair&gt; findKeyPairs();
+        <i class="conum" data-value="1"></i><b>(1)</b>
+        <span class="predefined-type">List</span>&lt;RsaKeyPair&gt; findKeyPairs();
 
-    <i class="conum" data-value="2"></i><b>(2)</b>
-    <span class="type">void</span> save(RsaKeyPair rsaKeyPair);
+        <i class="conum" data-value="2"></i><b>(2)</b>
+        <span class="type">void</span> save(RsaKeyPair rsaKeyPair);
+
 }</code></pre>
 </div>
 </div>
@@ -2384,44 +2258,39 @@ But I got it working and put that logic in two implementations of Spring Framewo
 <span class="keyword">import</span> <span class="include">java.security.spec.PKCS8EncodedKeySpec</span>;
 <span class="keyword">import</span> <span class="include">java.util.Base64</span>;
 
+<span class="type">class</span> <span class="class">RsaPrivateKeyConverter</span> <span class="directive">implements</span> Serializer&lt;<span class="predefined-type">RSAPrivateKey</span>&gt;, Deserializer&lt;<span class="predefined-type">RSAPrivateKey</span>&gt; {
 
-<span class="type">class</span> <span class="class">RsaPrivateKeyConverter</span> <span class="directive">implements</span> Serializer&lt;<span class="predefined-type">RSAPrivateKey</span>&gt;,
-        Deserializer&lt;<span class="predefined-type">RSAPrivateKey</span>&gt; {
+        <span class="directive">private</span> <span class="directive">final</span> TextEncryptor textEncryptor;
 
-    <span class="directive">private</span> <span class="directive">final</span> TextEncryptor textEncryptor;
-
-    RsaPrivateKeyConverter(TextEncryptor textEncryptor) {
-        <span class="local-variable">this</span>.textEncryptor = textEncryptor;
-    }
-
-    <i class="conum" data-value="1"></i><b>(1)</b>
-    <span class="annotation">@Override</span>
-    <span class="directive">public</span> <span class="type">void</span> serialize(<span class="predefined-type">RSAPrivateKey</span> object, <span class="predefined-type">OutputStream</span> outputStream) <span class="directive">throws</span> <span class="exception">IOException</span> {
-        <span class="type">var</span> pkcs8EncodedKeySpec = <span class="keyword">new</span> <span class="predefined-type">PKCS8EncodedKeySpec</span>(object.getEncoded());
-        <span class="type">var</span> string = <span class="string"><span class="delimiter">&quot;</span><span class="content">-----BEGIN PRIVATE KEY-----</span><span class="char">\n</span><span class="delimiter">&quot;</span></span> + Base64.getMimeEncoder().encodeToString(pkcs8EncodedKeySpec.getEncoded())
-                     + <span class="string"><span class="delimiter">&quot;</span><span class="char">\n</span><span class="content">-----END PRIVATE KEY-----</span><span class="delimiter">&quot;</span></span>;
-        outputStream.write(<span class="local-variable">this</span>.textEncryptor.encrypt(string).getBytes());
-    }
-
-    <i class="conum" data-value="2"></i><b>(2)</b>
-    <span class="annotation">@Override</span>
-    <span class="directive">public</span> <span class="predefined-type">RSAPrivateKey</span> deserialize(<span class="predefined-type">InputStream</span> inputStream) {
-        <span class="keyword">try</span> {
-            <span class="type">var</span> pem = <span class="local-variable">this</span>.textEncryptor.decrypt(
-                    FileCopyUtils.copyToString(<span class="keyword">new</span> <span class="predefined-type">InputStreamReader</span>(inputStream)));
-            <span class="type">var</span> privateKeyPEM = pem
-                    .replace(<span class="string"><span class="delimiter">&quot;</span><span class="content">-----BEGIN PRIVATE KEY-----</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>)
-                    .replace(<span class="string"><span class="delimiter">&quot;</span><span class="content">-----END PRIVATE KEY-----</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>);
-            <span class="type">var</span> encoded = Base64.getMimeDecoder().decode(privateKeyPEM);
-            <span class="type">var</span> keyFactory = <span class="predefined-type">KeyFactory</span>.getInstance(<span class="string"><span class="delimiter">&quot;</span><span class="content">RSA</span><span class="delimiter">&quot;</span></span>);
-            <span class="type">var</span> keySpec = <span class="keyword">new</span> <span class="predefined-type">PKCS8EncodedKeySpec</span>(encoded);
-            <span class="keyword">return</span> (<span class="predefined-type">RSAPrivateKey</span>) keyFactory.generatePrivate(keySpec);
-        }<span class="comment">//</span>
-        <span class="keyword">catch</span> (<span class="predefined-type">Throwable</span> throwable) {
-            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="exception">IllegalArgumentException</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">there's been an exception</span><span class="delimiter">&quot;</span></span>, throwable);
+        RsaPrivateKeyConverter(TextEncryptor textEncryptor) {
+                <span class="local-variable">this</span>.textEncryptor = textEncryptor;
         }
-    }
 
+        <i class="conum" data-value="1"></i><b>(1)</b>
+        <span class="annotation">@Override</span>
+        <span class="directive">public</span> <span class="type">void</span> serialize(<span class="predefined-type">RSAPrivateKey</span> object, <span class="predefined-type">OutputStream</span> outputStream) <span class="directive">throws</span> <span class="exception">IOException</span> {
+                <span class="type">var</span> pkcs8EncodedKeySpec = <span class="keyword">new</span> <span class="predefined-type">PKCS8EncodedKeySpec</span>(object.getEncoded());
+                <span class="type">var</span> string = <span class="string"><span class="delimiter">&quot;</span><span class="content">-----BEGIN PRIVATE KEY-----</span><span class="char">\n</span><span class="delimiter">&quot;</span></span>
+                                + Base64.getMimeEncoder().encodeToString(pkcs8EncodedKeySpec.getEncoded())
+                                + <span class="string"><span class="delimiter">&quot;</span><span class="char">\n</span><span class="content">-----END PRIVATE KEY-----</span><span class="delimiter">&quot;</span></span>;
+                outputStream.write(<span class="local-variable">this</span>.textEncryptor.encrypt(string).getBytes());
+        }
+
+        <i class="conum" data-value="2"></i><b>(2)</b>
+        <span class="annotation">@Override</span>
+        <span class="directive">public</span> <span class="predefined-type">RSAPrivateKey</span> deserialize(<span class="predefined-type">InputStream</span> inputStream) {
+                <span class="keyword">try</span> {
+                        <span class="type">var</span> pem = <span class="local-variable">this</span>.textEncryptor.decrypt(FileCopyUtils.copyToString(<span class="keyword">new</span> <span class="predefined-type">InputStreamReader</span>(inputStream)));
+                        <span class="type">var</span> privateKeyPEM = pem.replace(<span class="string"><span class="delimiter">&quot;</span><span class="content">-----BEGIN PRIVATE KEY-----</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>).replace(<span class="string"><span class="delimiter">&quot;</span><span class="content">-----END PRIVATE KEY-----</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>);
+                        <span class="type">var</span> encoded = Base64.getMimeDecoder().decode(privateKeyPEM);
+                        <span class="type">var</span> keyFactory = <span class="predefined-type">KeyFactory</span>.getInstance(<span class="string"><span class="delimiter">&quot;</span><span class="content">RSA</span><span class="delimiter">&quot;</span></span>);
+                        <span class="type">var</span> keySpec = <span class="keyword">new</span> <span class="predefined-type">PKCS8EncodedKeySpec</span>(encoded);
+                        <span class="keyword">return</span> (<span class="predefined-type">RSAPrivateKey</span>) keyFactory.generatePrivate(keySpec);
+                } <span class="comment">//</span>
+                <span class="keyword">catch</span> (<span class="predefined-type">Throwable</span> throwable) {
+                        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="exception">IllegalArgumentException</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">there's been an exception</span><span class="delimiter">&quot;</span></span>, throwable);
+                }
+        }
 
 }</code></pre>
 </div>
@@ -2461,42 +2330,39 @@ We won&#8217;t rehash it since its structure is basically identical to the <code
 <span class="keyword">import</span> <span class="include">java.security.spec.X509EncodedKeySpec</span>;
 <span class="keyword">import</span> <span class="include">java.util.Base64</span>;
 
-<span class="type">class</span> <span class="class">RsaPublicKeyConverter</span> <span class="directive">implements</span> Serializer&lt;<span class="predefined-type">RSAPublicKey</span>&gt;,
-        Deserializer&lt;<span class="predefined-type">RSAPublicKey</span>&gt; {
+<span class="type">class</span> <span class="class">RsaPublicKeyConverter</span> <span class="directive">implements</span> Serializer&lt;<span class="predefined-type">RSAPublicKey</span>&gt;, Deserializer&lt;<span class="predefined-type">RSAPublicKey</span>&gt; {
 
-    <span class="directive">private</span> <span class="directive">final</span> TextEncryptor textEncryptor;
+        <span class="directive">private</span> <span class="directive">final</span> TextEncryptor textEncryptor;
 
-    RsaPublicKeyConverter(TextEncryptor textEncryptor) {
-        <span class="local-variable">this</span>.textEncryptor = textEncryptor;
-    }
-
-    <span class="annotation">@Override</span>
-    <span class="directive">public</span> <span class="predefined-type">RSAPublicKey</span> deserialize(<span class="predefined-type">InputStream</span> inputStream) <span class="directive">throws</span> <span class="exception">IOException</span> {
-        <span class="keyword">try</span> {
-            <span class="type">var</span> pem = textEncryptor.decrypt(
-                    FileCopyUtils.copyToString(<span class="keyword">new</span> <span class="predefined-type">InputStreamReader</span>(inputStream)));
-            <span class="type">var</span> publicKeyPEM = pem
-                    .replace(<span class="string"><span class="delimiter">&quot;</span><span class="content">-----BEGIN PUBLIC KEY-----</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>)
-                    .replace(<span class="string"><span class="delimiter">&quot;</span><span class="content">-----END PUBLIC KEY-----</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>);
-            <span class="type">var</span> encoded = Base64.getMimeDecoder().decode(publicKeyPEM);
-            <span class="type">var</span> keyFactory = <span class="predefined-type">KeyFactory</span>.getInstance(<span class="string"><span class="delimiter">&quot;</span><span class="content">RSA</span><span class="delimiter">&quot;</span></span>);
-            <span class="type">var</span> keySpec = <span class="keyword">new</span> <span class="predefined-type">X509EncodedKeySpec</span>(encoded);
-            <span class="keyword">return</span> (<span class="predefined-type">RSAPublicKey</span>) keyFactory.generatePublic(keySpec);
-        }<span class="comment">//</span>
-        <span class="keyword">catch</span> (<span class="predefined-type">Throwable</span> throwable) {
-            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="exception">IllegalArgumentException</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">there's been an exception</span><span class="delimiter">&quot;</span></span>, throwable);
+        RsaPublicKeyConverter(TextEncryptor textEncryptor) {
+                <span class="local-variable">this</span>.textEncryptor = textEncryptor;
         }
 
-    }
+        <span class="annotation">@Override</span>
+        <span class="directive">public</span> <span class="predefined-type">RSAPublicKey</span> deserialize(<span class="predefined-type">InputStream</span> inputStream) <span class="directive">throws</span> <span class="exception">IOException</span> {
+                <span class="keyword">try</span> {
+                        <span class="type">var</span> pem = textEncryptor.decrypt(FileCopyUtils.copyToString(<span class="keyword">new</span> <span class="predefined-type">InputStreamReader</span>(inputStream)));
+                        <span class="type">var</span> publicKeyPEM = pem.replace(<span class="string"><span class="delimiter">&quot;</span><span class="content">-----BEGIN PUBLIC KEY-----</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>).replace(<span class="string"><span class="delimiter">&quot;</span><span class="content">-----END PUBLIC KEY-----</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>);
+                        <span class="type">var</span> encoded = Base64.getMimeDecoder().decode(publicKeyPEM);
+                        <span class="type">var</span> keyFactory = <span class="predefined-type">KeyFactory</span>.getInstance(<span class="string"><span class="delimiter">&quot;</span><span class="content">RSA</span><span class="delimiter">&quot;</span></span>);
+                        <span class="type">var</span> keySpec = <span class="keyword">new</span> <span class="predefined-type">X509EncodedKeySpec</span>(encoded);
+                        <span class="keyword">return</span> (<span class="predefined-type">RSAPublicKey</span>) keyFactory.generatePublic(keySpec);
+                } <span class="comment">//</span>
+                <span class="keyword">catch</span> (<span class="predefined-type">Throwable</span> throwable) {
+                        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="exception">IllegalArgumentException</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">there's been an exception</span><span class="delimiter">&quot;</span></span>, throwable);
+                }
 
-    <span class="annotation">@Override</span>
-    <span class="directive">public</span> <span class="type">void</span> serialize(<span class="predefined-type">RSAPublicKey</span> object, <span class="predefined-type">OutputStream</span> outputStream) <span class="directive">throws</span> <span class="exception">IOException</span> {
-        <span class="type">var</span> x509EncodedKeySpec = <span class="keyword">new</span> <span class="predefined-type">X509EncodedKeySpec</span>(object.getEncoded());
-        <span class="type">var</span> pem = <span class="string"><span class="delimiter">&quot;</span><span class="content">-----BEGIN PUBLIC KEY-----</span><span class="char">\n</span><span class="delimiter">&quot;</span></span> +
-                  Base64.getMimeEncoder().encodeToString(x509EncodedKeySpec.getEncoded()) +
-                  <span class="string"><span class="delimiter">&quot;</span><span class="char">\n</span><span class="content">-----END PUBLIC KEY-----</span><span class="delimiter">&quot;</span></span>;
-        outputStream.write(<span class="local-variable">this</span>.textEncryptor.encrypt(pem).getBytes());
-    }
+        }
+
+        <span class="annotation">@Override</span>
+        <span class="directive">public</span> <span class="type">void</span> serialize(<span class="predefined-type">RSAPublicKey</span> object, <span class="predefined-type">OutputStream</span> outputStream) <span class="directive">throws</span> <span class="exception">IOException</span> {
+                <span class="type">var</span> x509EncodedKeySpec = <span class="keyword">new</span> <span class="predefined-type">X509EncodedKeySpec</span>(object.getEncoded());
+                <span class="type">var</span> pem = <span class="string"><span class="delimiter">&quot;</span><span class="content">-----BEGIN PUBLIC KEY-----</span><span class="char">\n</span><span class="delimiter">&quot;</span></span>
+                                + Base64.getMimeEncoder().encodeToString(x509EncodedKeySpec.getEncoded())
+                                + <span class="string"><span class="delimiter">&quot;</span><span class="char">\n</span><span class="content">-----END PUBLIC KEY-----</span><span class="delimiter">&quot;</span></span>;
+                outputStream.write(<span class="local-variable">this</span>.textEncryptor.encrypt(pem).getBytes());
+        }
+
 }</code></pre>
 </div>
 </div>
@@ -2519,15 +2385,16 @@ I suppose I could&#8217;ve aded a <code>@Component</code> annotation to each of 
 <span class="annotation">@Configuration</span>
 <span class="type">class</span> <span class="class">Converters</span> {
 
-    <span class="annotation">@Bean</span>
-    RsaPublicKeyConverter rsaPublicKeyConverter(TextEncryptor textEncryptor) {
-        <span class="keyword">return</span> <span class="keyword">new</span> RsaPublicKeyConverter(textEncryptor);
-    }
+        <span class="annotation">@Bean</span>
+        RsaPublicKeyConverter rsaPublicKeyConverter(TextEncryptor textEncryptor) {
+                <span class="keyword">return</span> <span class="keyword">new</span> RsaPublicKeyConverter(textEncryptor);
+        }
 
-    <span class="annotation">@Bean</span>
-    RsaPrivateKeyConverter rsaPrivateKeyConverter(TextEncryptor textEncryptor) {
-        <span class="keyword">return</span> <span class="keyword">new</span> RsaPrivateKeyConverter(textEncryptor);
-    }
+        <span class="annotation">@Bean</span>
+        RsaPrivateKeyConverter rsaPrivateKeyConverter(TextEncryptor textEncryptor) {
+                <span class="keyword">return</span> <span class="keyword">new</span> RsaPrivateKeyConverter(textEncryptor);
+        }
+
 }</code></pre>
 </div>
 </div>
@@ -2551,59 +2418,49 @@ I suppose I could&#8217;ve aded a <code>@Component</code> annotation to each of 
 <span class="annotation">@Component</span>
 <span class="type">class</span> <span class="class">JdbcRsaKeyPairRepository</span> <span class="directive">implements</span> RsaKeyPairRepository {
 
-    <span class="directive">private</span> <span class="directive">final</span> JdbcTemplate jdbc;
+        <span class="directive">private</span> <span class="directive">final</span> JdbcTemplate jdbc;
 
-    <span class="directive">private</span> <span class="directive">final</span> RsaPublicKeyConverter rsaPublicKeyConverter;
+        <span class="directive">private</span> <span class="directive">final</span> RsaPublicKeyConverter rsaPublicKeyConverter;
 
-    <span class="directive">private</span> <span class="directive">final</span> RsaPrivateKeyConverter rsaPrivateKeyConverter;
+        <span class="directive">private</span> <span class="directive">final</span> RsaPrivateKeyConverter rsaPrivateKeyConverter;
 
-    <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">RowMapper</span>&lt;RsaKeyPair&gt; keyPairRowMapper;
+        <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">RowMapper</span>&lt;RsaKeyPair&gt; keyPairRowMapper;
 
-    JdbcRsaKeyPairRepository(
-            <span class="predefined-type">RowMapper</span>&lt;RsaKeyPair&gt; keyPairRowMapper,
-            RsaPublicKeyConverter publicConverter,
-            RsaPrivateKeyConverter privateConverter,
-            JdbcTemplate jdbc) {
-        <span class="local-variable">this</span>.jdbc = jdbc;
-        <span class="local-variable">this</span>.keyPairRowMapper = keyPairRowMapper;
-        <span class="local-variable">this</span>.rsaPublicKeyConverter = publicConverter;
-        <span class="local-variable">this</span>.rsaPrivateKeyConverter = privateConverter;
-    }
-
-    <i class="conum" data-value="1"></i><b>(1)</b>
-    <span class="annotation">@Override</span>
-    <span class="directive">public</span> <span class="predefined-type">List</span>&lt;RsaKeyPair&gt; findKeyPairs() {
-        <span class="keyword">return</span> <span class="local-variable">this</span>.jdbc.query(
-                <span class="string"><span class="delimiter">&quot;</span><span class="content">select * from rsa_key_pairs order by created desc</span><span class="delimiter">&quot;</span></span>,
-                <span class="local-variable">this</span>.keyPairRowMapper);
-    }
-
-    <i class="conum" data-value="2"></i><b>(2)</b>
-    <span class="annotation">@Override</span>
-    <span class="directive">public</span> <span class="type">void</span> save(RsaKeyPair keyPair) {
-        <span class="type">var</span> sql = <span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="content">
-                insert into rsa_key_pairs (id, private_key, public_key, created) 
-                values (?, ?, ?, ?)
-                on conflict on constraint rsa_key_pairs_id_created_key 
-                do nothing
-                </span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>;
-        <span class="keyword">try</span> (<span class="type">var</span> privateBaos = <span class="keyword">new</span> <span class="predefined-type">ByteArrayOutputStream</span>();
-             <span class="type">var</span> publicBaos = <span class="keyword">new</span> <span class="predefined-type">ByteArrayOutputStream</span>()) {
-            <span class="local-variable">this</span>.rsaPrivateKeyConverter.serialize(keyPair.privateKey(), privateBaos);
-            <span class="local-variable">this</span>.rsaPublicKeyConverter.serialize(keyPair.publicKey(), publicBaos);
-            <span class="type">var</span> updated = <span class="local-variable">this</span>.jdbc.update(sql,
-                    keyPair.id(),
-                    privateBaos.toString(),
-                    publicBaos.toString(),
-                    <span class="keyword">new</span> <span class="predefined-type">Date</span>(keyPair.created().toEpochMilli())
-            );
-            Assert.state(updated == <span class="integer">0</span> || updated == <span class="integer">1</span>,
-                <span class="string"><span class="delimiter">&quot;</span><span class="content">no more than one record should have been updated</span><span class="delimiter">&quot;</span></span>);
-        }<span class="comment">//</span>
-        <span class="keyword">catch</span> (<span class="exception">IOException</span> e) {
-            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="exception">IllegalArgumentException</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">there's been an exception</span><span class="delimiter">&quot;</span></span>, e);
+        JdbcRsaKeyPairRepository(<span class="predefined-type">RowMapper</span>&lt;RsaKeyPair&gt; keyPairRowMapper, RsaPublicKeyConverter publicConverter,
+                        RsaPrivateKeyConverter privateConverter, JdbcTemplate jdbc) {
+                <span class="local-variable">this</span>.jdbc = jdbc;
+                <span class="local-variable">this</span>.keyPairRowMapper = keyPairRowMapper;
+                <span class="local-variable">this</span>.rsaPublicKeyConverter = publicConverter;
+                <span class="local-variable">this</span>.rsaPrivateKeyConverter = privateConverter;
         }
-    }
+
+        <i class="conum" data-value="1"></i><b>(1)</b>
+        <span class="annotation">@Override</span>
+        <span class="directive">public</span> <span class="predefined-type">List</span>&lt;RsaKeyPair&gt; findKeyPairs() {
+                <span class="keyword">return</span> <span class="local-variable">this</span>.jdbc.query(<span class="string"><span class="delimiter">&quot;</span><span class="content">select * from rsa_key_pairs order by created desc</span><span class="delimiter">&quot;</span></span>, <span class="local-variable">this</span>.keyPairRowMapper);
+        }
+
+        <i class="conum" data-value="2"></i><b>(2)</b>
+        <span class="annotation">@Override</span>
+        <span class="directive">public</span> <span class="type">void</span> save(RsaKeyPair keyPair) {
+                <span class="type">var</span> sql = <span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="content">
+                                insert into rsa_key_pairs (id, private_key, public_key, created)
+                                values (?, ?, ?, ?)
+                                on conflict on constraint rsa_key_pairs_id_created_key
+                                do nothing
+                                </span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>;
+                <span class="keyword">try</span> (<span class="type">var</span> privateBaos = <span class="keyword">new</span> <span class="predefined-type">ByteArrayOutputStream</span>(); <span class="type">var</span> publicBaos = <span class="keyword">new</span> <span class="predefined-type">ByteArrayOutputStream</span>()) {
+                        <span class="local-variable">this</span>.rsaPrivateKeyConverter.serialize(keyPair.privateKey(), privateBaos);
+                        <span class="local-variable">this</span>.rsaPublicKeyConverter.serialize(keyPair.publicKey(), publicBaos);
+                        <span class="type">var</span> updated = <span class="local-variable">this</span>.jdbc.update(sql, keyPair.id(), privateBaos.toString(), publicBaos.toString(),
+                                        <span class="keyword">new</span> <span class="predefined-type">Date</span>(keyPair.created().toEpochMilli()));
+                        Assert.state(updated == <span class="integer">0</span> || updated == <span class="integer">1</span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">no more than one record should have been updated</span><span class="delimiter">&quot;</span></span>);
+                } <span class="comment">//</span>
+                <span class="keyword">catch</span> (<span class="exception">IOException</span> e) {
+                        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="exception">IllegalArgumentException</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">there's been an exception</span><span class="delimiter">&quot;</span></span>, e);
+                }
+        }
+
 }</code></pre>
 </div>
 </div>
@@ -2639,40 +2496,40 @@ The converters do most of the work. then it&#8217;s a simple matter of lining up
 <span class="annotation">@Component</span>
 <span class="type">class</span> <span class="class">RsaKeyPairRowMapper</span> <span class="directive">implements</span> <span class="predefined-type">RowMapper</span>&lt;RsaKeyPair&gt; {
 
-    <span class="directive">private</span> <span class="directive">final</span> RsaPrivateKeyConverter rsaPrivateKeyConverter;
+        <span class="directive">private</span> <span class="directive">final</span> RsaPrivateKeyConverter rsaPrivateKeyConverter;
 
-    <span class="directive">private</span> <span class="directive">final</span> RsaPublicKeyConverter rsaPublicKeyConverter;
+        <span class="directive">private</span> <span class="directive">final</span> RsaPublicKeyConverter rsaPublicKeyConverter;
 
-    RsaKeyPairRowMapper(RsaPrivateKeyConverter rsaPrivateKeyConverter,
-                        RsaPublicKeyConverter rsaPublicKeyConverter) {
-        <span class="local-variable">this</span>.rsaPrivateKeyConverter = rsaPrivateKeyConverter;
-        <span class="local-variable">this</span>.rsaPublicKeyConverter = rsaPublicKeyConverter;
-    }
-
-    <span class="annotation">@Override</span>
-    <span class="directive">public</span> RsaKeyPair mapRow(<span class="predefined-type">ResultSet</span> rs, <span class="type">int</span> rowNum) <span class="directive">throws</span> <span class="exception">SQLException</span> {
-        <span class="keyword">try</span> {
-
-            <i class="conum" data-value="1"></i><b>(1)</b>
-            <span class="type">var</span> privateKey = loadKey(rs, <span class="string"><span class="delimiter">&quot;</span><span class="content">private_key</span><span class="delimiter">&quot;</span></span>, <span class="local-variable">this</span>.rsaPrivateKeyConverter);
-            <span class="type">var</span> publicKey = loadKey(rs, <span class="string"><span class="delimiter">&quot;</span><span class="content">public_key</span><span class="delimiter">&quot;</span></span>, <span class="local-variable">this</span>.rsaPublicKeyConverter);
-
-            <i class="conum" data-value="2"></i><b>(2)</b>
-            <span class="type">var</span> created = <span class="keyword">new</span> <span class="predefined-type">Date</span>(rs.getDate(<span class="string"><span class="delimiter">&quot;</span><span class="content">created</span><span class="delimiter">&quot;</span></span>).getTime()).toInstant();
-            <span class="type">var</span> id = rs.getString(<span class="string"><span class="delimiter">&quot;</span><span class="content">id</span><span class="delimiter">&quot;</span></span>);
-
-            <i class="conum" data-value="3"></i><b>(3)</b>
-            <span class="keyword">return</span> <span class="keyword">new</span> RsaKeyPair(id, created, publicKey, privateKey);
-        } <span class="keyword">catch</span> (<span class="exception">IOException</span> e) {
-            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="exception">RuntimeException</span>(e);
+        RsaKeyPairRowMapper(RsaPrivateKeyConverter rsaPrivateKeyConverter, RsaPublicKeyConverter rsaPublicKeyConverter) {
+                <span class="local-variable">this</span>.rsaPrivateKeyConverter = rsaPrivateKeyConverter;
+                <span class="local-variable">this</span>.rsaPublicKeyConverter = rsaPublicKeyConverter;
         }
-    }
 
-    <span class="directive">private</span> <span class="directive">static</span> &lt;T&gt; T loadKey(<span class="predefined-type">ResultSet</span> rs, <span class="predefined-type">String</span> fn, Deserializer&lt;T&gt; f)
-            <span class="directive">throws</span> <span class="exception">SQLException</span>, <span class="exception">IOException</span> {
-        <span class="type">var</span> privateKeyBytes = rs.getString(fn).getBytes();
-        <span class="keyword">return</span> f.deserializeFromByteArray(privateKeyBytes);
-    }
+        <span class="annotation">@Override</span>
+        <span class="directive">public</span> RsaKeyPair mapRow(<span class="predefined-type">ResultSet</span> rs, <span class="type">int</span> rowNum) <span class="directive">throws</span> <span class="exception">SQLException</span> {
+                <span class="keyword">try</span> {
+
+                        <i class="conum" data-value="1"></i><b>(1)</b>
+                        <span class="type">var</span> privateKey = loadKey(rs, <span class="string"><span class="delimiter">&quot;</span><span class="content">private_key</span><span class="delimiter">&quot;</span></span>, <span class="local-variable">this</span>.rsaPrivateKeyConverter);
+                        <span class="type">var</span> publicKey = loadKey(rs, <span class="string"><span class="delimiter">&quot;</span><span class="content">public_key</span><span class="delimiter">&quot;</span></span>, <span class="local-variable">this</span>.rsaPublicKeyConverter);
+
+                        <i class="conum" data-value="2"></i><b>(2)</b>
+                        <span class="type">var</span> created = <span class="keyword">new</span> <span class="predefined-type">Date</span>(rs.getDate(<span class="string"><span class="delimiter">&quot;</span><span class="content">created</span><span class="delimiter">&quot;</span></span>).getTime()).toInstant();
+                        <span class="type">var</span> id = rs.getString(<span class="string"><span class="delimiter">&quot;</span><span class="content">id</span><span class="delimiter">&quot;</span></span>);
+
+                        <i class="conum" data-value="3"></i><b>(3)</b>
+                        <span class="keyword">return</span> <span class="keyword">new</span> RsaKeyPair(id, created, publicKey, privateKey);
+                }
+                <span class="keyword">catch</span> (<span class="exception">IOException</span> e) {
+                        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="exception">RuntimeException</span>(e);
+                }
+        }
+
+        <span class="directive">private</span> <span class="directive">static</span> &lt;T&gt; T loadKey(<span class="predefined-type">ResultSet</span> rs, <span class="predefined-type">String</span> fn, Deserializer&lt;T&gt; f) <span class="directive">throws</span> <span class="exception">SQLException</span>, <span class="exception">IOException</span> {
+                <span class="type">var</span> privateKeyBytes = rs.getString(fn).getBytes();
+                <span class="keyword">return</span> f.deserializeFromByteArray(privateKeyBytes);
+        }
+
 }</code></pre>
 </div>
 </div>
@@ -2716,38 +2573,38 @@ We&#8217;ll plug that OAuth2TokenCustomizer functionality in later.</p>
 <span class="keyword">import</span> <span class="include">java.util.List</span>;
 
 <span class="annotation">@Component</span>
-<span class="type">class</span> <span class="class">RsaKeyPairRepositoryJWKSource</span> <span class="directive">implements</span> JWKSource&lt;SecurityContext&gt;,
-        OAuth2TokenCustomizer&lt;JwtEncodingContext&gt; {
+<span class="type">class</span> <span class="class">RsaKeyPairRepositoryJWKSource</span> <span class="directive">implements</span> JWKSource&lt;SecurityContext&gt;, OAuth2TokenCustomizer&lt;JwtEncodingContext&gt; {
 
-    <span class="directive">private</span> <span class="directive">final</span> RsaKeyPairRepository keyPairRepository;
+        <span class="directive">private</span> <span class="directive">final</span> RsaKeyPairRepository keyPairRepository;
 
-    RsaKeyPairRepositoryJWKSource(RsaKeyPairRepository keyPairRepository) {
-        <span class="local-variable">this</span>.keyPairRepository = keyPairRepository;
-    }
-
-    <i class="conum" data-value="1"></i><b>(1)</b>
-    <span class="annotation">@Override</span>
-    <span class="directive">public</span> <span class="predefined-type">List</span>&lt;JWK&gt; get(JWKSelector jwkSelector, SecurityContext context) <span class="directive">throws</span> KeySourceException {
-        <span class="type">var</span> keyPairs = <span class="local-variable">this</span>.keyPairRepository.findKeyPairs();
-        <span class="type">var</span> result = <span class="keyword">new</span> <span class="predefined-type">ArrayList</span>&lt;JWK&gt;(keyPairs.size());
-        <span class="keyword">for</span> (<span class="type">var</span> keyPair : keyPairs) {
-            <span class="type">var</span> rsaKey = <span class="keyword">new</span> <span class="predefined-type">RSAKey</span>.Builder(
-                    keyPair.publicKey()).privateKey(keyPair.privateKey())
-                    .keyID(keyPair.id()).build();
-            <span class="keyword">if</span> (jwkSelector.getMatcher().matches(rsaKey)) {
-                result.add(rsaKey);
-            }
+        RsaKeyPairRepositoryJWKSource(RsaKeyPairRepository keyPairRepository) {
+                <span class="local-variable">this</span>.keyPairRepository = keyPairRepository;
         }
-        <span class="keyword">return</span> result;
-    }
 
-    <i class="conum" data-value="2"></i><b>(2)</b>
-    <span class="annotation">@Override</span>
-    <span class="directive">public</span> <span class="type">void</span> customize(JwtEncodingContext context) {
-        <span class="type">var</span> keyPairs = <span class="local-variable">this</span>.keyPairRepository.findKeyPairs();
-        <span class="type">var</span> kid = keyPairs.get(<span class="integer">0</span>).id();
-        context.getJwsHeader().keyId(kid);
-    }
+        <i class="conum" data-value="1"></i><b>(1)</b>
+        <span class="annotation">@Override</span>
+        <span class="directive">public</span> <span class="predefined-type">List</span>&lt;JWK&gt; get(JWKSelector jwkSelector, SecurityContext context) <span class="directive">throws</span> KeySourceException {
+                <span class="type">var</span> keyPairs = <span class="local-variable">this</span>.keyPairRepository.findKeyPairs();
+                <span class="type">var</span> result = <span class="keyword">new</span> <span class="predefined-type">ArrayList</span>&lt;JWK&gt;(keyPairs.size());
+                <span class="keyword">for</span> (<span class="type">var</span> keyPair : keyPairs) {
+                        <span class="type">var</span> rsaKey = <span class="keyword">new</span> <span class="predefined-type">RSAKey</span>.Builder(keyPair.publicKey()).privateKey(keyPair.privateKey())
+                                .keyID(keyPair.id())
+                                .build();
+                        <span class="keyword">if</span> (jwkSelector.getMatcher().matches(rsaKey)) {
+                                result.add(rsaKey);
+                        }
+                }
+                <span class="keyword">return</span> result;
+        }
+
+        <i class="conum" data-value="2"></i><b>(2)</b>
+        <span class="annotation">@Override</span>
+        <span class="directive">public</span> <span class="type">void</span> customize(JwtEncodingContext context) {
+                <span class="type">var</span> keyPairs = <span class="local-variable">this</span>.keyPairRepository.findKeyPairs();
+                <span class="type">var</span> kid = keyPairs.get(<span class="integer">0</span>).id();
+                context.getJwsHeader().keyId(kid);
+        }
+
 }</code></pre>
 </div>
 </div>
@@ -2782,34 +2639,32 @@ We&#8217;ll plug that OAuth2TokenCustomizer functionality in later.</p>
 <span class="keyword">import</span> <span class="include">org.springframework.security.oauth2.jwt.NimbusJwtEncoder</span>;
 <span class="keyword">import</span> <span class="include">org.springframework.security.oauth2.server.authorization.token</span>.*;
 
-
 <span class="annotation">@Configuration</span>
 <span class="type">class</span> <span class="class">KeyConfiguration</span> {
 
-    <i class="conum" data-value="1"></i><b>(1)</b>
-    <span class="annotation">@Bean</span>
-    TextEncryptor textEncryptor(
-            <span class="annotation">@Value</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">${jwk.persistence.password}</span><span class="delimiter">&quot;</span></span>) <span class="predefined-type">String</span> pw,
-            <span class="annotation">@Value</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">${jwk.persistence.salt}</span><span class="delimiter">&quot;</span></span>) <span class="predefined-type">String</span> salt) {
-        <span class="keyword">return</span> Encryptors.text(pw, salt);
-    }
+        <i class="conum" data-value="1"></i><b>(1)</b>
+        <span class="annotation">@Bean</span>
+        TextEncryptor textEncryptor(<span class="annotation">@Value</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">${jwk.persistence.password}</span><span class="delimiter">&quot;</span></span>) <span class="predefined-type">String</span> pw,
+                        <span class="annotation">@Value</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">${jwk.persistence.salt}</span><span class="delimiter">&quot;</span></span>) <span class="predefined-type">String</span> salt) {
+                <span class="keyword">return</span> Encryptors.text(pw, salt);
+        }
 
-    <i class="conum" data-value="2"></i><b>(2)</b>
-    <span class="annotation">@Bean</span>
-    OAuth2TokenGenerator&lt;OAuth2Token&gt; delegatingOAuth2TokenGenerator(
-            JwtEncoder encoder,
-            OAuth2TokenCustomizer&lt;JwtEncodingContext&gt; customizer) {
-        <span class="type">var</span> generator = <span class="keyword">new</span> JwtGenerator(encoder);
-        generator.setJwtCustomizer(customizer);
-        <span class="keyword">return</span> <span class="keyword">new</span> DelegatingOAuth2TokenGenerator(generator,
-                <span class="keyword">new</span> OAuth2AccessTokenGenerator(), <span class="keyword">new</span> OAuth2RefreshTokenGenerator());
-    }
+        <i class="conum" data-value="2"></i><b>(2)</b>
+        <span class="annotation">@Bean</span>
+        OAuth2TokenGenerator&lt;OAuth2Token&gt; delegatingOAuth2TokenGenerator(JwtEncoder encoder,
+                        OAuth2TokenCustomizer&lt;JwtEncodingContext&gt; customizer) {
+                <span class="type">var</span> generator = <span class="keyword">new</span> JwtGenerator(encoder);
+                generator.setJwtCustomizer(customizer);
+                <span class="keyword">return</span> <span class="keyword">new</span> DelegatingOAuth2TokenGenerator(generator, <span class="keyword">new</span> OAuth2AccessTokenGenerator(),
+                                <span class="keyword">new</span> OAuth2RefreshTokenGenerator());
+        }
 
-    <i class="conum" data-value="3"></i><b>(3)</b>
-    <span class="annotation">@Bean</span>
-    NimbusJwtEncoder jwtEncoder(JWKSource&lt;SecurityContext&gt; jwkSource) {
-        <span class="keyword">return</span> <span class="keyword">new</span> NimbusJwtEncoder(jwkSource);
-    }
+        <i class="conum" data-value="3"></i><b>(3)</b>
+        <span class="annotation">@Bean</span>
+        NimbusJwtEncoder jwtEncoder(JWKSource&lt;SecurityContext&gt; jwkSource) {
+                <span class="keyword">return</span> <span class="keyword">new</span> NimbusJwtEncoder(jwkSource);
+        }
+
 }</code></pre>
 </div>
 </div>
@@ -2873,22 +2728,23 @@ Let&#8217;s see that event wiring.</p>
 <span class="annotation">@Configuration</span>
 <span class="type">class</span> <span class="class">LifecycleConfiguration</span> {
 
-    <i class="conum" data-value="1"></i><b>(1)</b>
-    <span class="annotation">@Bean</span>
-    ApplicationListener&lt;RsaKeyPairGenerationRequestEvent&gt; keyPairGenerationRequestListener(
-            Keys keys, RsaKeyPairRepository repository, <span class="annotation">@Value</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">${jwk.key.id}</span><span class="delimiter">&quot;</span></span>) <span class="predefined-type">String</span> keyId) {
-        <span class="keyword">return</span> event -&gt; repository.save(keys.generateKeyPair(keyId, event.getSource()));
-    }
+        <i class="conum" data-value="1"></i><b>(1)</b>
+        <span class="annotation">@Bean</span>
+        ApplicationListener&lt;RsaKeyPairGenerationRequestEvent&gt; keyPairGenerationRequestListener(Keys keys,
+                        RsaKeyPairRepository repository, <span class="annotation">@Value</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">${jwk.key.id}</span><span class="delimiter">&quot;</span></span>) <span class="predefined-type">String</span> keyId) {
+                <span class="keyword">return</span> event -&gt; repository.save(keys.generateKeyPair(keyId, event.getSource()));
+        }
 
-    <i class="conum" data-value="2"></i><b>(2)</b>
-    <span class="annotation">@Bean</span>
-    ApplicationListener&lt;ApplicationReadyEvent&gt; applicationReadyListener(
-            ApplicationEventPublisher publisher, RsaKeyPairRepository repository) {
-        <span class="keyword">return</span> event -&gt; {
-            <span class="keyword">if</span> (repository.findKeyPairs().isEmpty())
-                publisher.publishEvent(<span class="keyword">new</span> RsaKeyPairGenerationRequestEvent(Instant.now()));
-        };
-    }
+        <i class="conum" data-value="2"></i><b>(2)</b>
+        <span class="annotation">@Bean</span>
+        ApplicationListener&lt;ApplicationReadyEvent&gt; applicationReadyListener(ApplicationEventPublisher publisher,
+                        RsaKeyPairRepository repository) {
+                <span class="keyword">return</span> event -&gt; {
+                        <span class="keyword">if</span> (repository.findKeyPairs().isEmpty())
+                                publisher.publishEvent(<span class="keyword">new</span> RsaKeyPairGenerationRequestEvent(Instant.now()));
+                };
+        }
+
 }</code></pre>
 </div>
 </div>
@@ -3409,43 +3265,39 @@ But something needs to ensure that there&#8217;s a file to read in the first pla
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.java.closeable</span>;
 
-
 <span class="keyword">import</span> <span class="include">java.io.File</span>;
 <span class="keyword">import</span> <span class="include">java.nio.file.Files</span>;
 <span class="keyword">import</span> <span class="include">java.time.Instant</span>;
 
-
 <span class="directive">public</span> <span class="type">class</span> <span class="class">Utils</span> {
 
-    <i class="conum" data-value="1"></i><b>(1)</b>
-    <span class="directive">static</span> <span class="predefined-type">String</span> CONTENTS = <span class="predefined-type">String</span>.format(<span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="content">
-            &lt;html&gt;
-            &lt;body&gt;&lt;h1&gt; Hello, world, @ %s !&lt;/h1&gt; &lt;/body&gt;
-            &lt;/html&gt;
-            </span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>, Instant.now().toString()).trim();
+        <i class="conum" data-value="1"></i><b>(1)</b>
+        <span class="directive">static</span> <span class="predefined-type">String</span> CONTENTS = <span class="predefined-type">String</span>.format(<span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="content">
+                        &lt;html&gt;
+                        &lt;body&gt;&lt;h1&gt; Hello, world, @ %s !&lt;/h1&gt; &lt;/body&gt;
+                        &lt;/html&gt;
+                        </span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>, Instant.now().toString()).trim();
 
-    <i class="conum" data-value="2"></i><b>(2)</b>
-    <span class="directive">static</span> <span class="predefined-type">File</span> setup() {
-        <span class="keyword">try</span> {
-            <span class="type">var</span> path = Files.createTempFile(<span class="string"><span class="delimiter">&quot;</span><span class="content">bootiful</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">.txt</span><span class="delimiter">&quot;</span></span>);
-            <span class="type">var</span> file = path.toFile();
-            file.deleteOnExit();
-            Files.writeString(path, CONTENTS);
-            <span class="keyword">return</span> file;
-        }<span class="comment">//</span>
-        <span class="keyword">catch</span> (<span class="predefined-type">Throwable</span> t) {
-            error(t);
-            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="exception">RuntimeException</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">could not produce a new file</span><span class="delimiter">&quot;</span></span>);
+        <i class="conum" data-value="2"></i><b>(2)</b>
+        <span class="directive">static</span> <span class="predefined-type">File</span> setup() {
+                <span class="keyword">try</span> {
+                        <span class="type">var</span> path = Files.createTempFile(<span class="string"><span class="delimiter">&quot;</span><span class="content">bootiful</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">.txt</span><span class="delimiter">&quot;</span></span>);
+                        <span class="type">var</span> file = path.toFile();
+                        file.deleteOnExit();
+                        Files.writeString(path, CONTENTS);
+                        <span class="keyword">return</span> file;
+                } <span class="comment">//</span>
+                <span class="keyword">catch</span> (<span class="predefined-type">Throwable</span> t) {
+                        error(t);
+                        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="exception">RuntimeException</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">could not produce a new file</span><span class="delimiter">&quot;</span></span>);
+                }
+
         }
 
-    }
-
-    <i class="conum" data-value="3"></i><b>(3)</b>
-    <span class="directive">static</span> <span class="type">void</span> error(<span class="predefined-type">Throwable</span> throwable) {<i class="conum" data-value="2"></i><b>(2)</b>
-        <span class="predefined-type">System</span>.err.println(
-                <span class="string"><span class="delimiter">&quot;</span><span class="content">there's been an exception processing the read! </span><span class="delimiter">&quot;</span></span> +
-                        throwable.getMessage());
-    }
+        <i class="conum" data-value="3"></i><b>(3)</b>
+        <span class="directive">static</span> <span class="type">void</span> error(<span class="predefined-type">Throwable</span> throwable) {<i class="conum" data-value="2"></i><b>(2)</b>
+                <span class="predefined-type">System</span>.err.println(<span class="string"><span class="delimiter">&quot;</span><span class="content">there's been an exception processing the read! </span><span class="delimiter">&quot;</span></span> + throwable.getMessage());
+        }
 
 }</code></pre>
 </div>
@@ -3484,40 +3336,40 @@ Otherwise, if you&#8217;re doing things the old-fashioned way, you&#8217;ll find
 
 <span class="type">class</span> <span class="class">TraditionalResourceHandlingTest</span> {
 
-    <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">File</span> file = Utils.setup();<i class="conum" data-value="1"></i><b>(1)</b>
+        <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">File</span> file = Utils.setup();<i class="conum" data-value="1"></i><b>(1)</b>
 
-    <span class="directive">private</span> <span class="directive">static</span> <span class="type">void</span> close(<span class="predefined-type">Reader</span> reader) { <i class="conum" data-value="3"></i><b>(3)</b>
-        <span class="keyword">if</span> (reader != <span class="predefined-constant">null</span>) {
-            <span class="keyword">try</span> {
-                reader.close();
-            } <span class="comment">//</span>
-            <span class="keyword">catch</span> (<span class="exception">IOException</span> e) {
-                error(e);
-            }
+        <span class="directive">private</span> <span class="directive">static</span> <span class="type">void</span> close(<span class="predefined-type">Reader</span> reader) { <i class="conum" data-value="3"></i><b>(3)</b>
+                <span class="keyword">if</span> (reader != <span class="predefined-constant">null</span>) {
+                        <span class="keyword">try</span> {
+                                reader.close();
+                        } <span class="comment">//</span>
+                        <span class="keyword">catch</span> (<span class="exception">IOException</span> e) {
+                                error(e);
+                        }
+                }
         }
-    }
 
-    <span class="annotation">@Test</span>
-    <span class="type">void</span> read() {
-        <span class="type">var</span> bufferedReader = (<span class="predefined-type">BufferedReader</span>) <span class="predefined-constant">null</span>; <i class="conum" data-value="2"></i><b>(2)</b>
-        <span class="keyword">try</span> {
-            bufferedReader = <span class="keyword">new</span> <span class="predefined-type">BufferedReader</span>(<span class="keyword">new</span> <span class="predefined-type">FileReader</span>(<span class="local-variable">this</span>.file));
-            <span class="type">var</span> stringBuilder = <span class="keyword">new</span> <span class="predefined-type">StringBuilder</span>();
-            <span class="type">var</span> line = (<span class="predefined-type">String</span>) <span class="predefined-constant">null</span>;
-            <span class="keyword">while</span> ((line = bufferedReader.readLine()) != <span class="predefined-constant">null</span>) {
-                stringBuilder.append(line);
-                stringBuilder.append(<span class="predefined-type">System</span>.lineSeparator());
-            }
-            <span class="type">var</span> contents = stringBuilder.toString().trim();
-            Assertions.assertEquals(contents, Utils.CONTENTS);
-        } <span class="comment">//</span>
-        <span class="keyword">catch</span> (<span class="exception">IOException</span> e) { <i class="conum" data-value="3"></i><b>(3)</b>
-            error(e);
-        } <span class="comment">//</span>
-        <span class="keyword">finally</span> { <i class="conum" data-value="4"></i><b>(4)</b>
-            close(bufferedReader);
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> read() {
+                <span class="type">var</span> bufferedReader = (<span class="predefined-type">BufferedReader</span>) <span class="predefined-constant">null</span>; <i class="conum" data-value="2"></i><b>(2)</b>
+                <span class="keyword">try</span> {
+                        bufferedReader = <span class="keyword">new</span> <span class="predefined-type">BufferedReader</span>(<span class="keyword">new</span> <span class="predefined-type">FileReader</span>(<span class="local-variable">this</span>.file));
+                        <span class="type">var</span> stringBuilder = <span class="keyword">new</span> <span class="predefined-type">StringBuilder</span>();
+                        <span class="type">var</span> line = (<span class="predefined-type">String</span>) <span class="predefined-constant">null</span>;
+                        <span class="keyword">while</span> ((line = bufferedReader.readLine()) != <span class="predefined-constant">null</span>) {
+                                stringBuilder.append(line);
+                                stringBuilder.append(<span class="predefined-type">System</span>.lineSeparator());
+                        }
+                        <span class="type">var</span> contents = stringBuilder.toString().trim();
+                        Assertions.assertEquals(contents, Utils.CONTENTS);
+                } <span class="comment">//</span>
+                <span class="keyword">catch</span> (<span class="exception">IOException</span> e) { <i class="conum" data-value="3"></i><b>(3)</b>
+                        error(e);
+                } <span class="comment">//</span>
+                <span class="keyword">finally</span> { <i class="conum" data-value="4"></i><b>(4)</b>
+                        close(bufferedReader);
+                }
         }
-    }
 
 }</code></pre>
 </div>
@@ -3566,25 +3418,25 @@ Let&#8217;s rework the example accordingly.</p>
 
 <span class="type">class</span> <span class="class">TryWithResourcesTest</span> {
 
-    <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">File</span> file = Utils.setup();
+        <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">File</span> file = Utils.setup();
 
-    <span class="annotation">@Test</span>
-    <span class="type">void</span> tryWithResources() {
-        <span class="keyword">try</span> (<span class="type">var</span> fileReader = <span class="keyword">new</span> <span class="predefined-type">FileReader</span>(<span class="local-variable">this</span>.file);<span class="comment">//</span>
-             <span class="type">var</span> bufferedReader = <span class="keyword">new</span> <span class="predefined-type">BufferedReader</span>(fileReader)) {
-            <span class="type">var</span> stringBuilder = <span class="keyword">new</span> <span class="predefined-type">StringBuilder</span>();
-            <span class="type">var</span> line = (<span class="predefined-type">String</span>) <span class="predefined-constant">null</span>;
-            <span class="keyword">while</span> ((line = bufferedReader.readLine()) != <span class="predefined-constant">null</span>) {
-                stringBuilder.append(line);
-                stringBuilder.append(<span class="predefined-type">System</span>.lineSeparator());
-            }
-            <span class="type">var</span> contents = stringBuilder.toString().trim();
-            Assertions.assertEquals(contents, Utils.CONTENTS);
-        } <span class="comment">//</span>
-        <span class="keyword">catch</span> (<span class="exception">IOException</span> e) {
-            Utils.error(e);
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> tryWithResources() {
+                <span class="keyword">try</span> (<span class="type">var</span> fileReader = <span class="keyword">new</span> <span class="predefined-type">FileReader</span>(<span class="local-variable">this</span>.file); <span class="comment">//</span>
+                                <span class="type">var</span> bufferedReader = <span class="keyword">new</span> <span class="predefined-type">BufferedReader</span>(fileReader)) {
+                        <span class="type">var</span> stringBuilder = <span class="keyword">new</span> <span class="predefined-type">StringBuilder</span>();
+                        <span class="type">var</span> line = (<span class="predefined-type">String</span>) <span class="predefined-constant">null</span>;
+                        <span class="keyword">while</span> ((line = bufferedReader.readLine()) != <span class="predefined-constant">null</span>) {
+                                stringBuilder.append(line);
+                                stringBuilder.append(<span class="predefined-type">System</span>.lineSeparator());
+                        }
+                        <span class="type">var</span> contents = stringBuilder.toString().trim();
+                        Assertions.assertEquals(contents, Utils.CONTENTS);
+                } <span class="comment">//</span>
+                <span class="keyword">catch</span> (<span class="exception">IOException</span> e) {
+                        Utils.error(e);
+                }
         }
-    }
 
 }</code></pre>
 </div>
@@ -3607,21 +3459,21 @@ As a result, Java is a strongly typed language with less typing - pressing of ke
 
 <span class="type">class</span> <span class="class">TypeInferenceTest</span> {
 
-    <span class="annotation">@Test</span>
-    <span class="type">void</span> infer() <span class="directive">throws</span> <span class="exception">Exception</span> {
-        <span class="type">var</span> map1 = <span class="predefined-type">Map</span>.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">key</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">value</span><span class="delimiter">&quot;</span></span>); <i class="conum" data-value="1"></i><b>(1)</b>
-        <span class="predefined-type">Map</span>&lt;<span class="predefined-type">String</span>, <span class="predefined-type">String</span>&gt; map2 = <span class="predefined-type">Map</span>.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">key</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">value</span><span class="delimiter">&quot;</span></span>);
-        Assertions.assertEquals(map2, map1); <i class="conum" data-value="1"></i><b>(1)</b>
-        <span class="type">var</span> anonymousSubclass = <span class="keyword">new</span> <span class="predefined-type">Object</span>() {
-            <span class="directive">final</span> <span class="predefined-type">String</span> name = <span class="string"><span class="delimiter">&quot;</span><span class="content">Peanut the Poodle</span><span class="delimiter">&quot;</span></span>;
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> infer() <span class="directive">throws</span> <span class="exception">Exception</span> {
+                <span class="type">var</span> map1 = <span class="predefined-type">Map</span>.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">key</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">value</span><span class="delimiter">&quot;</span></span>); <i class="conum" data-value="1"></i><b>(1)</b>
+                <span class="predefined-type">Map</span>&lt;<span class="predefined-type">String</span>, <span class="predefined-type">String</span>&gt; map2 = <span class="predefined-type">Map</span>.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">key</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">value</span><span class="delimiter">&quot;</span></span>);
+                Assertions.assertEquals(map2, map1); <i class="conum" data-value="1"></i><b>(1)</b>
+                <span class="type">var</span> anonymousSubclass = <span class="keyword">new</span> <span class="predefined-type">Object</span>() {
+                        <span class="directive">final</span> <span class="predefined-type">String</span> name = <span class="string"><span class="delimiter">&quot;</span><span class="content">Peanut the Poodle</span><span class="delimiter">&quot;</span></span>;
 
-            <span class="type">int</span> age = <span class="integer">7</span>;
+                        <span class="type">int</span> age = <span class="integer">7</span>;
 
-        };
-        <i class="conum" data-value="2"></i><b>(2)</b>
-        Assertions.assertEquals(<span class="integer">7</span>, anonymousSubclass.age);
-        Assertions.assertEquals(<span class="string"><span class="delimiter">&quot;</span><span class="content">Peanut the Poodle</span><span class="delimiter">&quot;</span></span>, anonymousSubclass.name);
-    }
+                };
+                <i class="conum" data-value="2"></i><b>(2)</b>
+                Assertions.assertEquals(<span class="integer">7</span>, anonymousSubclass.age);
+                Assertions.assertEquals(<span class="string"><span class="delimiter">&quot;</span><span class="content">Peanut the Poodle</span><span class="delimiter">&quot;</span></span>, anonymousSubclass.name);
+        }
 
 }</code></pre>
 </div>
@@ -3676,36 +3528,36 @@ Let&#8217;s look at some examples.</p>
 
 <span class="type">class</span> <span class="class">LambdasAndTypeInferenceTest</span> {
 
-    <span class="directive">private</span> <span class="predefined-type">String</span> delegate(<span class="predefined-type">String</span> s, <span class="predefined-type">Integer</span> two) {
-        <span class="keyword">return</span> <span class="string"><span class="delimiter">&quot;</span><span class="content">Hello </span><span class="delimiter">&quot;</span></span> + s + <span class="string"><span class="delimiter">&quot;</span><span class="content">:</span><span class="delimiter">&quot;</span></span> + two;
-    }
+        <span class="directive">private</span> <span class="predefined-type">String</span> delegate(<span class="predefined-type">String</span> s, <span class="predefined-type">Integer</span> two) {
+                <span class="keyword">return</span> <span class="string"><span class="delimiter">&quot;</span><span class="content">Hello </span><span class="delimiter">&quot;</span></span> + s + <span class="string"><span class="delimiter">&quot;</span><span class="content">:</span><span class="delimiter">&quot;</span></span> + two;
+        }
 
-    <span class="annotation">@Test</span>
-    <span class="type">void</span> lambdas() {
-        MyHandler defaultHandler = <span class="local-variable">this</span>::delegate; <i class="conum" data-value="1"></i><b>(1)</b>
-        <span class="type">var</span> withVar = <span class="keyword">new</span> MyHandler() { <i class="conum" data-value="2"></i><b>(2)</b>
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> lambdas() {
+                MyHandler defaultHandler = <span class="local-variable">this</span>::delegate; <i class="conum" data-value="1"></i><b>(1)</b>
+                <span class="type">var</span> withVar = <span class="keyword">new</span> MyHandler() { <i class="conum" data-value="2"></i><b>(2)</b>
 
-            <span class="annotation">@Override</span>
-            <span class="directive">public</span> <span class="predefined-type">String</span> handle(<span class="predefined-type">String</span> one, <span class="type">int</span> two) {
-                <span class="keyword">return</span> delegate(one, two);
-            }
-        };
-        <span class="type">var</span> withCast = (MyHandler) <span class="local-variable">this</span>::delegate; <i class="conum" data-value="3"></i><b>(3)</b>
-        <span class="type">var</span> string = <span class="string"><span class="delimiter">&quot;</span><span class="content">hello</span><span class="delimiter">&quot;</span></span>;
-        <span class="type">var</span> integer = <span class="integer">2</span>;
-        <span class="type">var</span> set = <span class="keyword">new</span> <span class="predefined-type">HashSet</span>&lt;&gt;( <span class="comment">//</span>
-                <span class="predefined-type">List</span>.of(withCast.handle(string, integer), <span class="comment">//</span>
-                        withVar.handle(string, integer), <span class="comment">//</span>
-                        defaultHandler.handle(string, integer)));
-        Assertions.assertEquals(<span class="integer">1</span>, set.size(), <span class="string"><span class="delimiter">&quot;</span><span class="content">the 3 entries should all be the same, and thus deduplicated out</span><span class="delimiter">&quot;</span></span>);
-    }
+                        <span class="annotation">@Override</span>
+                        <span class="directive">public</span> <span class="predefined-type">String</span> handle(<span class="predefined-type">String</span> one, <span class="type">int</span> two) {
+                                <span class="keyword">return</span> delegate(one, two);
+                        }
+                };
+                <span class="type">var</span> withCast = (MyHandler) <span class="local-variable">this</span>::delegate; <i class="conum" data-value="3"></i><b>(3)</b>
+                <span class="type">var</span> string = <span class="string"><span class="delimiter">&quot;</span><span class="content">hello</span><span class="delimiter">&quot;</span></span>;
+                <span class="type">var</span> integer = <span class="integer">2</span>;
+                <span class="type">var</span> set = <span class="keyword">new</span> <span class="predefined-type">HashSet</span>&lt;&gt;( <span class="comment">//</span>
+                                <span class="predefined-type">List</span>.of(withCast.handle(string, integer), <span class="comment">//</span>
+                                                withVar.handle(string, integer), <span class="comment">//</span>
+                                                defaultHandler.handle(string, integer)));
+                Assertions.assertEquals(<span class="integer">1</span>, set.size(), <span class="string"><span class="delimiter">&quot;</span><span class="content">the 3 entries should all be the same, and thus deduplicated out</span><span class="delimiter">&quot;</span></span>);
+        }
 
-    <span class="annotation">@FunctionalInterface</span>
-    <span class="type">interface</span> <span class="class">MyHandler</span> {
+        <span class="annotation">@FunctionalInterface</span>
+        <span class="type">interface</span> <span class="class">MyHandler</span> {
 
-        <span class="predefined-type">String</span> handle(<span class="predefined-type">String</span> one, <span class="type">int</span> two);
+                <span class="predefined-type">String</span> handle(<span class="predefined-type">String</span> one, <span class="type">int</span> two);
 
-    }
+        }
 
 }</code></pre>
 </div>
@@ -3747,32 +3599,32 @@ It simplifies things considerably:</p>
 
 <span class="type">class</span> <span class="class">TraditionalSwitchExpressionTest</span> {
 
-    <span class="annotation">@Test</span>
-    <span class="type">void</span> switchExpression() {
-        Assertions.assertEquals(respondToEmotionalState(Emotion.HAPPY), <span class="string"><span class="delimiter">&quot;</span><span class="content">that's wonderful.</span><span class="delimiter">&quot;</span></span>);
-        Assertions.assertEquals(respondToEmotionalState(Emotion.SAD), <span class="string"><span class="delimiter">&quot;</span><span class="content">I'm so sorry to hear that.</span><span class="delimiter">&quot;</span></span>);
-    }
-
-    <span class="directive">public</span> <span class="predefined-type">String</span> respondToEmotionalState(Emotion emotion) {
-        <span class="type">var</span> response = <span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>; <i class="conum" data-value="2"></i><b>(2)</b>
-        <span class="keyword">switch</span> (emotion) {
-            <span class="keyword">case</span> HAPPY:
-                response = <span class="string"><span class="delimiter">&quot;</span><span class="content">that's wonderful.</span><span class="delimiter">&quot;</span></span>;
-                <span class="keyword">break</span>; <i class="conum" data-value="3"></i><b>(3)</b>
-            <span class="keyword">case</span> SAD:
-                response = <span class="string"><span class="delimiter">&quot;</span><span class="content">I'm so sorry to hear that.</span><span class="delimiter">&quot;</span></span>;
-                <span class="keyword">break</span>;
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> switchExpression() {
+                Assertions.assertEquals(respondToEmotionalState(Emotion.HAPPY), <span class="string"><span class="delimiter">&quot;</span><span class="content">that's wonderful.</span><span class="delimiter">&quot;</span></span>);
+                Assertions.assertEquals(respondToEmotionalState(Emotion.SAD), <span class="string"><span class="delimiter">&quot;</span><span class="content">I'm so sorry to hear that.</span><span class="delimiter">&quot;</span></span>);
         }
 
-        <span class="keyword">return</span> response;
-    }
+        <span class="directive">public</span> <span class="predefined-type">String</span> respondToEmotionalState(Emotion emotion) {
+                <span class="type">var</span> response = <span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>; <i class="conum" data-value="2"></i><b>(2)</b>
+                <span class="keyword">switch</span> (emotion) {
+                        <span class="keyword">case</span> HAPPY:
+                                response = <span class="string"><span class="delimiter">&quot;</span><span class="content">that's wonderful.</span><span class="delimiter">&quot;</span></span>;
+                                <span class="keyword">break</span>; <i class="conum" data-value="3"></i><b>(3)</b>
+                        <span class="keyword">case</span> SAD:
+                                response = <span class="string"><span class="delimiter">&quot;</span><span class="content">I'm so sorry to hear that.</span><span class="delimiter">&quot;</span></span>;
+                                <span class="keyword">break</span>;
+                }
 
-    <span class="type">enum</span> Emotion {
+                <span class="keyword">return</span> response;
+        }
 
-        <i class="conum" data-value="1"></i><b>(1)</b>
-        HAPPY, SAD
+        <span class="type">enum</span> Emotion {
 
-    }
+                <i class="conum" data-value="1"></i><b>(1)</b>
+                HAPPY, SAD
+
+        }
 
 }</code></pre>
 </div>
@@ -3812,24 +3664,24 @@ There&#8217;s nothing wrong, <em>per se</em>, but it&#8217;s tedious, and I tend
 
 <span class="type">class</span> <span class="class">EnhancedSwitchExpressionTest</span> {
 
-    <span class="annotation">@Test</span>
-    <span class="type">void</span> switchExpression() {
-        Assertions.assertEquals(<span class="string"><span class="delimiter">&quot;</span><span class="content">that's wonderful.</span><span class="delimiter">&quot;</span></span>, respondToEmotionalState(Emotion.HAPPY));
-        Assertions.assertEquals(<span class="string"><span class="delimiter">&quot;</span><span class="content">I'm so sorry to hear that.</span><span class="delimiter">&quot;</span></span>, respondToEmotionalState(Emotion.SAD));
-    }
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> switchExpression() {
+                Assertions.assertEquals(<span class="string"><span class="delimiter">&quot;</span><span class="content">that's wonderful.</span><span class="delimiter">&quot;</span></span>, respondToEmotionalState(Emotion.HAPPY));
+                Assertions.assertEquals(<span class="string"><span class="delimiter">&quot;</span><span class="content">I'm so sorry to hear that.</span><span class="delimiter">&quot;</span></span>, respondToEmotionalState(Emotion.SAD));
+        }
 
-    <span class="directive">private</span> <span class="predefined-type">String</span> respondToEmotionalState(Emotion emotion) { <i class="conum" data-value="1"></i><b>(1)</b>
-        <span class="keyword">return</span> <span class="keyword">switch</span> (emotion) {
-            <span class="keyword">case</span> HAPPY -&gt; <span class="string"><span class="delimiter">&quot;</span><span class="content">that's wonderful.</span><span class="delimiter">&quot;</span></span>;
-            <span class="keyword">case</span> SAD -&gt; <span class="string"><span class="delimiter">&quot;</span><span class="content">I'm so sorry to hear that.</span><span class="delimiter">&quot;</span></span>;
-        };
-    }
+        <span class="directive">private</span> <span class="predefined-type">String</span> respondToEmotionalState(Emotion emotion) { <i class="conum" data-value="1"></i><b>(1)</b>
+                <span class="keyword">return</span> <span class="keyword">switch</span> (emotion) {
+                        <span class="keyword">case</span> HAPPY -&gt; <span class="string"><span class="delimiter">&quot;</span><span class="content">that's wonderful.</span><span class="delimiter">&quot;</span></span>;
+                        <span class="keyword">case</span> SAD -&gt; <span class="string"><span class="delimiter">&quot;</span><span class="content">I'm so sorry to hear that.</span><span class="delimiter">&quot;</span></span>;
+                };
+        }
 
-    <span class="type">enum</span> Emotion {
+        <span class="type">enum</span> Emotion {
 
-        HAPPY, SAD;
+                HAPPY, SAD;
 
-    }
+        }
 
 }</code></pre>
 </div>
@@ -3861,24 +3713,24 @@ There are a million opportunities for multiline `String`s: SQL queries, HTML, Ma
 
 <span class="type">class</span> <span class="class">MultilineStringsTest</span> {
 
-    <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">String</span> instant = Instant.now().toString();
+        <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">String</span> instant = Instant.now().toString();
 
-    <i class="conum" data-value="1"></i><b>(1)</b>
-    <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">String</span> multilines = <span class="predefined-type">String</span>.format(<span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="content">
-            &lt;html&gt;
-            &lt;body&gt;
-            &lt;h1&gt; Hello, world, @ %s!&lt;/h1&gt; &lt;/body&gt;
-            &lt;/html&gt;
-            </span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>, instant).trim();
+        <i class="conum" data-value="1"></i><b>(1)</b>
+        <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">String</span> multilines = <span class="predefined-type">String</span>.format(<span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="content">
+                        &lt;html&gt;
+                        &lt;body&gt;
+                        &lt;h1&gt; Hello, world, @ %s!&lt;/h1&gt; &lt;/body&gt;
+                        &lt;/html&gt;
+                        </span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>, instant).trim();
 
-    <i class="conum" data-value="2"></i><b>(2)</b>
-    <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">String</span> concatenated = <span class="string"><span class="delimiter">&quot;</span><span class="content">&lt;html&gt;</span><span class="char">\n</span><span class="content">&lt;body&gt;</span><span class="char">\n</span><span class="delimiter">&quot;</span></span> + <span class="string"><span class="delimiter">&quot;</span><span class="content">&lt;h1&gt; Hello, world, @ </span><span class="delimiter">&quot;</span></span> + instant + <span class="string"><span class="delimiter">&quot;</span><span class="content">!&lt;/h1&gt; &lt;/body&gt;</span><span class="char">\n</span><span class="delimiter">&quot;</span></span>
-            + <span class="string"><span class="delimiter">&quot;</span><span class="content">&lt;/html&gt;</span><span class="delimiter">&quot;</span></span>;
+        <i class="conum" data-value="2"></i><b>(2)</b>
+        <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">String</span> concatenated = <span class="string"><span class="delimiter">&quot;</span><span class="content">&lt;html&gt;</span><span class="char">\n</span><span class="content">&lt;body&gt;</span><span class="char">\n</span><span class="delimiter">&quot;</span></span> + <span class="string"><span class="delimiter">&quot;</span><span class="content">&lt;h1&gt; Hello, world, @ </span><span class="delimiter">&quot;</span></span> + instant + <span class="string"><span class="delimiter">&quot;</span><span class="content">!&lt;/h1&gt; &lt;/body&gt;</span><span class="char">\n</span><span class="delimiter">&quot;</span></span>
+                        + <span class="string"><span class="delimiter">&quot;</span><span class="content">&lt;/html&gt;</span><span class="delimiter">&quot;</span></span>;
 
-    <span class="annotation">@Test</span>
-    <span class="type">void</span> stringTheory() {
-        Assertions.assertEquals(<span class="local-variable">this</span>.multilines, <span class="local-variable">this</span>.concatenated);
-    }
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> stringTheory() {
+                Assertions.assertEquals(<span class="local-variable">this</span>.multilines, <span class="local-variable">this</span>.concatenated);
+        }
 
 }</code></pre>
 </div>
@@ -3935,31 +3787,30 @@ Records to the rescue!</p>
 
 <span class="keyword">import</span> <span class="include">java.util.List</span>;
 
-
 <span class="type">class</span> <span class="class">SimpleRecordsTest</span> {
 
-    <span class="annotation">@Test</span>
-    <span class="type">void</span> records() {
-        <span class="type">var</span> customer = <span class="keyword">new</span> Customer(<span class="integer">253</span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">Tammie</span><span class="delimiter">&quot;</span></span>);
-        <span class="type">var</span> order1 = <span class="keyword">new</span> Order(<span class="integer">2232</span>, <span class="float">74.023</span>);
-        <span class="type">var</span> order2 = <span class="keyword">new</span> Order(<span class="integer">9593</span>, <span class="float">23.44</span>);
-        <span class="type">var</span> cos = <span class="keyword">new</span> CustomerOrders(customer, <span class="predefined-type">List</span>.of(order1, order2));
-        Assertions.assertEquals(<span class="integer">2232</span>, order1.id());
-        Assertions.assertEquals(<span class="float">74.023</span>, order1.total());
-        Assertions.assertEquals(<span class="string"><span class="delimiter">&quot;</span><span class="content">Tammie</span><span class="delimiter">&quot;</span></span>, customer.name());
-        Assertions.assertEquals(<span class="integer">2</span>, cos.orders().size());
-        IO.println(<span class="string"><span class="delimiter">&quot;</span><span class="content">order components  </span><span class="delimiter">&quot;</span></span> + order1.id() + <span class="string"><span class="delimiter">'</span><span class="content">:</span><span class="delimiter">'</span></span> + order1.total()); <i class="conum" data-value="2"></i><b>(2)</b>
-    }
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> records() {
+                <span class="type">var</span> customer = <span class="keyword">new</span> Customer(<span class="integer">253</span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">Tammie</span><span class="delimiter">&quot;</span></span>);
+                <span class="type">var</span> order1 = <span class="keyword">new</span> Order(<span class="integer">2232</span>, <span class="float">74.023</span>);
+                <span class="type">var</span> order2 = <span class="keyword">new</span> Order(<span class="integer">9593</span>, <span class="float">23.44</span>);
+                <span class="type">var</span> cos = <span class="keyword">new</span> CustomerOrders(customer, <span class="predefined-type">List</span>.of(order1, order2));
+                Assertions.assertEquals(<span class="integer">2232</span>, order1.id());
+                Assertions.assertEquals(<span class="float">74.023</span>, order1.total());
+                Assertions.assertEquals(<span class="string"><span class="delimiter">&quot;</span><span class="content">Tammie</span><span class="delimiter">&quot;</span></span>, customer.name());
+                Assertions.assertEquals(<span class="integer">2</span>, cos.orders().size());
+                IO.println(<span class="string"><span class="delimiter">&quot;</span><span class="content">order components  </span><span class="delimiter">&quot;</span></span> + order1.id() + <span class="string"><span class="delimiter">'</span><span class="content">:</span><span class="delimiter">'</span></span> + order1.total()); <i class="conum" data-value="2"></i><b>(2)</b>
+        }
 
-    <i class="conum" data-value="1"></i><b>(1)</b>
-    record Customer(<span class="predefined-type">Integer</span> id, <span class="predefined-type">String</span> name) {
-    }
+        <i class="conum" data-value="1"></i><b>(1)</b>
+        record Customer(<span class="predefined-type">Integer</span> id, <span class="predefined-type">String</span> name) {
+        }
 
-    record Order(<span class="predefined-type">Integer</span> id, <span class="type">double</span> total) {
-    }
+        record Order(<span class="predefined-type">Integer</span> id, <span class="type">double</span> total) {
+        }
 
-    record CustomerOrders(Customer customer, <span class="predefined-type">List</span>&lt;Order&gt; orders) {
-    }
+        record CustomerOrders(Customer customer, <span class="predefined-type">List</span>&lt;Order&gt; orders) {
+        }
 
 }</code></pre>
 </div>
@@ -4017,25 +3868,25 @@ Records can have other constructors, but they need to delegate to the default co
 
 <span class="type">class</span> <span class="class">RecordConstructorsTest</span> {
 
-    <span class="annotation">@Test</span>
-    <span class="type">void</span> multipleConstructors() {
-        <span class="type">var</span> customer1 = <span class="keyword">new</span> Customer(<span class="string"><span class="delimiter">&quot;</span><span class="content">test@email.com</span><span class="delimiter">&quot;</span></span>);
-        <span class="type">var</span> customer2 = <span class="keyword">new</span> Customer(<span class="integer">2</span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">test2@gmail.com</span><span class="delimiter">&quot;</span></span>);
-        Assertions.assertEquals(customer1.id(), -<span class="integer">1</span>);
-        Assertions.assertEquals(customer2.id(), <span class="integer">2</span>);
-    }
-
-    record Customer(<span class="predefined-type">Integer</span> id, <span class="predefined-type">String</span> email) { <i class="conum" data-value="1"></i><b>(1)</b>
-
-        Customer { <i class="conum" data-value="2"></i><b>(2)</b>
-            Assert.notNull(id, () -&gt; <span class="string"><span class="delimiter">&quot;</span><span class="content">the id must never be null!</span><span class="delimiter">&quot;</span></span>);
-            Assert.isTrue(StringUtils.hasText(email), () -&gt; <span class="string"><span class="delimiter">&quot;</span><span class="content">the email is invalid</span><span class="delimiter">&quot;</span></span>);
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> multipleConstructors() {
+                <span class="type">var</span> customer1 = <span class="keyword">new</span> Customer(<span class="string"><span class="delimiter">&quot;</span><span class="content">test@email.com</span><span class="delimiter">&quot;</span></span>);
+                <span class="type">var</span> customer2 = <span class="keyword">new</span> Customer(<span class="integer">2</span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">test2@gmail.com</span><span class="delimiter">&quot;</span></span>);
+                Assertions.assertEquals(customer1.id(), -<span class="integer">1</span>);
+                Assertions.assertEquals(customer2.id(), <span class="integer">2</span>);
         }
 
-        Customer(<span class="predefined-type">String</span> email) {
-            <span class="local-variable">this</span>(-<span class="integer">1</span>, email);
+        record Customer(<span class="predefined-type">Integer</span> id, <span class="predefined-type">String</span> email) { <i class="conum" data-value="1"></i><b>(1)</b>
+
+                Customer { <i class="conum" data-value="2"></i><b>(2)</b>
+                        Assert.notNull(id, () -&gt; <span class="string"><span class="delimiter">&quot;</span><span class="content">the id must never be null!</span><span class="delimiter">&quot;</span></span>);
+                        Assert.isTrue(StringUtils.hasText(email), () -&gt; <span class="string"><span class="delimiter">&quot;</span><span class="content">the email is invalid</span><span class="delimiter">&quot;</span></span>);
+                }
+
+                Customer(<span class="predefined-type">String</span> email) {
+                        <span class="local-variable">this</span>(-<span class="integer">1</span>, email);
+                }
         }
-    }
 
 }</code></pre>
 </div>
@@ -4097,42 +3948,42 @@ They let you constrain the number of subclasses to a known set.</p>
 
 <span class="type">class</span> <span class="class">SealedTypesTest</span> {
 
-    <i class="conum" data-value="4"></i><b>(4)</b>
-    <span class="directive">private</span> <span class="predefined-type">String</span> describeShape(<span class="predefined-type">Shape</span> shape) {
-        Assert.notNull(shape, () -&gt; <span class="string"><span class="delimiter">&quot;</span><span class="content">the shape should never be null!</span><span class="delimiter">&quot;</span></span>);
-        <span class="keyword">if</span> (shape <span class="keyword">instanceof</span> Oval)
-            <span class="keyword">return</span> <span class="string"><span class="delimiter">&quot;</span><span class="content">round</span><span class="delimiter">&quot;</span></span>;
-        <span class="keyword">if</span> (shape <span class="keyword">instanceof</span> <span class="predefined-type">Polygon</span>)
-            <span class="keyword">return</span> <span class="string"><span class="delimiter">&quot;</span><span class="content">straight</span><span class="delimiter">&quot;</span></span>;
-        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="exception">RuntimeException</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">we should never get to this point!</span><span class="delimiter">&quot;</span></span>);
-    }
+        <i class="conum" data-value="4"></i><b>(4)</b>
+        <span class="directive">private</span> <span class="predefined-type">String</span> describeShape(<span class="predefined-type">Shape</span> shape) {
+                Assert.notNull(shape, () -&gt; <span class="string"><span class="delimiter">&quot;</span><span class="content">the shape should never be null!</span><span class="delimiter">&quot;</span></span>);
+                <span class="keyword">if</span> (shape <span class="keyword">instanceof</span> Oval)
+                        <span class="keyword">return</span> <span class="string"><span class="delimiter">&quot;</span><span class="content">round</span><span class="delimiter">&quot;</span></span>;
+                <span class="keyword">if</span> (shape <span class="keyword">instanceof</span> <span class="predefined-type">Polygon</span>)
+                        <span class="keyword">return</span> <span class="string"><span class="delimiter">&quot;</span><span class="content">straight</span><span class="delimiter">&quot;</span></span>;
+                <span class="keyword">throw</span> <span class="keyword">new</span> <span class="exception">RuntimeException</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">we should never get to this point!</span><span class="delimiter">&quot;</span></span>);
+        }
 
-    <span class="annotation">@Test</span>
-    <span class="type">void</span> disjointedUnionTypes() {
-        Assertions.assertEquals(describeShape(<span class="keyword">new</span> Oval()), <span class="string"><span class="delimiter">&quot;</span><span class="content">round</span><span class="delimiter">&quot;</span></span>);
-        Assertions.assertEquals(describeShape(<span class="keyword">new</span> <span class="predefined-type">Polygon</span>()), <span class="string"><span class="delimiter">&quot;</span><span class="content">straight</span><span class="delimiter">&quot;</span></span>);
-    }
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> disjointedUnionTypes() {
+                Assertions.assertEquals(describeShape(<span class="keyword">new</span> Oval()), <span class="string"><span class="delimiter">&quot;</span><span class="content">round</span><span class="delimiter">&quot;</span></span>);
+                Assertions.assertEquals(describeShape(<span class="keyword">new</span> <span class="predefined-type">Polygon</span>()), <span class="string"><span class="delimiter">&quot;</span><span class="content">straight</span><span class="delimiter">&quot;</span></span>);
+        }
 
-    <i class="conum" data-value="1"></i><b>(1)</b>
-    sealed <span class="type">interface</span> <span class="class">Shape</span> permits Oval, <span class="predefined-type">Polygon</span> {
+        <i class="conum" data-value="1"></i><b>(1)</b>
+        sealed <span class="type">interface</span> <span class="class">Shape</span> permits Oval, <span class="predefined-type">Polygon</span> {
 
-    }
+        }
 
-    <i class="conum" data-value="2"></i><b>(2)</b>
-    <span class="directive">static</span> sealed <span class="type">class</span> <span class="class">Oval</span> <span class="directive">implements</span> <span class="predefined-type">Shape</span> permits Circle {
+        <i class="conum" data-value="2"></i><b>(2)</b>
+        <span class="directive">static</span> sealed <span class="type">class</span> <span class="class">Oval</span> <span class="directive">implements</span> <span class="predefined-type">Shape</span> permits Circle {
 
-    }
+        }
 
-    <i class="conum" data-value="3"></i><b>(3)</b>
-    <span class="comment">// static final class Rhombus implements Shape {}</span>
+        <i class="conum" data-value="3"></i><b>(3)</b>
+        <span class="comment">// static final class Rhombus implements Shape {}</span>
 
-    <span class="directive">static</span> <span class="directive">final</span> <span class="type">class</span> <span class="class">Circle</span> <span class="directive">extends</span> Oval {
+        <span class="directive">static</span> <span class="directive">final</span> <span class="type">class</span> <span class="class">Circle</span> <span class="directive">extends</span> Oval {
 
-    }
+        }
 
-    <span class="directive">static</span> <span class="directive">final</span> <span class="type">class</span> <span class="class">Polygon</span> <span class="directive">implements</span> <span class="predefined-type">Shape</span> {
+        <span class="directive">static</span> <span class="directive">final</span> <span class="type">class</span> <span class="class">Polygon</span> <span class="directive">implements</span> <span class="predefined-type">Shape</span> {
 
-    }
+        }
 
 }</code></pre>
 </div>
@@ -4187,53 +4038,53 @@ Essentially, the feature spares you from having to create an intermediate variab
 
 <span class="directive">public</span> <span class="type">class</span> <span class="class">SmartCastsTest</span> {
 
-    <span class="annotation">@Test</span>
-    <span class="type">void</span> casts() {
-        <span class="type">interface</span> <span class="class">Animal</span> {
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> casts() {
+                <span class="type">interface</span> <span class="class">Animal</span> {
 
-            <span class="predefined-type">String</span> speak();
+                        <span class="predefined-type">String</span> speak();
+
+                }
+
+                <span class="type">class</span> <span class="class">Cat</span> <span class="directive">implements</span> Animal {
+
+                        <span class="annotation">@Override</span>
+                        <span class="directive">public</span> <span class="predefined-type">String</span> speak() {
+                                <span class="keyword">return</span> <span class="string"><span class="delimiter">&quot;</span><span class="content">meow!</span><span class="delimiter">&quot;</span></span>;
+                        }
+
+                }
+
+                <span class="type">class</span> <span class="class">Dog</span> <span class="directive">implements</span> Animal {
+
+                        <span class="annotation">@Override</span>
+                        <span class="directive">public</span> <span class="predefined-type">String</span> speak() {
+                                <span class="keyword">return</span> <span class="string"><span class="delimiter">&quot;</span><span class="content">woof!</span><span class="delimiter">&quot;</span></span>;
+                        }
+
+                }
+
+                <span class="type">var</span> newPet = <span class="predefined-type">Math</span>.random() &lt; <span class="float">.5</span> ? <span class="keyword">new</span> Cat() : <span class="keyword">new</span> Dog();
+                <span class="type">var</span> messages = <span class="keyword">new</span> <span class="predefined-type">HashSet</span>&lt;<span class="predefined-type">String</span>&gt;();
+
+                <i class="conum" data-value="1"></i><b>(1)</b>
+                <span class="keyword">if</span> (newPet <span class="keyword">instanceof</span> Cat) {
+                        <span class="type">var</span> cat = (Cat) newPet;
+                        messages.add(<span class="string"><span class="delimiter">&quot;</span><span class="content">the cat says </span><span class="delimiter">&quot;</span></span> + cat.speak());
+                }
+                <i class="conum" data-value="2"></i><b>(2)</b>
+                <span class="keyword">if</span> (newPet <span class="keyword">instanceof</span> Cat cat) {
+                        messages.add(<span class="string"><span class="delimiter">&quot;</span><span class="content">the cat says </span><span class="delimiter">&quot;</span></span> + cat.speak());
+                }
+
+                <span class="keyword">if</span> (newPet <span class="keyword">instanceof</span> Dog dog) {
+                        messages.add(<span class="string"><span class="delimiter">&quot;</span><span class="content">the dog says </span><span class="delimiter">&quot;</span></span> + dog.speak());
+                }
+
+                Assertions.assertEquals(messages.size(), <span class="integer">1</span>);
+                Assertions.assertTrue(messages.contains(<span class="string"><span class="delimiter">&quot;</span><span class="content">the dog says woof!</span><span class="delimiter">&quot;</span></span>) || messages.contains(<span class="string"><span class="delimiter">&quot;</span><span class="content">the cat says meow!</span><span class="delimiter">&quot;</span></span>));
 
         }
-
-        <span class="type">class</span> <span class="class">Cat</span> <span class="directive">implements</span> Animal {
-
-            <span class="annotation">@Override</span>
-            <span class="directive">public</span> <span class="predefined-type">String</span> speak() {
-                <span class="keyword">return</span> <span class="string"><span class="delimiter">&quot;</span><span class="content">meow!</span><span class="delimiter">&quot;</span></span>;
-            }
-
-        }
-
-        <span class="type">class</span> <span class="class">Dog</span> <span class="directive">implements</span> Animal {
-
-            <span class="annotation">@Override</span>
-            <span class="directive">public</span> <span class="predefined-type">String</span> speak() {
-                <span class="keyword">return</span> <span class="string"><span class="delimiter">&quot;</span><span class="content">woof!</span><span class="delimiter">&quot;</span></span>;
-            }
-
-        }
-
-        <span class="type">var</span> newPet = <span class="predefined-type">Math</span>.random() &lt; <span class="float">.5</span> ? <span class="keyword">new</span> Cat() : <span class="keyword">new</span> Dog();
-        <span class="type">var</span> messages = <span class="keyword">new</span> <span class="predefined-type">HashSet</span>&lt;<span class="predefined-type">String</span>&gt;();
-
-        <i class="conum" data-value="1"></i><b>(1)</b>
-        <span class="keyword">if</span> (newPet <span class="keyword">instanceof</span> Cat) {
-            <span class="type">var</span> cat = (Cat) newPet;
-            messages.add(<span class="string"><span class="delimiter">&quot;</span><span class="content">the cat says </span><span class="delimiter">&quot;</span></span> + cat.speak());
-        }
-        <i class="conum" data-value="2"></i><b>(2)</b>
-        <span class="keyword">if</span> (newPet <span class="keyword">instanceof</span> Cat cat) {
-            messages.add(<span class="string"><span class="delimiter">&quot;</span><span class="content">the cat says </span><span class="delimiter">&quot;</span></span> + cat.speak());
-        }
-
-        <span class="keyword">if</span> (newPet <span class="keyword">instanceof</span> Dog dog) {
-            messages.add(<span class="string"><span class="delimiter">&quot;</span><span class="content">the dog says </span><span class="delimiter">&quot;</span></span> + dog.speak());
-        }
-
-        Assertions.assertEquals(messages.size(), <span class="integer">1</span>);
-        Assertions.assertTrue(messages.contains(<span class="string"><span class="delimiter">&quot;</span><span class="content">the dog says woof!</span><span class="delimiter">&quot;</span></span>) || messages.contains(<span class="string"><span class="delimiter">&quot;</span><span class="content">the cat says meow!</span><span class="delimiter">&quot;</span></span>));
-
-    }
 
 }</code></pre>
 </div>
@@ -4306,27 +4157,27 @@ Let&#8217;s look at some examples.</p>
 
 <span class="type">class</span> <span class="class">LambdasTest</span> {
 
-    <span class="annotation">@Test</span>
-    <span class="type">void</span> lambdas() {
-        Function&lt;<span class="predefined-type">String</span>, <span class="predefined-type">Integer</span>&gt; stringIntegerFunction = str -&gt; <span class="integer">2</span>;<i class="conum" data-value="1"></i><b>(1)</b>
-        <span class="type">interface</span> <span class="class">MyHandler</span> {
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> lambdas() {
+                Function&lt;<span class="predefined-type">String</span>, <span class="predefined-type">Integer</span>&gt; stringIntegerFunction = str -&gt; <span class="integer">2</span>;<i class="conum" data-value="1"></i><b>(1)</b>
+                <span class="type">interface</span> <span class="class">MyHandler</span> {
 
-            <span class="predefined-type">String</span> handle(<span class="predefined-type">String</span> one, <span class="predefined-type">Integer</span> two);
+                        <span class="predefined-type">String</span> handle(<span class="predefined-type">String</span> one, <span class="predefined-type">Integer</span> two);
+
+                }
+                MyHandler withExplicit = (one, two) -&gt; one + <span class="string"><span class="delimiter">'</span><span class="content">:</span><span class="delimiter">'</span></span> + two;<i class="conum" data-value="2"></i><b>(2)</b>
+                Assertions.assertEquals(stringIntegerFunction.apply(<span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>), <span class="integer">2</span>);
+                Assertions.assertEquals(withExplicit.handle(<span class="string"><span class="delimiter">&quot;</span><span class="content">one</span><span class="delimiter">&quot;</span></span>, <span class="integer">2</span>), <span class="string"><span class="delimiter">&quot;</span><span class="content">one:2</span><span class="delimiter">&quot;</span></span>);
+                <span class="type">var</span> withVar = (MyHandler) (one, two) -&gt; one + <span class="string"><span class="delimiter">'</span><span class="content">:</span><span class="delimiter">'</span></span> + two;<i class="conum" data-value="3"></i><b>(3)</b>
+                Assertions.assertEquals(withVar.handle(<span class="string"><span class="delimiter">&quot;</span><span class="content">one</span><span class="delimiter">&quot;</span></span>, <span class="integer">2</span>), <span class="string"><span class="delimiter">&quot;</span><span class="content">one:2</span><span class="delimiter">&quot;</span></span>);
+                MyHandler delegate = <span class="local-variable">this</span>::doHandle; <i class="conum" data-value="4"></i><b>(4)</b>
+                Assertions.assertEquals(delegate.handle(<span class="string"><span class="delimiter">&quot;</span><span class="content">one</span><span class="delimiter">&quot;</span></span>, <span class="integer">2</span>), <span class="string"><span class="delimiter">&quot;</span><span class="content">one:2</span><span class="delimiter">&quot;</span></span>);
 
         }
-        MyHandler withExplicit = (one, two) -&gt; one + <span class="string"><span class="delimiter">'</span><span class="content">:</span><span class="delimiter">'</span></span> + two;<i class="conum" data-value="2"></i><b>(2)</b>
-        Assertions.assertEquals(stringIntegerFunction.apply(<span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>), <span class="integer">2</span>);
-        Assertions.assertEquals(withExplicit.handle(<span class="string"><span class="delimiter">&quot;</span><span class="content">one</span><span class="delimiter">&quot;</span></span>, <span class="integer">2</span>), <span class="string"><span class="delimiter">&quot;</span><span class="content">one:2</span><span class="delimiter">&quot;</span></span>);
-        <span class="type">var</span> withVar = (MyHandler) (one, two) -&gt; one + <span class="string"><span class="delimiter">'</span><span class="content">:</span><span class="delimiter">'</span></span> + two;<i class="conum" data-value="3"></i><b>(3)</b>
-        Assertions.assertEquals(withVar.handle(<span class="string"><span class="delimiter">&quot;</span><span class="content">one</span><span class="delimiter">&quot;</span></span>, <span class="integer">2</span>), <span class="string"><span class="delimiter">&quot;</span><span class="content">one:2</span><span class="delimiter">&quot;</span></span>);
-        MyHandler delegate = <span class="local-variable">this</span>::doHandle; <i class="conum" data-value="4"></i><b>(4)</b>
-        Assertions.assertEquals(delegate.handle(<span class="string"><span class="delimiter">&quot;</span><span class="content">one</span><span class="delimiter">&quot;</span></span>, <span class="integer">2</span>), <span class="string"><span class="delimiter">&quot;</span><span class="content">one:2</span><span class="delimiter">&quot;</span></span>);
 
-    }
-
-    <span class="directive">private</span> <span class="predefined-type">String</span> doHandle(<span class="predefined-type">String</span> one, <span class="predefined-type">Integer</span> two) {
-        <span class="keyword">return</span> one + <span class="string"><span class="delimiter">'</span><span class="content">:</span><span class="delimiter">'</span></span> + two;
-    }
+        <span class="directive">private</span> <span class="predefined-type">String</span> doHandle(<span class="predefined-type">String</span> one, <span class="predefined-type">Integer</span> two) {
+                <span class="keyword">return</span> one + <span class="string"><span class="delimiter">'</span><span class="content">:</span><span class="delimiter">'</span></span> + two;
+        }
 
 }</code></pre>
 </div>
@@ -4369,50 +4220,51 @@ We&#8217;ve only really seen that it&#8217;s possible to easily match values thu
 
 <span class="type">class</span> <span class="class">PatternMatchingTest</span> {
 
-    <i class="conum" data-value="1"></i><b>(1)</b>
-    <span class="directive">final</span> <span class="predefined-type">String</span> authenticateMessage = <span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="content">
-                please authenticate, so that we can
-                get to know you a little better.
-            </span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>
-            .stripIndent()
-            .stripLeading()
-            .stripTrailing();
-    <span class="directive">final</span> <span class="predefined-type">String</span> customerMessage = <span class="string"><span class="delimiter">&quot;</span><span class="content">the customer's name is %s</span><span class="delimiter">&quot;</span></span>;
+        <i class="conum" data-value="1"></i><b>(1)</b>
+        <span class="directive">final</span> <span class="predefined-type">String</span> authenticateMessage = <span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="content">
+                            please authenticate, so that we can
+                            get to know you a little better.
+                        </span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>.stripIndent().stripLeading().stripTrailing();
 
-    <i class="conum" data-value="2"></i><b>(2)</b>
-    <span class="predefined-type">String</span> showMessageWithIf(BrowserClient browserClient) {
-        <span class="type">var</span> message = <span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>;
-        <span class="keyword">if</span> (browserClient <span class="keyword">instanceof</span> Customer(<span class="type">var</span> id, <span class="type">var</span> name)) {
-            message = <span class="local-variable">this</span>.customerMessage.formatted(name);
-        } <span class="keyword">else</span> <span class="keyword">if</span> (browserClient <span class="keyword">instanceof</span> UnknownUser) {
-            message = <span class="local-variable">this</span>.authenticateMessage;
+        <span class="directive">final</span> <span class="predefined-type">String</span> customerMessage = <span class="string"><span class="delimiter">&quot;</span><span class="content">the customer's name is %s</span><span class="delimiter">&quot;</span></span>;
+
+        <i class="conum" data-value="2"></i><b>(2)</b>
+        <span class="predefined-type">String</span> showMessageWithIf(BrowserClient browserClient) {
+                <span class="type">var</span> message = <span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>;
+                <span class="keyword">if</span> (browserClient <span class="keyword">instanceof</span> Customer(<span class="type">var</span> id, <span class="type">var</span> name)) {
+                        message = <span class="local-variable">this</span>.customerMessage.formatted(name);
+                }
+                <span class="keyword">else</span> <span class="keyword">if</span> (browserClient <span class="keyword">instanceof</span> UnknownUser) {
+                        message = <span class="local-variable">this</span>.authenticateMessage;
+                }
+                <span class="keyword">return</span> message;
         }
-        <span class="keyword">return</span> message;
-    }
 
-    <i class="conum" data-value="3"></i><b>(3)</b>
-    <span class="predefined-type">String</span> showMessageWithSwitch(BrowserClient browserClient) {
-        <span class="keyword">return</span> <span class="keyword">switch</span> (browserClient) {
-            <span class="keyword">case</span> Customer(<span class="type">var</span> id, <span class="type">var</span> name) -&gt; <span class="local-variable">this</span>.customerMessage.formatted(name);
-            <span class="keyword">case</span> UnknownUser() -&gt; <span class="local-variable">this</span>.authenticateMessage;
-        };
-    }
+        <i class="conum" data-value="3"></i><b>(3)</b>
+        <span class="predefined-type">String</span> showMessageWithSwitch(BrowserClient browserClient) {
+                <span class="keyword">return</span> <span class="keyword">switch</span> (browserClient) {
+                        <span class="keyword">case</span> Customer(<span class="type">var</span> id, <span class="type">var</span> name) -&gt; <span class="local-variable">this</span>.customerMessage.formatted(name);
+                        <span class="keyword">case</span> UnknownUser() -&gt; <span class="local-variable">this</span>.authenticateMessage;
+                };
+        }
 
-    <span class="annotation">@Test</span>
-    <span class="type">void</span> patternMatching() <span class="directive">throws</span> <span class="exception">Exception</span> {
-        assertTrue(showMessageWithIf(<span class="keyword">new</span> Customer(<span class="integer">1</span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">Josh</span><span class="delimiter">&quot;</span></span>)).contains(<span class="local-variable">this</span>.customerMessage.formatted(<span class="string"><span class="delimiter">&quot;</span><span class="content">Josh</span><span class="delimiter">&quot;</span></span>)));
-        assertTrue(showMessageWithSwitch(<span class="keyword">new</span> UnknownUser()).contains(<span class="local-variable">this</span>.authenticateMessage));
-    }
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> patternMatching() <span class="directive">throws</span> <span class="exception">Exception</span> {
+                assertTrue(showMessageWithIf(<span class="keyword">new</span> Customer(<span class="integer">1</span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">Josh</span><span class="delimiter">&quot;</span></span>)).contains(<span class="local-variable">this</span>.customerMessage.formatted(<span class="string"><span class="delimiter">&quot;</span><span class="content">Josh</span><span class="delimiter">&quot;</span></span>)));
+                assertTrue(showMessageWithSwitch(<span class="keyword">new</span> UnknownUser()).contains(<span class="local-variable">this</span>.authenticateMessage));
+        }
 
-    <i class="conum" data-value="4"></i><b>(4)</b>
-    sealed <span class="type">interface</span> <span class="class">BrowserClient</span> permits UnknownUser, Customer {
-    }
+        <i class="conum" data-value="4"></i><b>(4)</b>
+        sealed <span class="type">interface</span> <span class="class">BrowserClient</span> permits UnknownUser, Customer {
 
-    record UnknownUser() <span class="directive">implements</span> BrowserClient {
-    }
+        }
 
-    record Customer(<span class="predefined-type">Integer</span> id, <span class="predefined-type">String</span> name) <span class="directive">implements</span> BrowserClient {
-    }
+        record UnknownUser() <span class="directive">implements</span> BrowserClient {
+        }
+
+        record Customer(<span class="predefined-type">Integer</span> id, <span class="predefined-type">String</span> name) <span class="directive">implements</span> BrowserClient {
+        }
+
 }</code></pre>
 </div>
 </div>
@@ -4544,35 +4396,36 @@ Let&#8217;s look at an example that I shamelessly stole from Oracle Java advocat
 
 <span class="type">class</span> <span class="class">LoomTest</span> {
 
-    <span class="directive">private</span> <span class="directive">static</span> <span class="predefined-type">Set</span>&lt;<span class="predefined-type">String</span>&gt; observe(<span class="type">int</span> index) {
-        <span class="type">var</span> before = <span class="predefined-type">Thread</span>.currentThread().toString();
-        <span class="keyword">try</span> {
-            <span class="predefined-type">Thread</span>.sleep(<span class="integer">100</span>);
-        }<span class="comment">//</span>
-        <span class="keyword">catch</span> (<span class="exception">InterruptedException</span> e) {
-            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="exception">RuntimeException</span>(e);
+        <span class="directive">private</span> <span class="directive">static</span> <span class="predefined-type">Set</span>&lt;<span class="predefined-type">String</span>&gt; observe(<span class="type">int</span> index) {
+                <span class="type">var</span> before = <span class="predefined-type">Thread</span>.currentThread().toString();
+                <span class="keyword">try</span> {
+                        <span class="predefined-type">Thread</span>.sleep(<span class="integer">100</span>);
+                } <span class="comment">//</span>
+                <span class="keyword">catch</span> (<span class="exception">InterruptedException</span> e) {
+                        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="exception">RuntimeException</span>(e);
+                }
+                <span class="type">var</span> after = <span class="predefined-type">Thread</span>.currentThread().toString();
+                <span class="keyword">return</span> index == <span class="integer">0</span> ? <span class="keyword">new</span> <span class="predefined-type">HashSet</span>&lt;&gt;(<span class="predefined-type">Arrays</span>.asList(before, after)) : <span class="predefined-type">Set</span>.of();
         }
-        <span class="type">var</span> after = <span class="predefined-type">Thread</span>.currentThread().toString();
-        <span class="keyword">return</span> index == <span class="integer">0</span> ? <span class="keyword">new</span> <span class="predefined-type">HashSet</span>&lt;&gt;(<span class="predefined-type">Arrays</span>.asList(before, after)) : <span class="predefined-type">Set</span>.of();
-    }
 
-    <span class="annotation">@Test</span>
-    <span class="type">void</span> threads() <span class="directive">throws</span> <span class="exception">Exception</span> {
-        <span class="type">var</span> switches = <span class="integer">5</span>;
-        <span class="type">var</span> observed = <span class="keyword">new</span> ConcurrentSkipListSet&lt;<span class="predefined-type">String</span>&gt;();
-        <span class="type">var</span> threads = IntStream
-                .range(<span class="integer">0</span>, <span class="integer">1000</span>)<i class="conum" data-value="1"></i><b>(1)</b>
-                .mapToObj(index -&gt; <span class="predefined-type">Thread</span>
-                        .ofVirtual()<i class="conum" data-value="2"></i><b>(2)</b>
-                        .unstarted(() -&gt; {
-                            <span class="keyword">for</span> (<span class="type">var</span> i = <span class="integer">0</span>; i &lt; switches; i++) <i class="conum" data-value="3"></i><b>(3)</b>
-                                observed.addAll(observe(index));
-                        }))
-                .toList();
-        <span class="keyword">for</span> (<span class="type">var</span> t : threads) t.start();
-        <span class="keyword">for</span> (<span class="type">var</span> t : threads) t.join();
-        Assertions.assertTrue(observed.size() &gt; <span class="integer">1</span>); <i class="conum" data-value="4"></i><b>(4)</b>
-    }
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> threads() <span class="directive">throws</span> <span class="exception">Exception</span> {
+                <span class="type">var</span> switches = <span class="integer">5</span>;
+                <span class="type">var</span> observed = <span class="keyword">new</span> ConcurrentSkipListSet&lt;<span class="predefined-type">String</span>&gt;();
+                <span class="type">var</span> threads = IntStream.range(<span class="integer">0</span>, <span class="integer">1000</span>)<i class="conum" data-value="1"></i><b>(1)</b>
+                        .mapToObj(index -&gt; <span class="predefined-type">Thread</span>.ofVirtual()<i class="conum" data-value="2"></i><b>(2)</b>
+                                .unstarted(() -&gt; {
+                                        <span class="keyword">for</span> (<span class="type">var</span> i = <span class="integer">0</span>; i &lt; switches; i++) <i class="conum" data-value="3"></i><b>(3)</b>
+                                                observed.addAll(observe(index));
+                                }))
+                        .toList();
+                <span class="keyword">for</span> (<span class="type">var</span> t : threads)
+                        t.start();
+                <span class="keyword">for</span> (<span class="type">var</span> t : threads)
+                        t.join();
+                Assertions.assertTrue(observed.size() &gt; <span class="integer">1</span>); <i class="conum" data-value="4"></i><b>(4)</b>
+        }
+
 }</code></pre>
 </div>
 </div>
@@ -4647,6 +4500,35 @@ Hopefully, this chapter has been persuasive, and you&#8217;re ready to turn the 
 </div>
 <div class="paragraph">
 <p>So, here we go. We&#8217;re going to do the same sort of thing, but of course greatly udpated to reflect the amazing moemnt in which we fnd ourselves.</p>
+</div>
+<div class="paragraph">
+<p>when spring first came out we talked about the "spring triangle"  the three pillars that made the Spring Framework so useful for people:
+ * portable service abstractions
+ * dependency injection
+ * autoconfiguration</p>
+</div>
+<div class="paragraph">
+<p>more recently, with the introduction mof Spring Boot, we&#8217;ve added a new dimension of utility to the framework: autoconfiguration. So I guess its more like a "Spring square" now, come to think of it.</p>
+</div>
+<div class="paragraph">
+<p>At the core of Spring as a framework is the fact htat it needs to understand how your objects are wired together. But why? why bother telling it these things? Why not just wire things yourself?</p>
+</div>
+<div class="paragraph">
+<p>at the microlevel, this isnt an unreasonable quesiton. spring is just java and i can write java without spring, so why bother with Spring?</p>
+</div>
+<div class="paragraph">
+<p>let&#8217;s introduce a <em>trivial</em> example to enforce the idea. Were going to read <code>Dog</code> data from a SQL database, PostgreSQl, running on our machine. Well use the follwoing Docker Compose file to stand up the instance of our database.</p>
+</div>
+<div class="paragraph">
+<p>services:
+  postgres:
+    image: 'postgres:latest'
+    environment:
+      - 'POSTGRES_DB=mydatabase'
+      - 'POSTGRES_PASSWORD=secret'
+      - 'POSTGRES_USER=myuser'
+    ports:
+      - '5432:5432'</p>
 </div>
 <div class="ulist">
 <ul>
@@ -4778,7 +4660,7 @@ Hopefully, this chapter has been persuasive, and you&#8217;re ready to turn the 
 <div id="footer">
 <div id="footer-text">
 Version 1.0<br>
-Last updated 2026-06-30 07:10:50 +0900
+Last updated 2026-06-30 06:58:24 UTC
 </div>
 </div>
 </body>
