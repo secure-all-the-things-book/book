@@ -37,12 +37,12 @@ include::{code}/beans-to-boot/beans-to-boot/compose.yml[]
 // psb start
 * use JdbcClient
 // psb start
-// psb tx
-
+// psb tx1
 * what about tx?
 * oop says dry; extract single responsibility to another class
 * TransactionalDogRepository is a composite that wraps the target one
 * platformtxmanager
+// psb tx1
 * transactiontemplate
 * still very tedious tho is there some way to programatically generate new implementations of the interface?
 * jdk proxies
