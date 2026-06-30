@@ -57,15 +57,20 @@ include::{code}/beans-to-boot/beans-to-boot/compose.yml[]
 * spring's proxyfactorybean
 * we can delete the interface. huzzah
 // stop cglibproxy
-// start
+// start springframework
 * its nice but things are getting out of hand. that said, our code is approachable enough for now.
 * what if we wanted to do any kind of testing? wed have to duplicate all these beans
 * and all of this just for a single query to a db! we havent even started to think about building a web application, messaging, observability, etc.
 * lets see if spring can improve things
 * turn everything into beans
+// stop springframework
+// start lifecycle
 * there is a lifecycle at play. i can control the beans construction and destuction. they can implement InitializingBean && DisposablBean
+// stop lifecycle
+// start events
 * these callbacks are nbut one way to participate in important lifecycle events. another is to use `ApplicationEvent`s. there are a ton of them! lets implement a simple `@EventListener`
 * the lifecycle is interesting. when the app starts up and shuts down ur code can hook into the lifecycle.
+// start events
 * > ingest -> BeanDefintiions -> beans
 * BeanFactoryPostProcessor lets u see the BeanDefintions
 * what we want is BeanPostProcessor
