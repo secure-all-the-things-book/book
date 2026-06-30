@@ -24,13 +24,18 @@ include::{code}/beans-to-boot/beans-to-boot/compose.yml[]
 ----
 .run this in the usual way: `docker compose up -d`
 
+// db start
+* theres some SQL for schema and data in `schema.sql` and `data.sql`. run `docker compose up -d` then make sure to pass that SQL to postgresql:
+```shell
+PGPASSWORD=secret psql -Umyuser -hlocalhost mydatabase
+```
+// db stop
 // raw start
 * spring 'square' : psb, aop, di, autoconfig
 * basic repository
 * core java
 * DataSource inline
 // raw stop
-
 // di start
 * use DI to extract it out; nothing fancy just polymorphism.
 // di start
@@ -66,15 +71,16 @@ include::{code}/beans-to-boot/beans-to-boot/compose.yml[]
 // stop springframework
 // start lifecycle
 * there is a lifecycle at play. i can control the beans construction and destuction. they can implement InitializingBean && DisposablBean
-// stop lifecycle
-// start events
 * these callbacks are nbut one way to participate in important lifecycle events. another is to use `ApplicationEvent`s. there are a ton of them! lets implement a simple `@EventListener`
 * the lifecycle is interesting. when the app starts up and shuts down ur code can hook into the lifecycle.
-// start events
+// stop lifecycle
+// start pp
+* let's look at `BeanFactoryPostProcessors` and `BeanPostProcessors`
 * > ingest -> BeanDefintiions -> beans
 * BeanFactoryPostProcessor lets u see the BeanDefintions
 * what we want is BeanPostProcessor
 * extract the transactional support to this based on presence of marker interface `Tx`
+// start pp
 * obviously, if u have used spring at all before then u prolly know where this is going: we've already done this exact magic trick. let's refactor to use `@transactional`. just need to enable it with `@EnableTransactionManagment`
 * nice but of course its tedious to define beans with full config every time. lets use implicit configuration and `@ComponentScan`
 * component scanning for our repository by adding `@Repository`
