@@ -19,7 +19,11 @@ at the microlevel, this isnt an unreasonable quesiton. spring is just java and i
 
 let's introduce a _trivial_ example to enforce the idea. Were going to read `Dog` data from a SQL database, PostgreSQl, running on our machine. Well use the follwoing Docker Compose file to stand up the instance of our database.
 
+----
 include::{code}/beans-to-boot/beans-to-boot/compose.yml[]
+----
+.run this in the usual way: `docker compose up -d`
+
 
 * spring 'square' : psb, aop, di, autoconfig
 * basic repository
