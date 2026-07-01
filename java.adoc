@@ -70,7 +70,8 @@ Finally, Java 14 introduced the Shenandoah GC, which keeps pause times low and d
 And it's fast.
 I can't give you a specific number or anything because it is so highly workload-sensitive, but https://www.optaplanner.org/blog/2025/09/15/HowMuchFasterIsJava17.html[this post from the folks at OptaPlanner] is persuasive.
 They saw an average improvement of 8.66% for their CPU-intensive workloads when using the G1 GC, measured after a discarded 30-second warmup period.
-These numbers reflect the jump from Java 11 (not Java 8) to Java 17. I can only imagine the numbers from Java 8 to Java 17 are even better. And the numbers for Java 25, even better still!
+These numbers reflect the jump from Java 11 (not Java 8) to Java 17. I can only imagine the numbers from Java 8 to Java 17 are even better.
+And the numbers for Java 25, even better still!
 And that number is just an average: some workloads improved by as much as 23%!
 
 === AutoCloseable
