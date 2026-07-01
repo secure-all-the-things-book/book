@@ -308,14 +308,54 @@ include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_b
 
 // stop tx2
 // start jdkproxy
-== Hold My Proxy!
+== Cross-Cutting Concerns
 
-The approach is conceptually clean enough but its obviously going to start becoming tedious as we add more methods, or more concerns. Suppose wanted to add logging. Or to add metrics. Or to add security checks. We'd have to wwrite more and more composites and for every new method in the core `DogRepository` interface, we'd have to add new methods in each of the composites.
+The approach is conceptually clean enough but its obviously going to start becoming tedious as we add more methods, or more concerns.
+Suppose wanted to add logging.
+Or to add metrics.
+Or to add security checks.
+We'd have to wwrite more and more composites and for every new method in the core `DogRepository` interface, we'd have to add new methods in each of the composites.
 
-what about ordering. Which composite wraps which?
+what about ordering.
+Which composite wraps which?
 what if we wanted to support auditing, so for every write operation we want to also write an access log to a database. that would need to happen inside the transactional composite so that both the underlying write and the write to the audit table would be in the sane transaction.
 
-this is where the object oriented approach starts to fall apart.
+this is where the object oriented approach starts to fall apart. weve got a common concern thatll be common to _all_ repositories. these are _cross-cutting_ concerns.
+
+== Hold My Proxy!
+
+the plan of attack for an object oriented language is to use composition or inheritance to introduce new concerns. but we cant scale that. wed get too many permutations of too many types in no time at all. so what if we could automatically do this? what if we could, at runtime, _programmatically_ create a class that implements the interface? java has a way to do this since java 1.4.
+
+ive extracted out the really meta-programming magic into a separeate new class called `Transactions`.
+
+Fair warning, this level of high wire metaprogrammming can be a little intense for folks not prepared for it. you dont need to retain all of it. lets just understand conceptually what's happening. were goinf to ask java to do two things at once: create a class that impleements the interface we want it to implement (`DogRepository`) and then create a single instance of that new class and return it back to us.
+
+we provide a callback (here it's shown as a lambda; but it's actually an instance of the JDK's `InvocationHandler` type) that will be invoked whenever anybody invokes a method on the newly generated instance.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/jdkproxy/Transactions.java[]
+----
+
+<.> call `java.lang.reflect.Proxy.newProxyInstance(ClassLoader, Class[] interfaces, InvocationHandler)`
+<.> in the `InvocationHandler` lambda, we're given a pointer to `this`, the instance that the `newProxyInstance` hands back to us.
+We don't need it here.
+<.> we're given a pointer to the `java.lang.reflect.Method` method that is being invoked. did the user call `toString` on the proxy instance? then this will be the `toString` method.
+<.> we're given a pointer to the `Object[]` arguments that've been passed into the method when it was called.
+In our case, we're going to be calling `findAll`, which takes no arguments, so this `Object[] args` will be empty.
+
+Weird, isnt it?
+But its a force multiplier that we need.
+Itll allow us to acheive the same sort of runtime metaprogramming shenanigans youd expect with a duck typed language like JavaScript or Ruby, without giving up the type system for most of our code.
+
+Let's rework our `Main` class, jettisoning the old, artisanal, hand-crafted  `TransactionalDogRepository` and instead using this new shortcut to simplify things.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/jdkproxy/Main.java[]
+----
+
+Again, from the perspective of our "test," nothing has changed. It expects a `DogRepository`, and a `DogRepository` it got.
+
+
 
 //
 // * still very tedious tho is there some way to programmatically generate new implementations of the interface?
