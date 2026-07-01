@@ -1,4 +1,4 @@
-:code: .. 
+:code: ..
 
 = Spring Boot
 // start boot
@@ -6,7 +6,7 @@
 We've come a long way, but done very, very little.
 For all our troubles, we've only got one repository with one method.
 Now imagine we were trying to build a real application.
-We'd need security, we'd need to stand up a webserver.
+We'd need security; we'd need to stand up a web server.
 We'd need observability.
 We'd need to package the application up for production.
 
@@ -16,7 +16,7 @@ Spring Boot builds on Spring Framework (and the rest of the Spring ecosystem).
 It's just more Spring, taken a step further thanks to the power of something called _autoconfiguration_.
 But first, let's refactor.
 
-here's the updated `Main` class.
+Here's the updated `Main` class.
 
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/boot/Main.java[]
@@ -24,44 +24,44 @@ include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_b
 
 . Spring Boot's `@SpringBootApplication` annotation is itself a _meta-annotation_.
 It is meta-annotated with `@Configuration`, which means this `Main` class is also a `@Configuration` class.
-It's meta-annotated with `@ComponentScan` so we don't need to worry about that either.
-. because its a `@Configuration` class, we can use `@Import` on it, just like before.
-. through most of the codew e've looked at we've created a Spring `ApplicationContext`.
-Here, were doing the same thing.
-The returnv alue of `SpringApplication.run` is an `ApplicationContext`.
-But we don't need it because we don't need to explicitly look up the `DogRepository` to pass to our `test` method.
-Instead..
-. ..we can define a bean of type `ApplicationRunner`. `ApplicationRunner` beans are given a chance to run as close as possible to the moment when the application is fully initialized and right before its put into service.
-So, here, rather than squatting on the `main` method as we did every earlier example, we simply register this bean.
-We can register as many as we want for whatever purposes, and know that this logic will run as the service initializes.
+It's meta-annotated with `@ComponentScan`, so we don't need to worry about that either.
+. because it's a `@Configuration` class, we can use `@Import` on it, just like before.
+. through most of the code we've looked at, we've created a Spring `ApplicationContext`.
+Here, we're doing the same thing.
+The return value of `SpringApplication.run` is an `ApplicationContext`.
+But we don't need it, because we don't need to explicitly look up the `DogRepository` to pass to our `test` method.
+Instead...
+. ...we can define a bean of type `ApplicationRunner`. `ApplicationRunner` beans are given a chance to run as close as possible to the moment when the application is fully initialized and right before it's put into service.
+So, here, rather than squatting on the `main` method as we did in every earlier example, we simply register this bean.
+We can register as many as we want, for whatever purpose, and know that this logic will run as the service initializes.
 
 
 == Spring Data JDBC
 
 We're using Spring Boot now.
-We've got a full objet relational mapper (ORM) framework on the CLASSPATH.
-Spring Data JDBC is capable and its already been configured.
+We've got a full object-relational mapper (ORM) framework on the CLASSPATH.
+Spring Data JDBC is capable, and it's already been configured.
 Let's rework our repository to leverage it, rather than hand-rolling SQL ourselves.
 
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/boot/DogRepository.java[]
 ----
 
-I know, you're thinking: "didn't we get rid of the interface ages ago?" But fear not!
+I know, you're thinking: "Didn't we get rid of the interface ages ago?" But fear not!
 The interface is back, but this is _way_ better: we got rid of the implementation!
 This interface, which extends Spring Data's `ListCrudRepository`, already has a method called `findAll`.
 It also has methods to `save`, `delete`, `findById`, etc.
-Spring will create a proxy implementation of this class at startup time and provide implementations for all those methods by default.
+Spring will create a proxy implementation of this interface at startup time and provide implementations for all those methods by default.
 You can even define custom finder methods.
-In this example, I've got a finder method called `findByName` that when invoked will execute a SQL query of the shape `select * from dog where name = ?`.
-It does this by conventino.
-You can of course annotate the method in the interface with `@Query` and Spring will use your query instead. _Much better!_
+In this example, I've got a finder method called `findByName` that, when invoked, will execute a SQL query of the shape `select * from dog where name = ?`.
+It does this by convention.
+You can, of course, annotate the method in the interface with `@Query`, and Spring will use your query instead. _Much better!_
 
 == Conventions over Configuration
 
 Spring Boot has a ton of convenient conventions.
-For example, itll create a _real_ `DataSource` using the HikariCP connection pool using the properties that it'll load, by convention, from the Spring `Environment`.
-Spring Boot will by convention load any `application.properties` or `applicationl.yml` if it finds them in `src/main/resources`.
+For example, it'll create a _real_ `DataSource` backed by the HikariCP connection pool, with properties loaded by convention from the Spring `Environment`.
+Spring Boot will, by convention, load any `application.properties` or `application.yml` it finds in `src/main/resources`.
 
 == AutoConfiguration
 
@@ -73,36 +73,36 @@ include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_b
 
 What happened?
 Where are all our beans?!
-Theyre gone.
+They're gone.
 All gone.
 Spring Boot provides those beans for us, thanks to its marvelous _autoconfiguration_.
 So all that remains are our beans.
 
-When Spring Boot starts up, it scans the CLASSPATH for all in any `.jar` located at  `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`. this file in turn contains a list, newline delimited, of Java configuration classes. these classes are basically the same as the ones weve seen so far, with some small refinements.
+When Spring Boot starts up, it scans the CLASSPATH for any `.jar` containing a file at `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`. That file, in turn, contains a newline-delimited list of Java configuration classes. These classes are basically the same as the ones we've seen so far, with some small refinements.
 First, keep in mind that Spring Boot will _try_ to load every single one of these configuration classes on startup.
-Sometimes the beans in these ocnfiguration classes are not important or useful in a particular situation.
-We dont want Spring Boot contirbuting beans we dont actually need.
+Sometimes the beans in these configuration classes are not important or useful in a particular situation.
+We don't want Spring Boot contributing beans we don't actually need.
 So, autoconfiguration classes and the `@Bean` methods within are guarded with `@Conditional` annotations.
 These annotations point to implementations of `Condition`.
-These `Condition` instances test something about the application or its environment and if the test comes back positive, the beans are contributed to the `BeanFactory`.
+These `Condition` instances test something about the application or its environment, and if the test comes back positive, the beans are contributed to the `BeanFactory`.
 If not, they are not contributed.
 
 There are many such conditions.
-Conditions to test for the presence or particular specification of a property in the `Environment`.
-Conditions to see if you and I, the users, have or have not defined beans of a particular type already.
-Conditions to see if certain classes are present in the CLASSPATH.
-These conditions let Spring Boot avoid defining beans if therey not needed, and to degrade gracefulyl.
-If we'd kept our `DriverManagerDataSource` from earlier, Spring Boot would've backed off on contributing its `DataSource`, because it would interpret that we want to exert control here.
-In this way we get the best of both worlds: Spring Boot has sensible defaults that drop away whenever we ant to override something.
+Conditions to test for the presence or specific value of a property in the `Environment`.
+Conditions to see whether you and I, the users, have or have not already defined beans of a particular type.
+Conditions to see whether certain classes are present in the CLASSPATH.
+These conditions let Spring Boot avoid defining beans that aren't needed, and degrade gracefully.
+If we'd kept our `DriverManagerDataSource` from earlier, Spring Boot would've backed off on contributing its `DataSource`, because it would infer that we want to exert control here.
+In this way, we get the best of both worlds: Spring Boot has sensible defaults that drop away whenever we want to override something.
 
 == An Amazing Web Server
 
 But Spring Boot autoconfiguration does a whole heckuva lot more than that.
-You might notice that when you start the program it doesnt just exit as soon as the `Dog` entities have been enumerated.
-Sprign Boot started a webserver.
+You might notice that when you start the program, it doesn't just exit as soon as the `Dog` entities have been enumerated.
+Spring Boot started a web server.
 Why?
 Because we asked it to by adding `Spring Web` to the project _way_ back at the very beginning of this chapter.
-So we now have a full web framework and webserver in play.
+So we now have a full web framework and web server in play.
 
 Here, I even wrote a trivial Spring MVC controller that loads all the results from the repository.
 
@@ -110,24 +110,24 @@ Here, I even wrote a trivial Spring MVC controller that loads all the results fr
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/boot/DogController.java[]
 ----
 
-Run the program and then hit `http://localhost:8080/dogs` in your browser to see that its working.
+Run the program and then hit `http://localhost:8080/dogs` in your browser to see that it's working.
 
-By the way, when you ran the program did you notice the pretty colored log output?
+By the way, when you ran the program, did you notice the pretty colored log output?
 And the _amazing_ ASCII art banner?
 
-TIP: if you put some custom banner in  `src/main/resources/banner.txt`, Spring Boot will load that over the default built-in ASCII art.
+TIP: If you put a custom banner in `src/main/resources/banner.txt`, Spring Boot will use it instead of the default built-in ASCII art.
 
-Remember when we first introduced `application.properties`, I didnt speak to some of the configuration values in the property file.
+Remember when we first introduced `application.properties`? I didn't speak to some of the configuration values in the property file.
 Only those concerned with the `DataSource`.
-Lets revisit some of those.
+Let's revisit some of those.
 
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/resources/application.properties[]
 ----
 
-. the original database credentials.. moving on.
-. this prooperty enables virtual threads, a game changnig feature in Java 21 or later.
-This will dramatically improve scalability of blocking IO.
+. the original database credentials... moving on.
+. this property enables virtual threads, a game-changing feature in Java 21 or later.
+This will dramatically improve the scalability of blocking I/O.
 . this property tells Spring Boot to run `src/main/resources/schema.sql` and `src/main/resources/data.sql` on startup.
 Super convenient to ensure the system is correctly configured.
 
@@ -135,10 +135,10 @@ Super convenient to ensure the system is correctly configured.
 
 Spring Boot is production-ready and worthy out of the box.
 When you configured the application back on the Spring Initializr, you added the `Actuator` and `OpenTelemetry` dependencies.
-The Actuator dependnecy brings in a slew of endpoints, usually mounted under `/actuator/*`.
-There are so many endpoints, but most of them are not visible unless you _expose_ them with another property added to `application.properties`:
+The Actuator dependency brings in a slew of endpoints, usually mounted under `/actuator/*`.
+There are many endpoints, but most of them are not visible unless you _expose_ them with another property added to `application.properties`.
 
-If you want to see all the Actuator endpoints and see the full health endpoint, you might use the following confugratin properties.
+If you want to see all the Actuator endpoints and the full health endpoint, you might use the following configuration properties.
 
 ----
 management.endpoints.web.exposure.include=*
@@ -146,17 +146,17 @@ management.endpoint.health.show-details=always
 ----
 
 Now you can visit `/actuator/metrics`, `/actuator/health`, `/actuator/beans`, `/actuator/configprops`, etc.
-Visit just `/actuator` to see all the sub endpoints.
+Visit just `/actuator` to see all the sub-endpoints.
 
 We've also got Grafana running in the background.
-As yo work throught the code in Spring Boot you might notice that, first of all, youre seeing a good deal many more application events.
-Second, if you visit http://localhost:3000, then visit `Drilldown` -> `Metrics`, you can see the same metrics you saw under `/actuator/metrics`.
+As you work through the code in Spring Boot, you might notice that, first of all, you're seeing a good deal more application events.
+Second, if you visit http://localhost:3000 and then navigate to `Drilldown` -> `Metrics`, you can see the same metrics you saw under `/actuator/metrics`.
 
 == GraalVM Native Images
 
 This application runs really quickly and scalably, but could it be faster and use less RAM?
 Sure!
-One way you migth help with that is to embrace GraalVM native images. https://graalvm.org[GraalVM] is an OpenJDK distribution that carries with it some amazing extras.
+One way you might help with that is to embrace GraalVM native images. https://graalvm.org[GraalVM] is an OpenJDK distribution that carries with it some amazing extras.
 You'll need to have it installed on your machine.
 I'm using SDKMAN.io, so all I needed to do was:
 
@@ -166,25 +166,25 @@ sdk default java 25.0.2-graalce
 ----
 
 I'm interested in the `native-image` compiler tool that comes with GraalVM.
-It takes a Java program's `.class` files and turns them into native operating system- and architecture-specific machine code.
+It takes a Java program's `.class` files and turns them into native, operating-system- and architecture-specific machine code.
 The kind you'd get from using C, Go, or Rust.
 The result is a _markedly_ smaller memory footprint and a _markedly_ faster startup time, at the dubious expense of portability.
 The resulting binaries only run on the platform for which they were compiled.
-If you compile the binary in a Linux CI environment, itll be fine in a Linux environment production, though, so its not as big a deal breaker as maybe it sounds.
+If you compile the binary in a Linux CI environment, it'll be fine in a Linux production environment, so it's not as big a deal-breaker as it might sound.
 
-WARNING: Keep in mind that GraalVM native images are _not_ standard Java, and in fact run contrary in some ways to Java's write-once, run-anywhere mantra and promise of portability.
+WARNING: Keep in mind that GraalVM native images are _not_ standard Java and in fact run counter in some ways to Java's write-once, run-anywhere mantra and promise of portability.
 
-GraalVM was the first scneario where Spring Boot could leverage ahead-of-time code generation to transform the program into a form that'd execute more efficienrlty at runime.
+GraalVM was the first scenario where Spring Boot could leverage ahead-of-time code generation to transform the program into a form that would execute more efficiently at runtime.
 One of the AOT transformations that's just been made possible in Spring Boot 4 and Spring Framework 7 is compile-time, ahead-of-time code generation for Spring Data repositories like our Spring Data JDBC repository.
-In order for it to work, however, the AOT engine will need to know which SQL query dialect is being used _at compilation time_.
+For it to work, however, the AOT engine will need to know which SQL query dialect is being used _at compilation time_.
 
-Add the following beant o help it along.
+Add the following bean to help it along.
 
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/boot/AotConfiguration.java[]
 ----
 
-You can take advantage of native image technology thusly:
+You can take advantage of native-image technology thusly:
 
 ----
 ./mvnw -DskipTests -Pnative native:compile
@@ -193,7 +193,7 @@ You can take advantage of native image technology thusly:
 Then, stand back.
 It might take a while.
 Maybe even minutes.
-On my machine, for this applicatino, it takes about 30 seconds to do the full compile.
+On my machine, for this application, it takes about 30 seconds to do the full compile.
 Your mileage may vary.
 
 Try it.
@@ -202,14 +202,14 @@ Go to the `target` folder and run `target/beans-to-boot` or whatever your Maven 
 == Project Leyden
 
 GraalVM native images are my favorite approach for optimization, but they do come with their own caveats.
-They don't always work without finessing, and I won't get into all that here, but there is a whole Spring Ahead-of-Time (AOT) component model that allows you to add supplementary configuration to your Spring Boot applications sot hat they behave well in a GraalVM native image context.
+They don't always work without finessing, and I won't get into all that here, but there is a whole Spring Ahead-of-Time (AOT) component model that allows you to add supplementary configuration to your Spring Boot applications so that they behave well in a GraalVM native-image context.
 
-If you want a standard way to improve the startup time (and not much else) of your aplcation, you can also use Project Leyden, part of the core Java SDK.
+If you want a standard way to improve the startup time (and not much else) of your application, you can also use Project Leyden, part of the core Java SDK.
 It works reliably on _every_ program, with no compromises, but the results aren't quite as impressive, either.
 
-zthe thrust of it is that you run the program in a special mode, the JVM dumps out information about which things are used into a file, and that file can then be fed into the `java` CLi on a subsequent run and itll startup a lot faster.
-On my machine this application is almost 50% faster on startup as a result of using Project Leyden.
-Here's an example of donig this training run and then getting great results.
+The thrust of it is that you run the program in a special mode: the JVM dumps out information about which things are used into a file, and that file can then be fed into the `java` CLI on a subsequent run so it'll start up a lot faster.
+On my machine, this application is almost 50% faster on startup as a result of using Project Leyden.
+Here's an example of doing this training run and then getting great results.
 
 ----
 include::{code}/beans-to-boot/beans-to-boot/leyden.sh[]
@@ -221,18 +221,18 @@ include::{code}/beans-to-boot/beans-to-boot/leyden.sh[]
 . run the program using Spring Boot's `.jar` tools to extract the normally nested Spring Boot `.jar` into a folder called `aot`.
 . run the Java program up until the application context's been refreshed, and dump the analysis out to `app.aot`.
 . cleanup
-. finaly, run the program but use the `app.aot` index to dramatically speed up the applicatino.
+. finally, run the program but use the `app.aot` index to dramatically speed up the application.
 
 == The Spring Boot Buildpack integration
 
 For most scheduling solutions, you'll need a container containing your application.
-This doesnt mean that you'll a `Dockerfile`, however.
+This doesn't mean that you'll need a `Dockerfile`, however.
 Quite the contrary.
-You're better off automaticaly building the container rather than manually defining it.
-I the world of mystery meat cloud containers, _less is more_.
+You're better off automatically building the container rather than manually defining it.
+In the world of mystery meat cloud containers, _less is more_.
 
-Spring Boot's Maven and Gradle plugins can do the work for yu by deferring to the https://buildpacks.io[Buildpacks project].
-Buildpacks provide recipes for taking applicationa rtifacts and packaging them up as containers. tehse recipes represent the collective wisdom of the Spring and Java communities that maintaim them. there are also buildpacksf or scores of other languages and ecosystems, includgin COBOL!
+Spring Boot's Maven and Gradle plugins can do the work for you by deferring to the https://buildpacks.io[Buildpacks project].
+Buildpacks provide recipes for taking application artifacts and packaging them up as containers. These recipes represent the collective wisdom of the Spring and Java communities that maintain them. There are also buildpacks for scores of other languages and ecosystems, including COBOL!
 
 Here's how you can use it for your own application.
 
@@ -240,4 +240,4 @@ Here's how you can use it for your own application.
 ./mvnw -DskipTests -Pnative spring-boot:build-image
 ----
 
-let this run for a bit and itll give you the name od the container thats jsut been built. You can run it or `docker push` it to whatever container registry you want. From there, you're off to production!
+Let this run for a bit and it'll give you the name of the container that's just been built. You can run it or `docker push` it to whatever container registry you want. From there, you're off to production!
