@@ -1,14 +1,14 @@
 :code: ..
 
 
-==  Your First Cup of Java
+== Your First Cup of Java
 
 Are you using the latest version of Java yet?
 No?
 That's a real pity, because it's basically a different language from the one you might've known.
-This book was written with Java 25 in mind, but you should be using whatever the latest-and-greatest version of Java available to you is.
+This book was written with Java 25 in mind, but you should be using whatever the latest-and-greatest version of Java available to you happens to be.
 
-That said, i can appreciate that some of you may not have seen all that is new and nifty in the latest and greatest installments of Java, so we'll review some of my favorite features here.
+That said, I can appreciate that some of you may not have seen all that is new and nifty in the latest and greatest installments of Java, so we'll review some of my favorite features here.
 If you're all caught up, then please move on to the next chapters - there's entirely too much to look at, anyway.
 
 I don't know what the reason is, but I hope you're able to move up and over soon because Spring Framework 6 and Spring Boot 3 assume a Java 17 baseline.
@@ -19,9 +19,9 @@ Whatever the cause of your hesitation, this chapter contains _spoilers_!
 If you don't mind spoilers, let's dive right in!
 
 First things first: you need an OpenJDK distribution that works for you.
-The list of valid and viable distributions scrolls down to the floor and out the door, so I'll refer you to Fooojay.io's https://foojay.io/almanac/java-17/[handy version almanac for Java 17].
-One of my favorite tools for managing my Java installations on UNIX-y type operating systems is https://sdkman.io/[`sdkman`].
-It works on macOS, Windows Subsystem for Linux (WSL), Linux, and I'm sure other places besides.
+The list of valid and viable distributions scrolls down to the floor and out the door, so I'll refer you to Foojay.io's https://foojay.io/almanac/java-17/[handy version almanac for Java 17].
+One of my favorite tools for managing my Java installations on UNIX-like operating systems is https://sdkman.io/[`sdkman`].
+It works on macOS, Windows Subsystem for Linux (WSL), Linux, and, I'm sure, plenty of other places besides.
 I use the https://www.graalvm.org/[GraalVM] distribution.
 GraalVM is an OpenJDK distribution with some extra features, including ahead-of-time native image compilation.
 To get that distribution, you might say:
@@ -46,8 +46,8 @@ I consistently shave 0.1 or 0.2 seconds from startup time when using CDS Archive
 The newer versions of Java are also container-aware.
 So, let's suppose you are running Docker images on your host machine, which has 32GB of RAM.
 You might configure the JRE with 2GB of RAM and errantly configure the Docker container with only 1GB of RAM.
-Java would see the 32GB and think it could allocate 2GB and then fail to startup.
-Java is aware of the container's limited RAM in newer versions and won't exceed it.
+Java would see the 32GB and think it could allocate 2GB, and then fail to start up.
+In newer versions, Java is aware of the container's limited RAM and won't exceed it.
 
 Java Flight Recorder (JEP 328) monitors and profiles running Java applications.
 Even better, it does so with a low runtime footprint.
@@ -63,21 +63,21 @@ It's fast, lightweight, and minimally invasive.
 It's also one of those things where, when it's improved, your application's runtime improves with it, for free.
 No recompilation is required.
 
-G1 has been the default garbage collector since Java 9, replacing the Parallel garbage collector in Java 8. It reduces pause times with the default Parallel GC from Java 8, though it may have lower throughput overall.
+G1 has been the default garbage collector since Java 9, replacing the Parallel garbage collector that had been the default in Java 8. G1 reduces pause times compared to Parallel, though its overall throughput may be lower.
 Next, Java 11 introduced the ZGC garbage collector to reduce pauses further.
 Finally, Java 14 introduced the Shenandoah GC, which keeps pause times low and does so in a manner independent of the heap's size.
 
 And it's fast.
 I can't give you a specific number or anything because it is so highly workload-sensitive, but https://www.optaplanner.org/blog/2025/09/15/HowMuchFasterIsJava17.html[this post from the folks at OptaPlanner] is persuasive.
-They saw an average of 8.66% improvement for their CPU-intensive workloads when using the G1 GC, measured after a discarded 30 second warmup period.
+They saw an average improvement of 8.66% for their CPU-intensive workloads when using the G1 GC, measured after a discarded 30-second warmup period.
 These numbers reflect the jump from Java 11 (not Java 8) to Java 17. I can only imagine the numbers from Java 8 to Java 17 are even better. And the numbers for Java 25, even better still!
 And that number is just an average: some workloads improved by as much as 23%!
 
-=== Autocloseable
+=== AutoCloseable
 
 Java manages most memory for you, but it can't be responsible for the state outside the humble confines of the JVM.
 So, for example, you wouldn't like it if Java _garbage collected_ your connection to the database, and you wouldn't like it if Java garbage-collected your open socket connections without warning.
-Therefore, the interfaces you use to interact with these external resources typically have a `close()` method that you, the client, need to call when working the external resource finishes.
+Therefore, the interfaces you use to interact with these external resources typically have a `close()` method that you, the client, need to call when your work with the external resource is finished.
 
 You mustn't neglect to call that method!
 Don't be greedy!
@@ -86,8 +86,8 @@ You want to leave the JVM as clean as you found it.
 So, you write the boilerplate.
 We all know the boilerplate: open the resource; work with it; surround that work with a `try`/`catch`/`finally` block; catch any `Throwable` instances if (_when_?) something goes wrong; `close()` the resource if something goes wrong.
 Add the `close()` call in a `finally` block for extra robustness.
-All the while, handle the exceptions that might arise when you try to do anything, including calling `close()` the resource.
-You'll end up with one or more `try`/`catch` embedded within the outer `try`/`catch` blocks.
+All the while, handle the exceptions that might arise when you try to do anything, including calling `close()` on the resource.
+You'll end up with one or more `try`/`catch` blocks embedded within the outer `try`/`catch` blocks.
 
 Let's look at some examples.
 I'll read a file on the filesystem to demonstrate this new feature.
@@ -118,7 +118,7 @@ Bear in mind that this solution doesn't even attempt to field the errors and som
 If there is _any_ error anywhere, then we abort.
 <4> also, make sure to close that `Reader`!
 Err, close that reader _if_ it's not `null`!
-Sorry, close that reader _if_ it's not `null` and also don't forget to handle any errors in the doing, either!
+Sorry, close that reader _if_ it's not `null`, and don't forget to handle any errors that arise while doing so, either!
 Be kind, rewind!
 
 Yuck.
@@ -149,7 +149,7 @@ If you created an anonymous subclass of `Object` and assigned it to a variable o
 Traditionally, there was no way to reify _anonymous_ subclass types because they were _anonymous_.
 But with `var`, you don't need to account for the type; you can let the compiler infer it.
 
-This last bit - reifying anonymous subclasses comes in particularly handy when you're working with Java 8 streams abstractions and want to avoid having a host of throwaway classes created as side effects to conduct your data across the transformations.
+This last bit - reifying anonymous subclasses - comes in particularly handy when you're working with Java 8 streams abstractions and want to avoid having a host of throwaway classes created as side effects to conduct your data across the transformations.
 
 The new `var` keyword can come in handy in a whole host of other smaller scenarios.
 You can use the `var` keyword for parameters in a lambda definition.
@@ -157,12 +157,12 @@ It doesn't buy you much over just omitting `var` (or the type itself), except th
 Neat!
 
 Lambdas are the one fly in the proverbial ointment, however.
-Java doesn't have structural lambdas like Scala, Kotlin, and other languages.
+Java doesn't have structural lambdas like those in Scala, Kotlin, and other languages.
 Instead, you must assign the lambda to an instance of a functional interface like `java.util.function.Consumer<T>`.
 If the literal lambda syntax doesn't clarify what type that is, then the variable type definition itself must.
 So you can use `var` for every variable definition _except_ lambdas.
 It's so dissatisfying!
-The agony of having a column of nice, clean `var's punctuated occasionally with standard variable definitions just because those variables happen to be lambdas!
+The agony of having a column of nice, clean `var`s punctuated occasionally by standard variable definitions just because those variables happen to be lambdas!
 There is a way around it with casts, but I admit it isn't much better.
 Let's look at some examples.
 
@@ -181,7 +181,7 @@ Your sensibilities may vary, and given how new this feature is, I wouldn't be su
 
 === Enhanced Switch Expressions
 
-Java has a new _enhanced_ switch, which forms the basis of the gradual addition of _pattern amtching_ to the Java language.
+Java has a new _enhanced_ switch, which forms the basis of the gradual addition of _pattern matching_ to the Java language.
 It simplifies things considerably:
 
 [source,java,indent=0]
@@ -191,7 +191,7 @@ include::{code}/java/java/src/test/java/com/example/java/switches/TraditionalSwi
 
 <1> `Emotion` is an `enum`.
 There are only two possible values (for this simple example that doesn't at all reflect the rich gradient of human emotions) for a variable of type `Emotion`: `HAPPY` and `SAD`.
-We have branches for all known states in this' switch' statement.
+We have branches for all known states in this `switch` statement.
 The compiler is satisfied that we have covered every possible value, so it doesn't insist on a `default` branch to handle any unforeseen values.
 There are no unforeseen values.
 We say that we've _exhausted_ the range of values.
@@ -223,7 +223,7 @@ include::{code}/java/java/src/test/java/com/example/java/MultilineStringsTest.ja
 <1> The first example uses a multiline `String` to represent some HTML markup
 <2> The second variable recreates the same HTML markup, down to the padding and the newlines, but uses string concatenation and manually encodes newlines, as we used to have to do.
 
-In the example, both variables `multilines`, and `concatenated`, are identical, but I the multiline `String` is much easier to wrangle.
+In the example, the two variables `multilines` and `concatenated` are identical, but the multiline `String` is much easier to wrangle.
 
 Short and simple.
 
@@ -234,7 +234,7 @@ If you've ever used case classes in Scala, or data classes in Kotlin, you'll fee
 
 Java introduced records, which are a new kind of type.
 Records, like enums, are a restricted form of a class.
-As a result, they're ideal for "plain data carriers," classes containing data not meant to be altered and only the most fundamental methods such as constructors and accessors.
+As a result, they're ideal for "plain data carriers": classes containing data not meant to be altered, with only the most fundamental methods, such as constructors and accessors.
 We'll use (and sometimes abuse) them _all_ the time in this book.
 They're wonderful time savers.
 Need to model a read-only entity in your database that has accessors for all the constituent fields, a constructor, a functional `toString` implementation, a valid `equals` implementation, and a valid `hashCode` implementation?
@@ -258,7 +258,7 @@ Scarcely more than three lines of code for three brand new types!
 <2> records also automatically expose accessor methods for the fields defined in the constructor.
 For example, if you want to read the `name` field of the `Customer` type, use `Customer#name()`.
 If you wish to read the `orders` field of the `CustomerOrders` type, use `orders()`.
-It took a while to accept that they they're in the form `x()`, and not in the form `getX()`, but I've come to love it.
+It took a while to accept that they're in the form `x()`, and not in the form `getX()`, but I've come to love it.
 Mercifully, all the interesting libraries that need to know about this convention - JSON serializers, for example - already work well with it.
 
 Records make perfect sense for immutable, data-centric types.
@@ -272,14 +272,14 @@ I still occasionally use Lombok for other things, but it's nice to reduce my rel
 More controversially, I also sometimes use records to implement services and components quickly.
 After all, you can have methods on a record.
 Of course, record implementations can't extend classes, but one doesn't need to do that a lot.
-There is the undesirable side-effect of having accessor-methods that expose the state - `dataSource()` or whatever - but, for whatever reason, I don't care.
+There is the undesirable side effect of having accessor methods that expose the state - `dataSource()` or whatever - but, for whatever reason, I don't care.
 It doesn't cost me anything when I use it.
 If my code grows large enough to need hierarchies or interface implementations, I'll change it.
-If the code grows enough to worry about the leaking state, I'll change it.
+If the code grows enough that I need to worry about leaking state, I'll change it.
 But the immediate, short-term effect of having more concise, approachable, readable code seems to make sense to me.
 Maybe one day that'll change?
 
-Behind the scenes, a record creates a default constructor whose parameters match the types and rarity of the record header.
+Behind the scenes, a record creates a default constructor whose parameters match the types and arity of the record header.
 Records can have other constructors, but they need to delegate to the default constructor.
 
 [source,java,indent=0]
@@ -310,15 +310,15 @@ The ability to call that method on an instance of that child type, in terms of t
 Polymorphic, or _virtual_, dispatch requires a lookup in the virtual function table, which in theory takes time.
 The runtime wouldn't have to do that if it could say conclusively that a given type can never be subclassed, such as with a final type.
 The `final` keyword is a bit of a sledgehammer, however.
-It forecloses entirely on the possibility of on any kind whatsoever subclassing the final type.
-You might have a hierarchy but wish to keep it shallow, and well-known.
-Alternatively, you could make everything package-private (simply omit `public` modifier on the class), which means that only types in the same class could subclass the type.
+It forecloses entirely on the possibility of any kind of subclassing whatsoever.
+You might have a hierarchy but wish to keep it shallow and well known.
+Alternatively, you could make everything package-private (simply omit the `public` modifier on the class), which means that only types in the same package could subclass the type.
 This would probably work, but of course, somebody else could come along and create types in the same package in their `.jar`.
-There's traditionally not been a lot of great ways to keep a hierarchy shallow until now.
+There haven't traditionally been many good ways to keep a hierarchy shallow - until now.
 Sealed types can help.
 They let you constrain the number of subclasses to a known set.
 
-Let's look at an example that is building out a
+Let's look at an example.
 
 [source,java,indent=0]
 ----
@@ -332,7 +332,7 @@ A sealed type's subclasses may themselves be sealed types, permitting further su
 <4> the `describeShape` method is written so that we can exhaustively handle every subclass.
 
 Sealed types help the compiler, too.
-The compiler can exhaustively determine every case of every possible subtype, which has implications for the future, as Java looks to better incorporate simple pattern matching into Java.
+The compiler can exhaustively determine every case of every possible subtype, which has implications for the future, as Java looks to better incorporate simple pattern matching into the language.
 Imagine the possibilities here, and you can kind of see how sealed types might play with the new `switch` expressions, too.
 
 Right now, I don't recommend using `sealed` types.
@@ -342,7 +342,7 @@ Furthermore, sealed subtypes are `final`, inhibiting tools like Spring and Hiber
 
 === Smart Casts
 
-This feature is one of those things that I don't use all that often in application code, but it's pretty useful when writing infrastructure code when dealing with polymorphism.
+This feature is one of those things that I don't use all that often in application code, but it's pretty useful when writing infrastructure code that deals with polymorphism.
 Essentially, the feature spares you from having to create an intermediate variable and casting after you've already done an `instanceof` check.
 
 [source,java,indent=0]
@@ -356,7 +356,7 @@ If ever we change the type definition, we have to replace it both in the cast an
 
 This feature looks almost exactly like a similar feature in Kotlin, and I love it.
 
-=== Function Interfaces, Lambdas  and Method References
+=== Functional Interfaces, Lambdas, and Method References
 
 Java 8 introduced lambdas.
 They let us treat functions as first-class citizens that can be assigned and passed around.
@@ -370,7 +370,7 @@ This interface, one with a single abstract method intended for use as a lambda, 
 There are some very convenient and oft-used functional interfaces in the JDK itself.
 Here are some of my favorites.
 
-* `java.util.function.Function<I, O>`: an instance of this interface accepts a type `I` and returns a type ` O'.
+* `java.util.function.Function<I, O>`: an instance of this interface accepts a type `I` and returns a type `O`.
 This is useful as a general-purpose function.
 Every other function could, in theory, be generalized from this.
 Thankfully, there's no need for that as several other handy functional interfaces exist.
@@ -379,7 +379,7 @@ This is an ideal filter when you're trying to sift through a stream of values.
 * `java.util.function.Supplier<T>`: A supplier accepts no input and returns an output.
 * `java.util.function.Consumer<T>`: A consumer is the mirror image of a `Supplier<T>`; it takes an input and returns no output.
 
-You can also create and use your custom functional interfaces.
+You can also create and use your own custom functional interfaces.
 Let's look at some examples.
 
 [source,java,indent=0]
@@ -394,7 +394,7 @@ include::{code}/java/java/src/test/java/com/example/java/LambdasTest.java[]
 
 === Pattern Matching
 
-We've seen the smart casting `if` statement, and we've seen the switch expression.
+We've seen the smart-casting `if` statement, and we've seen the switch expression.
 At the heart of both of these new things is _pattern matching_, wherein we match a value and then extract the value for use.
 We've only really seen that it's possible to easily match values thus far, so let's revisit that a bit.
 
@@ -405,37 +405,37 @@ include::{code}/java/java/src/test/java/com/example/java/patternmatching/Pattern
 
 <.> for our examples, we're going to work with a shallow hierarchy rooted in a type called `BrowserClient`.
 Imagine that when an HTTP request comes in, we adapt the request into one of either a known `Customer` or an `UnknownUser`.
-<.> we'll do some analaysis of the incoming user type and display a message as appropriate.
+<.> we'll do some analysis of the incoming user type and display a message as appropriate.
 Since we're going to prepare these same messages two different ways, I've extracted them out into separate environment variables.
 <.> let's use the smart `if` statement to deduce which message to present.
 Note that we're now switching on an instance of `BrowserClient`.
-In the first line we do two things at once: we check that the variable is an instance of `Customer` and if so, we hoist out - we _extract_ not just the `Customer` variable, but instead the constituent component fields of the record itself - `id`, and `name` - into their own new variables.
+In the first line, we do two things at once: we check that the variable is an instance of `Customer`, and if so, we hoist out - we _extract_ - not just the `Customer` variable, but the constituent component fields of the record itself - `id` and `name` - into their own new variables.
 Super concise.
 In the second test, we don't need a pointer to the `UnknownUser` or its field, so we do nothing with it save match it.
-<.> the if / else structure worked fine but it meant that we had to stash a variable and then make sure that only one branch of the test was ever evaluated.
+<.> the if / else structure worked fine, but it meant that we had to stash a variable and then make sure that only one branch of the test was ever evaluated.
 The structure as written also gives us nothing in the way of comfort.
 What happens when we add a new type to the hierarchy?
 We need to handle that branch, but the compiler will let us ignore it.
 Let's use our new friend the `switch` expression.
-The switch expression has access to thes ame pattern matching super powers as the `if`, but it does us two new favors.
-The compiler wwill complain if we add a new type to the hierarchy because it knows that the types are `sealed` and therefore there is an exhaustive set of types and our `switch` hasn't defined a `default` branch.
+The switch expression has access to the same pattern-matching superpowers as the `if`, but it does us two new favors.
+The compiler will complain if we add a new type to the hierarchy, because it knows that the types are `sealed` and therefore there is an exhaustive set of types, and our `switch` hasn't defined a `default` branch.
 Thanks, compiler!
-And, to make things jsut that much cleaner, the `switch` is an expression, so we can assign the results of the `switch` to a variable or just return the result of the expression directly.
+And, to make things just that much cleaner, the `switch` is an expression, so we can assign the result of the `switch` to a variable or just return the result of the expression directly.
 
 I bet you never thought you'd see the day that the `switch` was more elegant than an `if`, did you?
 
-Java language architect Brian Goetz talks about the combination of some of the features that we have just covered - pattern matching, sealed types, the smart switch expression - as  _data oriented programming_.
-Java has reigned supreme in large monolithic codebases, he explains, because it provides good object-oriented support and strong enforcement of privacy, security and encapsulation.
-In such a codebase, the boundary on which different parts of the program align is typically an object interface, which the magic of polymorphism incentivises.
+Java language architect Brian Goetz talks about the combination of some of the features that we have just covered - pattern matching, sealed types, the smart switch expression - as _data-oriented programming_.
+Java has reigned supreme in large monolithic codebases, he explains, because it provides good object-oriented support and strong enforcement of privacy, security, and encapsulation.
+In such a codebase, the boundary on which different parts of the program align is typically an object interface, which the magic of polymorphism incentivizes.
 But programs aren't usually large, sprawling, deeply rooted graphs of objects these days.
-More often than not they're smaller programs dealing with ad-hoc messages coming in over the wire and being handled in terms of dumb, but typed, carriers.
+More often than not, they're smaller programs dealing with ad hoc messages coming in over the wire and being handled in terms of dumb, but typed, carriers.
 There's no hierarchy at all!
 In this context, Java 8 was starting to feel mighty clunky.
 But no more.
-With Java 25, it's trivial to define small ad-hoc objects and to vary behavior based on those objects.
-In a sense, Java 25 introduces a new kind of dispatch: not the dynamic dispatch of yore, but a dispatch for small ad-hoc objects.
+With Java 25, it's trivial to define small ad hoc objects and to vary behavior based on them.
+In a sense, Java 25 introduces a new kind of dispatch: not the dynamic dispatch of yore, but a dispatch for small ad hoc objects.
 
-And just like that, without us ever realizing it, Java 25 manages to introduce support for a completely new style of programming: data oriented programming.
+And just like that, without our ever realizing it, Java 25 manages to introduce support for a completely new style of programming: data-oriented programming.
 And I bet you were only just getting used to the possibilities of the rudimentary functional programming support in Java 8!
 
 === Java 25, Project Loom, and Virtual Threads
@@ -446,7 +446,7 @@ Call `int InputStream#read()`, and you might have to wait for the next byte to f
 In `java.io.File`-centric IO, there's very rarely much of a delay.
 On the network, however, you just can't really ever know.
 Clients might disconnect.
-Clients be people, driving through a tunnel and getting spotty signal coverage.
+Clients are people, driving through a tunnel and getting spotty signal coverage.
 During this time, the program flow is said to be _blocked_ from proceeding on the thread of execution.
 In the following snippet, we have no way of knowing when we'll see the word "after" printed.
 Might be a nanosecond from now.
@@ -461,10 +461,10 @@ include::{code}/java/java/snippets/traditional-io[]
 This means that we can't address any other requests with this thread until it's finished doing whatever it was doing.
 We'll need more threads.
 
-This is bad enough, but it's made worse by the architecture of threading in Java prior to Java 25 where each thread maps, more or less, to a native operating system thread.
+This is bad enough, but it's made worse by the architecture of threading in Java prior to Java 25, where each thread maps, more or less, to a native operating system thread.
 It's expensive to create more threads, too, taking about two megabytes of RAM.
 We're going to need a _lot_ of threads to handle requests if our existing threads are blocked long enough.
-Many, many, times more threads.
+Many, many more threads.
 Or, we're going to need to find a way to avoid _blocking_ on the precious few threads we do have.
 
 We could use non-blocking IO, as enabled by Java NIO (java.nio.\*).
@@ -477,11 +477,11 @@ It works well.
 But, it requires changing the way you write code.
 If you're not used to it, it can be a bit daunting, too.
 Wouldn't it be nice if you could just take that existing code, as demonstrated above, and have it do the right thing, transparently moving the flow of execution off the thread when there's nothing happening, and then resuming the flow of execution when there is?
-This way, we could keep our relatively simpler code, and get the benefits of non-blocking IO.
+This way, we could keep our simpler code and still get the benefits of non-blocking IO.
 Absolutely it would.
 And now you can.
-Project Loom is straightforward at the high levels: if you run your code in a _virtual thread_ (just another type of `java.lang.Thread`), then the runtime will detect _blocking_ operations like `InputStream#read()`, `Thread.sleep(long)`, etc., and automatically move the code off the thread its on if it's in a state where nothing is happening.
-It'll move the code back on to the thread once there's something to be, once the blocking operation has stopped blocking.
+Project Loom is straightforward at the high levels: if you run your code in a _virtual thread_ (just another type of `java.lang.Thread`), then the runtime will detect _blocking_ operations like `InputStream#read()`, `Thread.sleep(long)`, etc., and automatically move the code off the thread it's on if it's in a state where nothing is happening.
+It'll move the code back onto the thread once there's something to be done, once the blocking operation has stopped blocking.
 In the case of reading, that means it'll resume once there are bytes to read.
 In the case of `Thread.sleep`, it'll resume once the sleep time has elapsed.
 And you don't have to do anything to get it to work.
@@ -492,17 +492,17 @@ Let's look at an example that I shamelessly stole from Oracle Java advocate Jos√
 include::{code}/java/java/src/test/java/com/example/java/loom/LoomTest.java[]
 ----
 
-<.> This program launches a 1000 virtual threads.
+<.> This program launches 1,000 virtual threads.
 This is an arbitrary number, but it's also enough that it'll create contention - a need to share the precious few resources available to the machine.
 <.> the program sleeps five times in each thread, for about 100 milliseconds each.
 This is not a long time, but it's enough that it forces the runtime to have to interleave, to _share_, the actual operating system threads.
-<.> In each thread we call the `observe` function, which notes the current thread, sleeps, and then notes the current thread again.
+<.> In each thread, we call the `observe` function, which notes the current thread, sleeps, and then notes the current thread again.
 We don't want all the threads, however, as that would be too many.
-So we sample: if we're on the first thread (whose index would be `0`) launched, not the information; otherwise: do nothing with the information and move on.
-<.> by the end of the run, we've captured the thread on which our first of a thousand threads executed and stored them in a `Set<String>`, where the values will be deduplicated.
+So we sample: if we're on the first thread launched (whose index would be `0`), note the information; otherwise, do nothing with it and move on.
+<.> by the end of the run, we've captured the threads on which the first of our thousand virtual threads executed, and stored them in a `Set<String>`, where the values will be deduplicated.
 Interestingly, there is _probably_ more than one value in the set!
-Remember, we only noted the thread of execution for _one_ thread - the _same_ thread! - and somehow - without us asking or doing anything, it got moved around.
-Print the values out, and you'll see the code ran on the same  _virtual_ thread, but on multiple carrier threads.
+Remember, we only noted the thread of execution for _one_ thread - the _same_ thread! - and somehow, without our asking or doing anything, it got moved around.
+Print the values out, and you'll see the code ran on the same _virtual_ thread, but on multiple carrier threads.
 
 The result is that while we were `Thread.sleep`-ing, the carrier thread on which we were executing was made available to whatever else required it in the JVM.
 This efficient time-sharing means that now we can handle a _lot_ more requests with the same codebase.
@@ -515,7 +515,7 @@ Threads are no longer expensive, after all.
 
 That's easy enough.
 In a typical Spring Boot application, however, there are countless places where you'll need to override the default configured `Executor`, but in Spring Boot 3.2 we can do that for you.
-Specify `spring.threads.virtual.enabled=true` and you're all set.
+Specify `spring.threads.virtual.enabled=true`, and you're all set.
 
 Loom is especially important in the context of the Spring Authorization Server, because it uses traditional blocking IO.
 If you want to easily scale it up, consider using virtual threads and Java 25 when running the Spring Authorization Server.
