@@ -30,9 +30,41 @@ At the micro level, this isn't an unreasonable question.
 Spring is just Java, and I can write Java without Spring, so why bother with Spring?
 Let's learn what Spring can help you with by way of an example that we'll start from scratch, iteratively letting Spring do more and more to reduce code and elevate results.
 
-But first, we'll need a database...
+But first, we'll need a project and a database...
 
-== A Supporting Database
+== The Spring Initializr
+
+We will need to incept a new project.
+It's just Java and some libraries so in theory you could create your own with no issues.
+But I like to use the https://start.spring.io[Spring Initializr (https://start.spring.io)].
+Visit the Spring Initializr and make the following dependency selections: `Spring Boot Actuator`, `Spring Data JDBC`, `PostgreSQL Driver`, `Spring Web`, `GraalVM Native Support`, and `Spring Boot DevTools`.
+Select Java 25 (or later), and Apache Maven as the build tool. you could use Gradle if you're more comfortable, though I'll be showing Apache Maven.
+
+give the application whatever group name and artifact name that u like.
+Click `Generate`.
+You'll download an application archive (`.zip`).
+Unzip it and then point your IDE - IntelliJ IDEA, Visual Studio Code, Eclipse, etc. - at the `pom.xml` in the root of the project.
+
+you should have a project with the usual folder structure: `pom.xml` and  `src/{test,main}/{java,resources}`. you'll also have a new class in the `src/main/java` folder with a `public static void main` method.
+
+Rename the file `Main.java`, and gut the code inside.
+It should  look something like this when you're done:
+
+----
+package com.example.beans_to_boot;
+
+public class Main {
+
+	public static void main(String[] args) {
+    // <.>
+	}
+}
+----
+. a _tabula rasa_!
+
+It is on this humble foundation that we build.
+
+== The Database
 
 Let's introduce a _trivial_ example to reinforce the idea.
 We're going to read `Dog` data from a SQL database, PostgreSQL, running on our machine.
@@ -45,15 +77,26 @@ include::{code}/beans-to-boot/beans-to-boot/compose.yml[]
 .Run this in the usual way: `docker compose up -d`
 
 // db start
-* There's some SQL for schema and data in `schema.sql` and `data.sql`.
+Put the following SQL files in `src/main/resources/schema.sql` and `src/main/resources/data.sql` relative to your project root.
+
+Here's `schema.sql`:
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/resources/schema.sql[]
+----
+
+and here's `data.sql`:
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/resources/data.sql[]
+----
+
 Run `docker compose up -d`, then make sure to pass that SQL to PostgreSQL:
 
 ```shell
-cat src/main/resources/schema.sql | PGPASSWORD=secret psql -Umyuser -hlocalhost mydatabase
-cat src/main/resources/data.sql | PGPASSWORD=secret psql -Umyuser -hlocalhost mydatabase
+cat schema.sql | PGPASSWORD=secret psql -Umyuser -hlocalhost mydatabase
+cat data.sql | PGPASSWORD=secret psql -Umyuser -hlocalhost mydatabase
 ```
-
-// db stop
 
 // raw start
 == A Repository of Knowledge... About Dogs
@@ -783,27 +826,114 @@ What if I wanted to register five beans based on some property value?
 One does not simply programmatically add methods to a class in a for-loop.
 The same limitation exists with stereotype annotations.
 
-Spring Framework 7 (in 2026) introduced a new mechanism that  nicely addresses some limitations of the other two models.
+Spring Framework 7 (in 2026) introduced a new mechanism that nicely addresses some limitations of the other two models.
 If you need the dynamism it affords, it's the best way to get it.
 
 NOTE: I will confess, there _are_ some existing ways to access that runtime dynamism that long predate `BeanRegistrar`, but they come with their own cadre of limitations and 99% of people won't use or need them, especially with `BeanRegistrar` now available.
 
+Lets look at an example where we rewire _almost_ the entire application using `BeanRegistrar`.
+Well retain one bean with component scanning (the `DogRepository`) and well retain one bean (the `DriverManagerDataSource`) using Java configuration.
 
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/beanregistrar/DogBeanRegistrar.java[]
+----
 
+. you do your wiring in a method. you can do iteration, load things, do `if`/`else`, etc. all from within a method. what a time to be alive!
+. if you want Spring to apply the same heuristics and automatically configure a bean, as it would when doing component scanning,t hen you can simply call `registerBean(Class)` and Spring will take it from there.
+. if you want to exert more control over how things are wired up, or lookup other beans for reference, pass in the second parameter and specify a `Supplier<T>` on the `spec` parameter.
 
-// * Spring Framework 7 introduced `BeanRegistrar`s, too, btw. Here's how that would look.
-// * We turned almost all the beans into the `BeanRegistrar` format.
-// We leave the `DataSource` in Java config, and we still have component scanning for the `DogRepository` itself.
-// * You can mix and match.
-// No need to pick one over the other.
-// They all end up as `BeanDefinition`s that get turned into beans, and those beans can be injected and reused in all the normal ways.
+all in all this is a huge improvement in total lines of code.
+I dont know how i feel about readability, though. i think it'd be pretty natural to factor those lambda suppliers out to separate methods.
+But then, i might as well just use Java bean configuration.
+That said, in Kotlin, this DSL is even more succinct and elegant and inarguably readable while taking less code.
+
+this style grows on me more and more. you can use it. or don't. you've got options depending on your style and usecase.
+
 // stop beanRegistrar
+== The `Environment`
 // start environment
-* Anyway, we've done a lot here.
-But we've got hardcoded configuration.
-Let's extricate the values to properties (`application.properties`) and use the `Environment`.
+
+Lets revisit the one bean we left as Java configuration: the `DriverManagerDataSource`.
+This entire time we;ve left that bean confugured with values harccoded in the Java source code.
+This is terribad for a number of reasons.
+
+First, in a book about security, it is _woefully_ insecure!
+Obvioulsy you should store your passwords in a more secure medium than in plaintext buried in the source code for a program developers interact with every day.
+Esecially if it's the production database password.
+Heaven forbid!
+
+Second, this is super fragile.
+It doesnt confrom to the principles behind  https://12factor.net[_The 12 Factor Manifesto_], which offers a ton of good advice for how to structure and deploy cloud-native applications.
+Factor III (oh, excuse me, I meant "three") is _Config_.
+This factor says that "an app’s config is everything that is likely to vary between deploys (staging, production, developer environments, etc)." This includes things like database connection credentials, backing services like Amazon S3, a cache, etc.
+It poses the litmus test for whether your application is well enough configured thusly: if the codebase were open-sourced right now, would any credentials be compromised?
+If so, you've not done a good enough job with your configuration.
+
+Lets use the Spring Framework `Environment` abstraction.
+Its a layer of indirection between the application and the outside world.
+Think: property files, YAML files, environment variables, JNDI keys, Hashicorp Vault, etc.
+The `Environment` is an object that any Spring bean might inject and use to load configuration values.
+It in turn delegates to a chain of `PropertySource` instances that know how to load values from various sources.
+Spring comes loaded with some useful out-of-the-box defaults.
+As you move up the abstraction stack, you get even more sophisticated alternatives for things like Hashicorp Vault, the Spring Cloud Config Server, etc.
+
+Let's load our configuration values from a local configuration file called `application.proeprties`.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/environment/DogConfiguration.java[]
+----
+
+. the `@PropertySource` annotation is a convenient way to add the contents of a `.properties` file to the `Environment`
+. you can inject a reference to the `Environment` directly _or_ you can have Spring provide the value for you in Java configuration methods by annotating parameters with `@Value` and then using a `\${...}` syntax.
+. here we're just laoding a value and getting it back as a `String`, the default.
+. Spring's built-in `ConversionService` can translate all manner of different String values into useful domain types.
+You only need ask, in this case by passing in the preferred target conversion type.
+I'm asking that the URI be converted to a `java.net.URI`.
+Why not?
+If it's not a valid URI, the conversion will fail and program will stop just that much earlier.
+
+We'e added a new `.properties` file to the example.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/resources/application.properties[]
+----
+
+. ive chosen to use the keys `spring.datasource.url`, `sring.datasource.password`, and `spring.datasource.username` as the keys for my DataSource's URL, password, and username for, um, no reason at all...
+
+I've got the password for the PostgreSQL server as it will be configured when we use the Docker Compose `compose.yml` file that ships with this codebase.
+This isn't the end of the world for local-only development.
+But obviously in production environemtns, you'd never hae the production database username and password and URL in plaintext.
+You'd pass them in through environment variables or use something like Hashicorp Vault.
+
+This is why Spring's `Environment` has the notion of precedence.
+External contributions - those further away from the codebase - override contributions closer to the codebase, conceptually.
+So, if you specify an environment variable, it'll override the values provided in `application.properties`.
+There's even some goodness in there to normalize encironment variables.
+So, `SPRING_DATASOURCE_URL` will be normalized to `spring.datasource.url`.
 // stop environment
+
+== Spring Boot
 // start boot
+
+We've come a long way, but done very, very little.
+For all our troubles, we've only got one repository with one method.
+Now imagine we were trying to build a real application.
+We'd need security, we'd need to stand up a webserver.
+We'd need observability.
+We'd need to package the application up for production.
+
+Let's leaverage Spring Boot.
+It's already on the CLASSPATH.
+Spring Boot builds on Spring Framework (and the rest of the Spring ecosystem).
+It's just more Spring, taken a step further thanks to the power of something called _autoconfiguration_.
+But first, let's refactor.
+
+here's the updated `Main` class.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/boot/Main.java[]
+----
+
 * It's nice!
 But there's a lot of boilerplate that'll probably be the same from one app to another.
 * Let's use Spring Boot.
