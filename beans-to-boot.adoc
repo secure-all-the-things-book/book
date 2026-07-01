@@ -22,10 +22,13 @@ More recently, with the introduction of Spring Boot, we've added a new dimension
 So I guess it's more like a "Spring square" now, come to think of it.
 
 At the core of Spring as a framework is the fact that it needs to understand how your objects are wired together.
-But why? Why bother telling it these things?
+But why?
+Why bother telling it these things?
 Why not just wire things yourself?
 
-At the micro level, this isn't an unreasonable question. Spring is just Java, and I can write Java without Spring, so why bother with Spring? Let's learn what Spring can help you with by way of an example that we'll start from scratch, iteratively letting Spring do more and more to reduce code and elevate results.
+At the micro level, this isn't an unreasonable question.
+Spring is just Java, and I can write Java without Spring, so why bother with Spring?
+Let's learn what Spring can help you with by way of an example that we'll start from scratch, iteratively letting Spring do more and more to reduce code and elevate results.
 
 But first, we'll need a database...
 
@@ -42,7 +45,8 @@ include::{code}/beans-to-boot/beans-to-boot/compose.yml[]
 .Run this in the usual way: `docker compose up -d`
 
 // db start
-* There's some SQL for schema and data in `schema.sql` and `data.sql`. Run `docker compose up -d`, then make sure to pass that SQL to PostgreSQL:
+* There's some SQL for schema and data in `schema.sql` and `data.sql`.
+Run `docker compose up -d`, then make sure to pass that SQL to PostgreSQL:
 
 ```shell
 cat src/main/resources/schema.sql | PGPASSWORD=secret psql -Umyuser -hlocalhost mydatabase
@@ -54,7 +58,10 @@ cat src/main/resources/data.sql | PGPASSWORD=secret psql -Umyuser -hlocalhost my
 // raw start
 == A Repository of Knowledge... About Dogs
 
-We're going to be working with data about dogs, so we'll need a layer to read that data and make it available to us. Here's a strawman first cut at this code, with several less-than-ideal design decisions. Let's look at the moving parts. We'll introduce all of them now and only the things that change as we progress.
+We're going to be working with data about dogs, so we'll need a layer to read that data and make it available to us.
+Here's a strawman first cut at this code, with several less-than-ideal design decisions.
+Let's look at the moving parts.
+We'll introduce all of them now and only the things that change as we progress.
 
 First, the holder for data coming from our `dog` table.
 
@@ -64,7 +71,8 @@ include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_b
 
 . A Java record is a marvelous thing.
 
-We'll be implementing a repository. Here's the interface for that repository.
+We'll be implementing a repository.
+Here's the interface for that repository.
 
 -----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/raw/DogRepository.java[]
@@ -78,12 +86,15 @@ include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_b
 -----
 
 . Everything about this arrangement makes me itch: `DataSource` objects are expensive and should be pooled, centralized, and reused for many objects.
-I don't love credentials hardcoded into the source code. And I don't love that we're instantiating the expensive resource in the constructor instead of centralizing its definition and having it passed in via injection.
-. Believe it or not, this demo used to be a _lot_ worse when I first started teaching Spring to folks (even if just others on my team) 20+ years ago. The ability to use Java 7's `AutoCloseable` is a game-changer for this sort of code.
+I don't love credentials hardcoded into the source code.
+And I don't love that we're instantiating the expensive resource in the constructor instead of centralizing its definition and having it passed in via injection.
+. Believe it or not, this demo used to be a _lot_ worse when I first started teaching Spring to folks (even if just others on my team) 20+ years ago.
+The ability to use Java 7's `AutoCloseable` is a game-changer for this sort of code.
 Just hope you remember to use it!
 You definitely don't want these things leaking.
 
-And of course here's the entry point into this example. All `Main` classes will have the same basic formula: use an instance of `DogRepository` to read data and iterate over the data.
+And of course here's the entry point into this example.
+All `Main` classes will have the same basic formula: use an instance of `DogRepository` to read data and iterate over the data.
 
 -----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/raw/Main.java[]
@@ -98,28 +109,37 @@ include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_b
 == Dependency Injection
 
 You probably already saw this coming.
-We should centralize that `DataSource` definition. Here's the updated `Main` and `DefaultDogRepository`.
+We should centralize that `DataSource` definition.
+Here's the updated `Main` and `DefaultDogRepository`.
 
 -----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/di/Main.java[]
 -----
 
-And here's the `DogRepository` implementation. There shouldn't be much to say.
-This is, after all, just using constructors in an object-oriented language. But I'll say a few things anyway, because there was a time when that kind of code used to be fairly common.
+And here's the `DogRepository` implementation.
+There shouldn't be much to say.
+This is, after all, just using constructors in an object-oriented language.
+But I'll say a few things anyway, because there was a time when that kind of code used to be fairly common.
 
-When I first started using Java, I'd see a lot of code written like the first example, with the `DataSource` initialized _inside_ the thing that used it. This was because a lot of the programmers who first adopted Java when I started using it came from C++ and C backgrounds. In those paradigms, developers were forced to manage memory, and if any of the memory got away from the programmer, you'd get an insidious memory leak!
+When I first started using Java, I'd see a lot of code written like the first example, with the `DataSource` initialized _inside_ the thing that used it.
+This was because a lot of the programmers who first adopted Java when I started using it came from C++ and C backgrounds.
+In those paradigms, developers were forced to manage memory, and if any of the memory got away from the programmer, you'd get an insidious memory leak!
 So we had a pattern: RAII.
-Resource Acquisition Is Initialization. The idea was that we bound things that needed to be managed—memory, sockets, etc.—to the lifecycle of the smallest scope, usually that of the object that used it.
+Resource Acquisition Is Initialization.
+The idea was that we bound things that needed to be managed—memory, sockets, etc.—to the lifecycle of the smallest scope, usually that of the object that used it.
 Put another way, if a `Foo` needed a `Bar`, it'd create it in the `Foo` constructor and it'd destroy it in the `Foo` _destructor_, a concept we don't really have in Java.
 Because Java has a garbage collector, it's fine if objects have lifetimes longer than the things that use them.
 
 `DataSource`s tend to be expensive, especially once you have connection pooling.
-You'll want to keep tabs on where the `DataSource` is built, what its pool size is, and so on. There are several benefits here.
+You'll want to keep tabs on where the `DataSource` is built, what its pool size is, and so on.
+There are several benefits here.
 
-One, it's easier to maintain, as you only need to change things in one place. Two, we're writing our code...
+One, it's easier to maintain, as you only need to change things in one place.
+Two, we're writing our code...
 
 Anyway, here's the updated repository with the constructor.
-One of the benefits of the constructor is that it's written against the lowest common type, `javax.sql.DataSource`. We're using Spring's built-in (and _not_ production-worthy) `DriverManagerDataSource`.
+One of the benefits of the constructor is that it's written against the lowest common type, `javax.sql.DataSource`.
+We're using Spring's built-in (and _not_ production-worthy) `DriverManagerDataSource`.
 It does _not_ do connection pooling or anything interesting.
 It just implements the `DataSource`.
 In a production environment, you'd likely replace it with a more appropriately configured HikariCP connection pool.
@@ -130,20 +150,30 @@ Either way, you only need to change one thing in one place and pass it into cons
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/di/DefaultDogRepository.java[]
 -----
 
-Nothing fancy. Just object-oriented programming, constructors, and leveraging the power of polymorphism. Our constructors expect a `DataSource`, and we can give them any implementation we want without violating the contract.
+Nothing fancy.
+Just object-oriented programming, constructors, and leveraging the power of polymorphism.
+Our constructors expect a `DataSource`, and we can give them any implementation we want without violating the contract.
 // di start
 
 // psb start
 == Portable Service Abstractions
 
 Looking at the code for the repository, it is a bit... much.
-I've written this sort of low-level `DataSource` manipulation code a million times in my career. Trust me when I say that as terrible as it is, it could be _much worse_. Thanks to the elegance of `AutoCloseable`, most of the resource management code and the tedious wrapping of `try` / `catch` goes away.
-But it's still a low-level approach to data access. This isn't even controversial.
+I've written this sort of low-level `DataSource` manipulation code a million times in my career.
+Trust me when I say that as terrible as it is, it could be _much worse_.
+Thanks to the elegance of `AutoCloseable`, most of the resource management code and the tedious wrapping of `try` / `catch` goes away.
+But it's still a low-level approach to data access.
+This isn't even controversial.
 JDBC is a driver, not an abstraction.
-It's the lowest level of infrastructure for working with data in a SQL database. I bet if you asked, you'd find that most of the folks working on JDBC drivers never expected people to use it directly. And a good thing, too, because it hurts.
+It's the lowest level of infrastructure for working with data in a SQL database.
+I bet if you asked, you'd find that most of the folks working on JDBC drivers never expected people to use it directly.
+And a good thing, too, because it hurts.
 
-Look at the code again. There are two things that are _essential_: the SQL query and the mapping logic.
-Everything else—creating the connection, prepared statements, and result sets; iterating over the result sets; extracting out to lists; and so on—is boilerplate code that is far removed from whatever we're trying to achieve by writing this code in the first place. (Surely there's _some_ business justification? Right?)
+Look at the code again.
+There are two things that are _essential_: the SQL query and the mapping logic.
+Everything else—creating the connection, prepared statements, and result sets; iterating over the result sets; extracting out to lists; and so on—is boilerplate code that is far removed from whatever we're trying to achieve by writing this code in the first place.
+(Surely there's _some_ business justification?
+Right?)
 
 Let's rework this code to leverage one of Spring's many amazing _portable service abstractions_, the `JdbcClient`.
 
@@ -151,8 +181,10 @@ Let's rework this code to leverage one of Spring's many amazing _portable servic
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/psb/DefaultDogRepository.java[]
 -----
 
-<.> Look! There's the query we were talking about!
-<.> And there's the mapper logic. Clear as a bell!
+<.> Look!
+There's the query we were talking about!
+<.> And there's the mapper logic.
+Clear as a bell!
 
 I think we can agree, this is _much_ better.
 // psb stop
@@ -161,14 +193,24 @@ I think we can agree, this is _much_ better.
 == Unified Transaction Handling with `PlatformTransactionManager`
 // tx1 start
 
-This repository has just _one_ method, and that method only executes _one_ read query. But what happens if that method has two queries?
+This repository has just _one_ method, and that method only executes _one_ read query.
+But what happens if that method has two queries?
 What if they're both writes, modifying database state?
 
-Suppose we're writing to the database and we want to add two records. The first record will go to a new `customers` table that contains a list of all the people who have registered with our pet shop. The second will go to a table containing the customer's expressed preferences for pets (small enough for a condo or apartment living, needs more aggressive routine grooming, etc.). These two records are related to each other. Now imagine that, as soon as we write the first row, the power goes out and we don't manage to write the second row. Now we have a record in an inconsistent state in the database. We can't help the customer until we sort out their preferences.
-Or imagine, by some contrivance, that the first write succeeds, and then somebody comes along and deletes the customer before the second gets a chance to commit. Now we've got preferences, but no customer!
+Suppose we're writing to the database and we want to add two records.
+The first record will go to a new `customers` table that contains a list of all the people who have registered with our pet shop.
+The second will go to a table containing the customer's expressed preferences for pets (small enough for a condo or apartment living, needs more aggressive routine grooming, etc.).
+These two records are related to each other.
+Now imagine that, as soon as we write the first row, the power goes out and we don't manage to write the second row.
+Now we have a record in an inconsistent state in the database.
+We can't help the customer until we sort out their preferences.
+Or imagine, by some contrivance, that the first write succeeds, and then somebody comes along and deletes the customer before the second gets a chance to commit.
+Now we've got preferences, but no customer!
 
-The data is in an inconsistent state. The normal way to handle this in a database system is to use transactions.
-Transactions are, broadly speaking, a way of batching and then either committing or rolling back work. It looks conceptually like this:
+The data is in an inconsistent state.
+The normal way to handle this in a database system is to use transactions.
+Transactions are, broadly speaking, a way of batching and then either committing or rolling back work.
+It looks conceptually like this:
 
 - start tx
 ** write 1
@@ -177,9 +219,12 @@ Transactions are, broadly speaking, a way of batching and then either committing
 - if everything is good: commit _everything_ all at once
 - else: rollback
 
-This oversimplifies things a bit, but the main takeaway is that from the perspective of other SQL clients to the database, the system is never in an in-between state. It's all or nothing. They won't ever take action based on inconsistent or invalid database state.
+This oversimplifies things a bit, but the main takeaway is that from the perspective of other SQL clients to the database, the system is never in an in-between state.
+It's all or nothing.
+They won't ever take action based on inconsistent or invalid database state.
 
-It's a _truly_ powerful concept, and it has mirrors in all sorts of technologies. Here's an abbreviated list:
+It's a _truly_ powerful concept, and it has mirrors in all sorts of technologies.
+Here's an abbreviated list:
 
 - JMS
 - JDBC
@@ -257,7 +302,8 @@ In object-oriented design there are two ways to introduce new features to a type
 
 Prefer composition to inheritance.
 It buys you lots of _optionality_.
-Optionality is wiggle room, the freedom to make different decisions later on with little cost or disadvantage. Optionality is the bedrock of architecture: given the constraints, what choices should I make that most advantage me now and tomorrow?
+Optionality is wiggle room, the freedom to make different decisions later on with little cost or disadvantage.
+Optionality is the bedrock of architecture: given the constraints, what choices should I make that most advantage me now and tomorrow?
 
 * Flexibility at runtime.
 Composition lets an object hold references to other objects and swap them out, so behavior can change dynamically.
@@ -286,9 +332,18 @@ If you run `Main`, you'll see that we've got printouts and that we've started an
 // stop tx1
 == Simplified Transaction Management with `TransactionTemplate`
 // start tx2
-I'm happy with what we've done, but the result is certainly more verbose. Imagine having to write all that boilerplate transaction code in a new composite method for every method we introduce in the original implementation. It wouldn't be so bad if we could do away with the fragile resource management and error-handling logic.
+I'm happy with what we've done, but the result is certainly more verbose.
+Imagine having to write all that boilerplate transaction code in a new composite method for every method we introduce in the original implementation.
+It wouldn't be so bad if we could do away with the fragile resource management and error-handling logic.
 
-The core arrangement is similar from one use to another. Start transaction, do work. Commit. Or catch an exception and roll back. The only thing we really care about is the stuff in the middle—the work itself. Another very interesting design pattern we care about is the _template_ pattern. Here, we extract that which changes from that which doesn't, and we hide that which doesn't change in a _template method_. It's a template, you see, because you only need to fill out the parts that are unique to your situation.
+The core arrangement is similar from one use to another.
+Start transaction, do work.
+Commit.
+Or catch an exception and roll back.
+The only thing we really care about is the stuff in the middle—the work itself.
+Another very interesting design pattern we care about is the _template_ pattern.
+Here, we extract that which changes from that which doesn't, and we hide that which doesn't change in a _template method_.
+It's a template, you see, because you only need to fill out the parts that are unique to your situation.
 
 Spring's `TransactionTemplate` and `JdbcTemplate`—the precursor to Spring's `JdbcClient`—were gateway drugs for me.
 I deleted thousands of lines of code when I first found these gems.
@@ -321,17 +376,28 @@ We'd have to write more and more composites, and for every new method in the cor
 
 What about ordering?
 Which composite wraps which?
-What if we wanted to support auditing, so that for every write operation we also write an access log to a database? That would need to happen inside the transactional composite so that both the underlying write and the write to the audit table would be in the same transaction.
+What if we wanted to support auditing, so that for every write operation we also write an access log to a database?
+That would need to happen inside the transactional composite so that both the underlying write and the write to the audit table would be in the same transaction.
 
-This is where the object-oriented approach starts to fall apart. We've got a common concern that'll be common to _all_ repositories. These are _cross-cutting_ concerns.
+This is where the object-oriented approach starts to fall apart.
+We've got a common concern that'll be common to _all_ repositories.
+These are _cross-cutting_ concerns.
 
 == Hold My Proxy!
 
-The plan of attack for an object-oriented language is to use composition or inheritance to introduce new concerns. But we can't scale that. We'd get too many permutations of too many types in no time at all. So what if we could do this automatically? What if we could, at runtime, _programmatically_ create a class that implements the interface? Java has had a way to do this since Java 1.4.
+The plan of attack for an object-oriented language is to use composition or inheritance to introduce new concerns.
+But we can't scale that.
+We'd get too many permutations of too many types in no time at all.
+So what if we could do this automatically?
+What if we could, at runtime, _programmatically_ create a class that implements the interface?
+Java has had a way to do this since Java 1.4.
 
 I've extracted the real metaprogramming magic into a separate new class called `Transactions`.
 
-Fair warning: this level of high-wire metaprogramming can be a little intense for folks not prepared for it. You don't need to retain all of it. Let's just understand conceptually what's happening. We're going to ask Java to do two things at once: create a class that implements the interface we want it to implement (`DogRepository`) and then create a single instance of that new class and return it back to us.
+Fair warning: this level of high-wire metaprogramming can be a little intense for folks not prepared for it.
+You don't need to retain all of it.
+Let's just understand conceptually what's happening.
+We're going to ask Java to do two things at once: create a class that implements the interface we want it to implement (`DogRepository`) and then create a single instance of that new class and return it back to us.
 
 We provide a callback (here it's shown as a lambda, but it's actually an instance of the JDK's `InvocationHandler` type) that will be invoked whenever anybody invokes a method on the newly generated instance.
 
@@ -342,7 +408,9 @@ include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_b
 <.> Call `java.lang.reflect.Proxy.newProxyInstance(ClassLoader, Class[] interfaces, InvocationHandler)`.
 <.> In the `InvocationHandler` lambda, we're given a pointer to `this`, the instance that `newProxyInstance` hands back to us.
 We don't need it here.
-<.> We're given a pointer to the `java.lang.reflect.Method` that is being invoked. Did the user call `toString` on the proxy instance? Then this will be the `Method` for the `toString` method.
+<.> We're given a pointer to the `java.lang.reflect.Method` that is being invoked.
+Did the user call `toString` on the proxy instance?
+Then this will be the `Method` for the `toString` method.
 <.> We're given a pointer to the `Object[]` arguments that have been passed into the method when it was called.
 In our case, we're going to be calling `findAll`, which takes no arguments, so this `Object[] args` will be empty.
 
@@ -356,80 +424,221 @@ Let's rework our `Main` class, jettisoning the old, artisanal, hand-crafted `Tra
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/jdkproxy/Main.java[]
 ----
 
-Again, from the perspective of our "test," nothing has changed. It expects a `DogRepository`, and a `DogRepository` it got.
-
-
-
-//
-// * still very tedious tho is there some way to programmatically generate new implementations of the interface?
-// * jdk proxies
-// * now we can wrap our target with our new `transactional` method
-
+Again, from the perspective of our "test," nothing has changed.
+It expects a `DogRepository`, and a `DogRepository` it got.
 
 // stop jdkproxy
 // start cglibproxy
-* But what about concrete types with no interface?
-* After all, it's an antipattern to have an interface for just one type.
-* Spring's `ProxyFactoryBean`.
-* We can delete the interface. Huzzah!
+
+== What About Concrete Types?
+
+OK, we got this far.
+Let's talk about the elephants in the room.
+First: we now have a single concrete implementation of the interface and a programatically generated implementation.
+But, really, since the programatically generated one is not _our_ work product, it feels like we've got a single interface for a single concrete type.
+Opinions vary here, but I would wager that the consensus is that if you have just one concrete implementation, then you don't need the interface.
+So how do we get rid of it?
+Remember, the JDK's `Proxy` class only works on _interfaces_.
+The JDK does not have a way to automatically create new implementations of concrete classes.
+COnceptually, its simple.
+Subclass a concrete type and then use that subclass as a sort of composite, forwarding requests to the actual target.
+In this way the subclass has the same shape as the concrete type, and can wrap the target just as before.
+But how?
+The easiest way to do this these days is to do bytecode weaving.
+We can programatically write - with bytecode - a new class file that we add to the classloader and then reflectively construct a new instance of.
+There are many libraries that can help with this sort of thing.
+ASM.
+The JDK itself in more recent versions can do this.
+ByeBuddy.
+And, a perennial favorite, CGLIB.
+
+Spring vendors CGLIB.
+That is to say it actually has a copy of CGLIB in the framework itself.
+We use it to generate classes for all sorts of reasons.
+And there's even a super convenient type, the `ProxyFactoryBean`, which we can use to acheive the same results as with the JDK's `Proxy` class.
+
+Here's the rewritten `Transactions` class.
+No other changes are required.
+You can see we've even kept the same `doInTx` method.
+The concepts are the same; both the JDK implementation and the CGLIB implementation need a pointer to the current executing method, the arguments of the method, and the method itself.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/cglibproxy/Transactions.java[]
+----
+
+In this iteration, we've deleted the interface and renamed our `DefaultDogRepository` to just `DogRepository`.
+Less is more.
 // stop cglibproxy
 // start springframework
-* It's nice, but things are getting out of hand. That said, our code is approachable enough for now.
-* What if we wanted to do any kind of testing? We'd have to duplicate all these beans.
-* And all of this just for a single query to a DB! We haven't even started to think about building a web application, messaging, observability, etc.
-* Let's see if Spring can improve things.
-* Turn everything into beans.
-* We're wiring everything up with an `ApplicationContext`.
-The AC is the thing that glues a `BeanFactory` into an application's environment... it's the _context_.
-* The `BeanFactory` is the thing that does most of the work. It's the thing that does dependency injection.
-* Ingest -> `BeanDefinition`s -> beans.
-* You can inspect the `BeanDefinition`s with a `BeanFactoryPostProcessor`.
-* You must never call `getBean(Class<?>)`.
-Use the bean names and the method that gets the bean definitions.
+
+== Better Configuration with Spring
+
+Right now the code is approachable enough, but things are getting out of hand.
+What if we wanted to write any kind of test?
+We'd have to duplicate all these object definitions by hand.
+And this is just for a single database query in a single repository - we haven't even begun to think about web layers, messaging, or observability.
+Let's see if Spring can improve things.
+The idea is to turn object instantiation into _beans_ (basically an object that Spring manages) and let the Spring  `ApplicationContext` wire them together.
+Inside of an `ApplicationContext` is a `BeanFactory`.
+The context is what glues a `BeanFactory` into the surrounding application environment.
+It's the context, after all.
+The `BeanFactory` underneath does most of the real work: it's the thing that performs dependency injection.
+Conceptually, the flow is simple: Spring ingests your configuration, produces `BeanDefinitions`, and from those definitions instantiates the actual beans.
+
+Here's our rewritten `Main` class, this time using Spring Framework to wire things together.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/springframework/Main.java[]
+----
+
+. we create the `ApplicationContext` and tell it to source the wiring of these objects from a configuration class.
+Spring needs to know how your objects are wired together.
+There are mutliple ways.
+You can use all or just one of them to get the job done.
+We're starting with one way, Java configuration.
+In this case its a Java configuration class called `DogConfiguration`.
+
+Here's that class.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/springframework/DogConfiguration.java[]
+----
+
+. the wirings should look familiar. each method constructs and returns one fully formed object.
+If the object requires any dependencies, it declares them as parameters in the method.
+Spring will attempt to resolve those dependencies for you.
+
+We've simply retooled our `Main` method into an admittedly longer Java configuration class.
+In Spring, you want the return values of each method to be as specific as possible.
+Spring can do better work when it knows exactly whats been returned.
+For the dependencies, you can declare as imprecise a dependency as you want.
+This maxim happens all over the computer science ecosystem and is called _Postel's Law_.
+It says: _Be conservative in what you send, and liberal in what you accept_.
+The maxim is more about network services and API design, but helps here when thinking about object wiring, too.
+
+
 // stop springframework
 // start lifecycle
-* There is a lifecycle at play. I can control the beans' construction and destruction. They can implement `InitializingBean` and `DisposableBean`.
-* These callbacks are but one way to participate in important lifecycle events. Another is to use `ApplicationEvent`s. There are a ton of them! Let's implement a simple `@EventListener`.
-* The lifecycle is interesting. When the app starts up and shuts down, your code can hook into the lifecycle.
+== Bean Lifecycles
+
+Earlier we spoke about C++ and RAII.
+That particular pattern isn't great, but it does imply an interesting point: objects often have interesting and delicate state.
+They're created.
+They're put into service.
+They're destroyed.
+Java handles memory management, but more things than just RAM can leak.
+Network sockets, for one.
+So it's important to have a concept of lifecycle.
+Spring provides _many_ different lifecycle-related mechanisms that allow interested beans to participate in lifecycle events.
+These are essentially callbacks based on when the objects are created or destroyed.
+
+In a typical Spring application, objects are created when the `ApplicationContext` starts up and destroyed when the `ApplicationContext` shuts down.
+Theres a one-to-one mapping.
+But objects can have _scope_.
+They could be created anew for each and every HTTP request, for example.
+Or for each new unique HTTP session.
+Or for each new run of a _step_ in a Spring Batch _job_.
+By default, Spring beans are _singleton_ - they exist once and only once per application.
+
+There are lots of ways to specify dependencies - _dependency injection_ - for a bean.
+Thus far we've been relying on constructors.
+But some objects are designed in such a way that they have a constructor and _setter_ methods that might be called with _optional_ dependencies after the object's been created.
+In this case, the constructor wouldn't be the best place for initialization code because the initialization would need to happen necessarily _after_ the object's dependnecies (constructor and setter alike) have been specified.
+Spring provides two ways of participating in this lifecyle phase: `InitializingBean` and `@PostConstruct`.
+Similarly, when the application shuts down there are two equivlanet approaches for cleaning state up: `DisposableBean` and `@PreDestroy`.
+
+Here's our reworked `DogRepository` to demonstrate this.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/lifecycle/DogRepository.java[]
+----
+
+Most of these lifecyle events are, in this particular example, pointless.
+But hopefully illustrative.
+
+There are tons of interesting events that happen in a typical application.
+Somebody has authenticated in a Spring Security application.
+A Spring Batch `Job` has finished executing.
+A new HTTP request has been made.
+A customer has added an item to a cart. _Whatever_.
+Spring provides an event bus for components within the framework to make this work even easier.
+Any Spring bean can inject a reference to an `ApplicationEventPublisher` and publish an event - any object, but commonly a subclass of Spring's `ApplicationEvent`.
+And any interested bean can listen for this event.
+In the old days beans did this by implementing the `ApplicationListener` interface; they'd get _every_ event and would have to sift through the types to determine whether they were interested.
+Then we got generics-capable `ApplicationListener<T>` where listeners would only have events of the type they were interested delivered.
+Then, finally, we got `@EventListener` which is my go-to approach these days.
+Here's an example showing two diferent listeners for Spring's `ContextRefreshedEvent`, whcih is published right after Spring's updated the bean graph with input configuration.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/lifecycle/Listener.java[]
+----
+
+A typical Spring application will publish dozens of events.
 // stop lifecycle
+
 // start pp
 * Let's look at `BeanFactoryPostProcessor`s and `BeanPostProcessor`s.
 * > Ingest -> `BeanDefinition`s -> beans.
 * `BeanFactoryPostProcessor` lets you see the `BeanDefinition`s.
-* We can demonstrate it. I've put it in another configuration class. We can import configuration classes by adding `@Import` to the `DogConfiguration` configuration class.
-* Neat. What we want to do, however, is introduce transactions. So let's use a `BeanPostProcessor`.
-* A BPP gets called right before the beans are put in service. We have a chance to enrich the object before it's put into service.
+* We can demonstrate it.
+I've put it in another configuration class.
+We can import configuration classes by adding `@Import` to the `DogConfiguration` configuration class.
+* Neat.
+What we want to do, however, is introduce transactions.
+So let's use a `BeanPostProcessor`.
+* A BPP gets called right before the beans are put in service.
+We have a chance to enrich the object before it's put into service.
 * Extract the transactional support to this, based on the presence of a marker interface, `Tx`.
-* Nice! Now we can refactor the config and remove the explicit call to `Transactions.createProxy`.
-* _This_ is the power of a good framework. You can centralize cross-cutting concerns in a single place. This is the essence of aspect-oriented programming (AOP).
+* Nice!
+Now we can refactor the config and remove the explicit call to `Transactions.createProxy`.
+* _This_ is the power of a good framework.
+You can centralize cross-cutting concerns in a single place.
+This is the essence of aspect-oriented programming (AOP).
 // stop pp
 // start transactional
-* If you have used Spring at all before, then you probably know where this is going: we've already done this exact magic trick. Let's refactor to use `@Transactional`. We just need to enable it with `@EnableTransactionManagement`.
+* If you have used Spring at all before, then you probably know where this is going: we've already done this exact magic trick.
+Let's refactor to use `@Transactional`.
+We just need to enable it with `@EnableTransactionManagement`.
 // stop transactional
 // start componentscan
-* Nice, but of course it's tedious to define beans with full config every time. Let's use implicit configuration and `@ComponentScan`.
+* Nice, but of course it's tedious to define beans with full config every time.
+Let's use implicit configuration and `@ComponentScan`.
 * Component scanning finds our repository once we add `@Repository`.
-* Stereotype annotations are neat. You can create your own, too.
+* Stereotype annotations are neat.
+You can create your own, too.
 * This is _implicit_ configuration.
 * As opposed to the explicit configuration.
 // stop componentscan
 // start beanRegistrar
 * Spring Framework 7 introduced `BeanRegistrar`s, too, btw. Here's how that would look.
-* We turned almost all the beans into the `BeanRegistrar` format. We leave the `DataSource` in Java config, and we still have component scanning for the `DogRepository` itself.
-* You can mix and match. No need to pick one over the other. They all end up as `BeanDefinition`s that get turned into beans, and those beans can be injected and reused in all the normal ways.
+* We turned almost all the beans into the `BeanRegistrar` format.
+We leave the `DataSource` in Java config, and we still have component scanning for the `DogRepository` itself.
+* You can mix and match.
+No need to pick one over the other.
+They all end up as `BeanDefinition`s that get turned into beans, and those beans can be injected and reused in all the normal ways.
 // stop beanRegistrar
 // start environment
-* Anyway, we've done a lot here. But we've got hardcoded configuration. Let's extricate the values to properties (`application.properties`) and use the `Environment`.
+* Anyway, we've done a lot here.
+But we've got hardcoded configuration.
+Let's extricate the values to properties (`application.properties`) and use the `Environment`.
 // stop environment
 // start boot
-* It's nice! But there's a lot of boilerplate that'll probably be the same from one app to another.
-* Let's use Spring Boot. Same `ApplicationContext`, but the code is much simpler.
+* It's nice!
+But there's a lot of boilerplate that'll probably be the same from one app to another.
+* Let's use Spring Boot.
+Same `ApplicationContext`, but the code is much simpler.
 We can delete everything except the `DogRepository` and the `test` method.
-* This works because of autoconfiguration. You can create your own, too. Autoconfig is activated by the presence of `starters`.
-* And, being honest, I'm not sure we ever needed to implement the repository ourselves. lol. Let's just use the Spring Data JDBC project.
-* Note that we've also now got good ASCII art. We've got an actuator. We've got a web server.
+* This works because of autoconfiguration.
+You can create your own, too.
+Autoconfig is activated by the presence of `starters`.
+* And, being honest, I'm not sure we ever needed to implement the repository ourselves. lol.
+Let's just use the Spring Data JDBC project.
+* Note that we've also now got good ASCII art.
+We've got an actuator.
+We've got a web server.
 * We can use virtual threads!
 * Also, it'll automatically initialize the schema of the DB for us (`schema.sql` and `data.sql`).
 // start boot
-* Remember the `BeanDefinition`s? We can turn this into a GraalVM native image!
+* Remember the `BeanDefinition`s?
+We can turn this into a GraalVM native image!
 * Use Spring Boot's build plugin to create a Docker image, too.
