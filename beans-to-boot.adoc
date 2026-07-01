@@ -739,7 +739,9 @@ Reading, writing, etc.
 Interestingly, `@RestController` is _not_ annotated with `@Component`.
 It's annotated with `@Controller`, so there you have _two_ levels of meta-annotations!
 
-Best part? You can create your own meta-annotations. Just add `@Component` to it and Spring will discover it just like it does any of the other meta-annotations.
+Best part?
+You can create your own meta-annotations.
+Just add `@Component` to it and Spring will discover it just like it does any of the other meta-annotations.
 
 Here's our reworked `DogConfiguration` supporting compnoent scanning, and with no explicit Java bean configuration method for the `DogRepository`.
 
@@ -756,21 +758,45 @@ We've simply annotated it with a stereotype annotation, `@Repository`.
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/componentscan/DogRepository.java[]
 ----
+
 . it's the little things that make everything so much nicer..
 
-Component scannign supports a kind of _implicit_ configuration. Spring discovers the class and applies heuristics to configure and construct a valid instance of your type. Java configuration supports a kind of _explicit_ configuration. You must tell Spring almost everything, but you also have full control. It's a bit more verbose, but sometimes it's the best option.
-
-== Spring Framework 7's `BeanRegistrar`: the best of both worlds
-
+Component scannign supports a kind of _implicit_ configuration.
+Spring discovers the class and applies heuristics to configure and construct a valid instance of your type.
+Java configuration supports a kind of _explicit_ configuration.
+You must tell Spring almost everything, but you also have full control.
+It's a bit more verbose, but sometimes it's the best option.
 
 // stop componentscan
-// start beanRegistrar
-* Spring Framework 7 introduced `BeanRegistrar`s, too, btw. Here's how that would look.
-* We turned almost all the beans into the `BeanRegistrar` format.
-We leave the `DataSource` in Java config, and we still have component scanning for the `DogRepository` itself.
-* You can mix and match.
-No need to pick one over the other.
-They all end up as `BeanDefinition`s that get turned into beans, and those beans can be injected and reused in all the normal ways.
+== Spring Framework 7's `BeanRegistrar`: the best of both worlds
+
+// start beanRegistraar
+I love Java configuration and component scanning.
+(I certainly don't miss XML!) Component scanning was introduced as a first-class feature in Spring Framework 2.5 in 2007. Java configuration was introduced as a first-class citizen i Spring Framework 3.0 in 2009.
+
+But they both have some limitations, too.
+Java Configuration is very verbose.
+A whole method plus an annotation for one bean registration.
+They're also inflexible.
+How do I register beans dynamically, subject to some ambient thing like environment variables?
+What if I wanted to register five beans based on some property value?
+One does not simply programmatically add methods to a class in a for-loop.
+The same limitation exists with stereotype annotations.
+
+Spring Framework 7 (in 2026) introduced a new mechanism that  nicely addresses some limitations of the other two models.
+If you need the dynamism it affords, it's the best way to get it.
+
+NOTE: I will confess, there _are_ some existing ways to access that runtime dynamism that long predate `BeanRegistrar`, but they come with their own cadre of limitations and 99% of people won't use or need them, especially with `BeanRegistrar` now available.
+
+
+
+
+// * Spring Framework 7 introduced `BeanRegistrar`s, too, btw. Here's how that would look.
+// * We turned almost all the beans into the `BeanRegistrar` format.
+// We leave the `DataSource` in Java config, and we still have component scanning for the `DogRepository` itself.
+// * You can mix and match.
+// No need to pick one over the other.
+// They all end up as `BeanDefinition`s that get turned into beans, and those beans can be injected and reused in all the normal ways.
 // stop beanRegistrar
 // start environment
 * Anyway, we've done a lot here.

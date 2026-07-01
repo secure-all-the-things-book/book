@@ -25,10 +25,14 @@ toc::[]
 :sectnums!:
 [frontmatter]
 = Frontmatter
-
 include::frontmatter.adoc[]
 
-= The Spring Authorization Server
+== Bootcamp
+include::java.adoc[]
+include::beans-to-boot.adoc[]
+include::spring-security.adoc[]
+
+= OAuth
 
 include::oauth.adoc[]
 include::authorization-server.adoc[]
@@ -36,22 +40,14 @@ include::implementing-authorization-server.adoc[]
 include::persistence.adoc[]
 include::federated-oauth.adoc[]
 
-= Secure Your Services
-// include::web.adoc[]
+= Applied Security
+
+include::web.adoc[]
 include::gateway.adoc[]
-// include::graphql.adoc[]
-// include::how-to-build-your-own-resource-server.adoc[]
+include::graphql.adoc[]
+include::grpc.adoc[]
+include::soap.adoc[]
+include::mcp.adoc[]
+include::messaging.adoc[]
+include::shell.adoc[]
 
-=
-// include::grpc.adoc[]
-// include::soap.adoc[]
-// include::mcp.adoc[]
-
-= Secure Everything Else
-// include::messaging.adoc[]
-// include::shell.adoc[]
-
-[appendix]
-= Appendix
-include::java.adoc[]
-include::beans-to-boot.adoc[]
