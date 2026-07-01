@@ -30,6 +30,7 @@ include::frontmatter.adoc[]
 == Bootcamp
 include::java.adoc[]
 include::beans-to-boot.adoc[]
+include::boot-and-beyond.adoc[]
 include::spring-security.adoc[]
 
 = OAuth
