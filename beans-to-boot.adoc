@@ -573,8 +573,24 @@ Here's an example showing two diferent listeners for Spring's `ContextRefreshedE
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/lifecycle/Listener.java[]
 ----
 
+And of course we've wired that up in the `DogConfiguration` class.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/lifecycle/DogConfiguration.java[]
+----
+. the newly registered `Listener` class.
+
 A typical Spring application will publish dozens of events.
 // stop lifecycle
+
+== Post Processors
+
+As you might've surmised, every Spring application goes through a well-known set of phases as it starts up.
+There's a lot more to it than this, but conceptually I find it helps to talk about three distinct phases.
+
+* ingest
+* `BeanDefinition`s
+* beans
 
 // start pp
 * Let's look at `BeanFactoryPostProcessor`s and `BeanPostProcessor`s.
