@@ -578,52 +578,191 @@ And of course we've wired that up in the `DogConfiguration` class.
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/lifecycle/DogConfiguration.java[]
 ----
+
 . the newly registered `Listener` class.
 
 A typical Spring application will publish dozens of events.
 // stop lifecycle
 
 == Post Processors
-
+// start pp
 As you might've surmised, every Spring application goes through a well-known set of phases as it starts up.
 There's a lot more to it than this, but conceptually I find it helps to talk about three distinct phases.
 
-* ingest
-* `BeanDefinition`s
-* beans
+* ingest, where in Spring reads the definitions of how you want your objects wired.
+So far we've seen Java configuration.
+But there are others, including component scanning, XML definitions, and `BeanRegistrar`s
+* `BeanDefinition` - after reading all the configuration, Spring turns all configuration into a `BeanDefinition`, which is a metamodel object that contains the definition of how an object should be created, its lifecyle, its dependencies, etc, inside a `BeanFactory`.
+At this stage nothing has been created yet, but we know enough to validate how objects relate to each other, any missing dependencies, etc.
+Think of `BeanDefintions` as the primoridal soup for your application.
+No strong types at this point.
+Just designs and aspirations.
+* beans - at this point we have live-fire objects.
+Spring has called constructors, passed in dependencies, and turned the `BeanDefinitions` into a valid graph of objects that taken together are your application
 
-// start pp
-* Let's look at `BeanFactoryPostProcessor`s and `BeanPostProcessor`s.
-* > Ingest -> `BeanDefinition`s -> beans.
-* `BeanFactoryPostProcessor` lets you see the `BeanDefinition`s.
-* We can demonstrate it.
-I've put it in another configuration class.
-We can import configuration classes by adding `@Import` to the `DogConfiguration` configuration class.
-* Neat.
-What we want to do, however, is introduce transactions.
-So let's use a `BeanPostProcessor`.
-* A BPP gets called right before the beans are put in service.
-We have a chance to enrich the object before it's put into service.
-* Extract the transactional support to this, based on the presence of a marker interface, `Tx`.
-* Nice!
-Now we can refactor the config and remove the explicit call to `Transactions.createProxy`.
-* _This_ is the power of a good framework.
+Spring has callback interfaces that allow you to be involved at different phases during this three-phase lifecycle.
+
+The earliest one is a `BeanFactoryPostProcessor`.
+Implement that and Spring will let you vist all the `BeanDefinition` instance in the `BeanFactory`, potentially deleting them or replacing them or adding new ones.
+
+Once the `BeanFactory` is full of viable `BeanDefinition` objects, Spring creates actuall _beans_ out of them by calling the constructors and settng the dependencies.
+Here we have one interface that lets us be involved _before all the setts are called and _after_: `BeanPostProcessor`.
+A `BeanPostProcessor` is one of the last lines to cross before the program is up and running.
+A `BeanPostProcessor` may replace a bean of a given type with another bean of the same polymorphic type, but not much more.
+It is, however, an ideal place in which to introduce generic, cross-cutting concerns like transaction demarcation.
+
+We can see this in action by creating a `BeanFactoryPostProcessor` called `MyBeanFactoryPostProcessor`.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/pp/MyBeanFactoryPostProcessor.java[]
+----
+
+This examples registers two beans, our `BeanFactoryPostProcessor` _and_ a single bean that implements `InitializingBean`.
+We dont really care about the ean itself, but we cna inspect the reasulting `BeanDefinition` in the `BeanFactoryPostProcessor` and inspect the resulting `definition` on the `BeanDefinition` that results from the use of the Spring Frameworik `@Definition` annotation on the bean method.
+
+Make sure to register the `BeanFactoryPostProcessor` accordingly.
+It needs to be invoked very early on in the lifecycle of the application, so use `static` on the bean method.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/pp/BppConfiguration.java[]
+----
+
+So far we've been manually using the `Transactions` class to create transactional proxies.
+Well have to remember to do this for all objects.
+But suppose we had some generic mechamism by which to identify that we wanted to participate in transactions, like a marker interface.
+Lets call it `Tx`.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/pp/Tx.java[]
+----
+
+Add that to the implementation of `DogRepository`:
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/pp/DogRepository.java[]
+----
+
+What we need now is some code to sift through all the objects right as theyre about to be pressed into service and, if they have this marker interfce, wrap them in a transactional composite.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/pp/TxBeanPostProcessor.java[]
+----
+
+. inject the `BeanFactory` so that we can ask for it whatever user-configured instance of `TransactionTemplate` is available.
+Note that we look up the bean only at the very last moment, at the time of the transactional method's invocation.
+We don't want to force eager initialization of the `TransactionTemplate` or any of its dependencies by looking up the object in the constructor.
+
+With this done, we no longer need to manually call `Transactions` for any particular bean.
+The framework will do this automatically for any bean that implements `Tx`.
+Register the new `TxBeanPostProcessor` using a `static` `@Bean` method so Spring is able to run involve the bean much earlier in the lifecycle.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/pp/DogConfiguration.java[]
+----
+
+This is where a good framework like Spring really comes into its own.
+Spring has a birds eye view of everything you're doing and can dramatically simplify things accordingly.
 You can centralize cross-cutting concerns in a single place.
 This is the essence of aspect-oriented programming (AOP).
 // stop pp
+
 // start transactional
-* If you have used Spring at all before, then you probably know where this is going: we've already done this exact magic trick.
+== But `@Transactional` Exists so Let's Use That Instead
+
+If you have used Spring at all before, then you probably know where this is going: Spring has already done this exact declarative transaction demarcation magic trick.
+It's called `@Transactional`, and its been in the framework for 20+ years.
 Let's refactor to use `@Transactional`.
 We just need to enable it with `@EnableTransactionManagement`.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/transactional/DogConfiguration.java[]
+----
+
+. here's the most important bit.
+We can replace everything we wrote with this one annotation, plus the `@Transactional` annotation.
+
+And now we can delete `Tx` and remove its use from `Main`.
+We can also delete the `Transactions` class and the `TxBeanPostProcessor`.
+
+Ahh.
+Much better.
+
+Spring wont know to do this for us unless we ask it to do with the `@EnableTransactionManagement` annotation on a `@Configuration` class.
+
+The `@Transactional` annotation is more granular and capable than our homebrewed `Tx` marker interface.
+You can place it on a class in whcih case every method in the class will be wrapped in a transaction, or you can place it on individual methods.
+You can also stipulate things like propagation, isolation, and timeouts.
+Or you could place it on the class for some sensible defaults and then override those at the method level. _Much_ better.
+
+This exercise of implementing a `BeanPostProcessor` and using proxies to centrally implement change is the core of how Spring works.
+Spring does this sort of misdirection _everywhere_.
+You put annotations on a class, Spring discovers it and replaces them with proxies that do the thing you asked for.
+And, thanks to the magic of polymorphism, consumers of these beans are none the wiser.
+They can interface with your code in terms of its plain interface.
+Everybody is better for it.
+
 // stop transactional
 // start componentscan
-* Nice, but of course it's tedious to define beans with full config every time.
-Let's use implicit configuration and `@ComponentScan`.
-* Component scanning finds our repository once we add `@Repository`.
-* Stereotype annotations are neat.
-You can create your own, too.
-* This is _implicit_ configuration.
-* As opposed to the explicit configuration.
+== Component Scanning
+
+We mentioned earlier that Spring can ingest your beans in a number of different ways, and that Java configuration was just one.
+Another one is _component scanning_, where in Spring can scan my packages and identify beans to manage by the presence of marker annotations, which we call _stereotype_ annotations, from the Unified Modeling Language (UML).
+
+The root stereotype annotation is `@Component`.
+Place it on a class and instruct Spring to discover classes in the package(s) in which that class lives and Spring will apply some useful heuristics to create the bean for you.
+It'll attempt to satisfy any dependencies to the constructor by type.
+I'll look for interfaces like `InitializingBean` and `DisposableBean`, and annotations like `@PostConstruct`, and honor them just as before.
+It'll create a singleton, just as before.
+Assuming Spring cna construct the object without any intervention from you, this is a great way to make short work of registering beans for Spring to manage.
+Indeed, it's easier to think about the places where Spring _couldn't_ do the work for you.
+
+* if you have custom factory methods (eg, `JdbcClient.create(DataSource)`)
+* if you need to pass in parameters that Spring can't satisfy by looking at other beans in the `BeanFactory`
+* If you don't have access to the source code.
+Obviously.
+From this arises an OK rule of thumb: use component scanning for your own code, use Java configuration for other people's code.
+
+Spring also supports _meta-annotations_.
+You cna put `@Component` on other annotations and then put those meta-annotations on your code and Spring will pick it up as well.
+
+Spring does this quite famously with a handful of other annotations.
+These annotations are documentational _and_ technical in nature.
+They tell the framework that the thing should be treated a certain way _and_ they tell the programmer the intended role of the component in the codebase.
+
+* `@Component` - a generic, managed bean
+* `@Repository` - indicates that the component handles data-access logic.
+Reading, writing, etc.
+* `@Service` - indicates that the component handles coarse grained business logic
+* `@Controller` - indicates that the component is a _controller_, adapting requests of a particular protocol to server-side types, routing them to handler methods, and forwarding the output model onto a handler to produce a response.
+* `@RestController` - indicates that the component is a _controller_, specifically adapted to HTTP and the tenents of the REST constraint on HTTP.
+
+Interestingly, `@RestController` is _not_ annotated with `@Component`.
+It's annotated with `@Controller`, so there you have _two_ levels of meta-annotations!
+
+Best part? You can create your own meta-annotations. Just add `@Component` to it and Spring will discover it just like it does any of the other meta-annotations.
+
+Here's our reworked `DogConfiguration` supporting compnoent scanning, and with no explicit Java bean configuration method for the `DogRepository`.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/componentscan/DogConfiguration.java[]
+----
+
+. we have enabled component-scanning with `@ComponentScan`.
+By default this will look in the current package (`com.example.beans_to_boot`) and below and (e.g., `com.example.beans_to_boot.a.b.c`) and find any class marked with `@Component`.
+
+The `DogRepository` no longer appears in the `DogConfiguration` class.
+We've simply annotated it with a stereotype annotation, `@Repository`.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/componentscan/DogRepository.java[]
+----
+. it's the little things that make everything so much nicer..
+
+Component scannign supports a kind of _implicit_ configuration. Spring discovers the class and applies heuristics to configure and construct a valid instance of your type. Java configuration supports a kind of _explicit_ configuration. You must tell Spring almost everything, but you also have full control. It's a bit more verbose, but sometimes it's the best option.
+
+== Spring Framework 7's `BeanRegistrar`: the best of both worlds
+
+
 // stop componentscan
 // start beanRegistrar
 * Spring Framework 7 introduced `BeanRegistrar`s, too, btw. Here's how that would look.
