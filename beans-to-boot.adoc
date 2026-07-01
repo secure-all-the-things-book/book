@@ -37,7 +37,7 @@ But first, we'll need a project and a database...
 We will need to incept a new project.
 It's just Java and some libraries so in theory you could create your own with no issues.
 But I like to use the https://start.spring.io[Spring Initializr (https://start.spring.io)].
-Visit the Spring Initializr and make the following dependency selections: `Spring Boot Actuator`, `Spring Data JDBC`, `PostgreSQL Driver`, `Spring Web`, `GraalVM Native Support`, and `Spring Boot DevTools`.
+Visit the Spring Initializr and make the following dependency selections: `Spring Boot Actuator`, `Spring Data JDBC`, `PostgreSQL Driver`, `Spring Web`, `GraalVM Native Support`, `OpenTelemetry`, and `Spring Boot DevTools`.
 Select Java 25 (or later), and Apache Maven as the build tool. you could use Gradle if you're more comfortable, though I'll be showing Apache Maven.
 
 give the application whatever group name and artifact name that u like.
@@ -48,7 +48,7 @@ Unzip it and then point your IDE - IntelliJ IDEA, Visual Studio Code, Eclipse, e
 you should have a project with the usual folder structure: `pom.xml` and  `src/{test,main}/{java,resources}`. you'll also have a new class in the `src/main/java` folder with a `public static void main` method.
 
 Rename the file `Main.java`, and gut the code inside.
-It should  look something like this when you're done:
+It should look something like this when you're done:
 
 ----
 package com.example.beans_to_boot;
@@ -60,6 +60,7 @@ public class Main {
 	}
 }
 ----
+
 . a _tabula rasa_!
 
 It is on this humble foundation that we build.
@@ -73,6 +74,8 @@ We'll use the following Docker Compose file to stand up the instance of our data
 ----
 include::{code}/beans-to-boot/beans-to-boot/compose.yml[]
 ----
+. this will stand up a PostgreSQL database
+. ..and a Grafana instance. We'll return to this later.
 
 .Run this in the usual way: `docker compose up -d`
 
@@ -898,7 +901,10 @@ We'e added a new `.properties` file to the example.
 include::{code}/beans-to-boot/beans-to-boot/src/main/resources/application.properties[]
 ----
 
+
 . ive chosen to use the keys `spring.datasource.url`, `sring.datasource.password`, and `spring.datasource.username` as the keys for my DataSource's URL, password, and username for, um, no reason at all...
+. we'll return to this soon..
+. wel'll return to this soon..
 
 I've got the password for the PostgreSQL server as it will be configured when we use the Docker Compose `compose.yml` file that ships with this codebase.
 This isn't the end of the world for local-only development.
@@ -910,6 +916,8 @@ External contributions - those further away from the codebase - override contrib
 So, if you specify an environment variable, it'll override the values provided in `application.properties`.
 There's even some goodness in there to normalize encironment variables.
 So, `SPRING_DATASOURCE_URL` will be normalized to `spring.datasource.url`.
+In this way, developers can keep the hardcoded development-onyl envrionment variable, but at runtime in production the real connection credentials can be specified with environment variables.
+
 // stop environment
 
 == Spring Boot
@@ -934,22 +942,102 @@ here's the updated `Main` class.
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/boot/Main.java[]
 ----
 
-* It's nice!
-But there's a lot of boilerplate that'll probably be the same from one app to another.
-* Let's use Spring Boot.
-Same `ApplicationContext`, but the code is much simpler.
-We can delete everything except the `DogRepository` and the `test` method.
-* This works because of autoconfiguration.
-You can create your own, too.
-Autoconfig is activated by the presence of `starters`.
-* And, being honest, I'm not sure we ever needed to implement the repository ourselves. lol.
-Let's just use the Spring Data JDBC project.
-* Note that we've also now got good ASCII art.
-We've got an actuator.
-We've got a web server.
-* We can use virtual threads!
-* Also, it'll automatically initialize the schema of the DB for us (`schema.sql` and `data.sql`).
-// start boot
-* Remember the `BeanDefinition`s?
-We can turn this into a GraalVM native image!
-* Use Spring Boot's build plugin to create a Docker image, too.
+. Spring Boot's `@SpringBootApplication` annotation is itself a _meta-annotation_.
+It is meta-annotated with `@Configuration`, which means this `Main` class is also a `@Configuration` class.
+It's meta-annotated with `@ComponentScan` so we don't need to worry about that either.
+. because its a `@Configuration` class, we can use `@Import` on it, just like before.
+. through most of the codew e've looked at we've created a Spring `ApplicationContext`.
+Here, were doing the same thing.
+The returnv alue of `SpringApplication.run` is an `ApplicationContext`.
+But we don't need it because we don't need to explicitly look up the `DogRepository` to pass to our `test` method.
+Instead..
+. ..we can define a bean of type `ApplicationRunner`. `ApplicationRunner` beans are given a chance to run as close as possible to the moment when the application is fully initialized and right before its put into service.
+So, here, rather than squatting on the `main` method as we did every earlier example, we simply register this bean.
+We can register as many as we want for whatever purposes, and know that this logic will run as the service initializes.
+
+We're using Spring Boot now.
+We've got a full objet relational mapper (ORM) framework on the CLASSPATH.
+Spring Data JDBC is capable and its already been configured.
+Let's rework our repository to leverage it, rather than hand-rolling SQL ourselves.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/boot/DogRepository.java[]
+----
+
+I know, you're thinking: "didn't we get rid of the interface ages ago?" But fear not!
+The interface is back, but this is _way_ better: we got rid of the implementation!
+This interface, which extends Spring Data's `ListCrudRepository`, already has a method called `findAll`.
+It also has methods to `save`, `delete`, `findById`, etc.
+Spring will create a proxy implementation of this class at startup time and provide implementations for all those methods by default.
+You can even define custom finder methods.
+In this example, I've got a finder method called `findByName` that when invoked will execute a SQL query of the shape `select * from dog where name = ?`.
+It does this by conventino.
+You can of course annotate the method in the interface with `@Query` and Spring will use your query instead. _Much better!_
+
+We imported the `DogBeanRegistrar`, so we might as well look at it.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/boot/Main.java[]
+----
+
+What happened?
+Where are all our beans?!
+Theyre gone.
+All gone.
+Spring Boot provides those beans for us, thanks to its marvelous _autoconfiguration_.
+So all that remains are our beans.
+Spring Boot has a ton of convenient conventions.
+For example, itll create a _real_ `DataSource` using the HikariCP connection pool using the properties that it'll load, by convention, from the Spring `Environment`.
+Spring Boot will by convention load any `application.properties` or `applicationl.yml` if it finds them in `src/main/resources`.
+
+But Spring Boot autoconfiguration does a whole heckuva lot more than that.
+You might notice that when you start the program it doesnt just exit as soon as the `Dog` entities have been enumerated.
+Sprign Boot started a webserver.
+Why?
+Because we asked it to by adding `Spring Web` to the project _way_ back at the very beginning of this chapter.
+So we now have a full web framework and webserver in play.
+
+Here, I even wrote a trivial Spring MVC controller that loads all the results from the repository.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/boot/DogController.java[]
+----
+
+Run the program and then hit `http://localhost:8080/dogs` in your browser to see that its working.
+
+By the way, when you ran the program did you notice the pretty colored log output? And the _amazing_ ASCII art banner?
+
+TIP: if you put some custom banner in  `src/main/resources/banner.txt`, Spring Boot will load that over the default built-in ASCII art.
+
+Remember when we first introduced `application.properties`, I didnt speak to some of the configuration values in the property file. Only those concerned with the `DataSource`. Lets revisit some of those.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/resources/application.properties[]
+----
+. the original database credentials.. moving on.
+. this prooperty enables virtual threads, a game changnig feature in Java 21 or later. This will dramatically improve scalability of blocking IO.
+. this property tells Spring Boot to run `src/main/resources/schema.sql` and `src/main/resources/data.sql` on startup. Super convenient to ensure the system is correctly configured.
+
+
+
+
+//
+// * It's nice!
+// But there's a lot of boilerplate that'll probably be the same from one app to another.
+// * Let's use Spring Boot.
+// Same `ApplicationContext`, but the code is much simpler.
+// We can delete everything except the `DogRepository` and the `test` method.
+// * This works because of autoconfiguration.
+// You can create your own, too.
+// Autoconfig is activated by the presence of `starters`.
+// * And, being honest, I'm not sure we ever needed to implement the repository ourselves. lol.
+// Let's just use the Spring Data JDBC project.
+// * Note that we've also now got good ASCII art.
+// We've got an actuator.
+// We've got a web server.
+// * We can use virtual threads!
+// * Also, it'll automatically initialize the schema of the DB for us (`schema.sql` and `data.sql`).
+// // start boot
+// * Remember the `BeanDefinition`s?
+// We can turn this into a GraalVM native image!
+// * Use Spring Boot's build plugin to create a Docker image, too.
