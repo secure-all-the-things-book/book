@@ -1,6 +1,6 @@
 :code: ..
 
-== The Gateway Client
+= The Gateway Client
 
 In our super secure OAuth onion, this next microservice, the `gateway`, is the outermost layer.
 It is the first port-of-call for all requests destined for the microservices in our system.

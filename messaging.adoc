@@ -190,7 +190,3 @@ include::{code}/messaging/messaging/src/main/java/com/example/messaging/JwtAuthe
 <.> use the `AuthenticationProvider` to talk to the Spring Authorizatoin Server.
 <.> if the JWT is in fact valid then we'll create a new `Message`, cloning the headers and payload from the incoming message, but specufying one new header, whose value is an object of type `Authentication`.
 <.> if the JWT is not valid, then create a new `Message` with a null header value.
-
-
-
-

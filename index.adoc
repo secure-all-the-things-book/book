@@ -1,10 +1,11 @@
-:tilde: ~
 :author: Josh Long
 :email:  josh@joshlong.com
 :revnumber: 1.0
 :revdate: {docdate}
-:revyear: 2027
-:keywords: "Secure All The Things!"
+:code: ..
+:revyear: 2026
+:java-lts-version: 25
+:keywords: "OAuth, Spring Framework, Spring Boot, Spring Security"
 :doctype: book
 :media: screen
 ifeval::["{media}" != "prepress"]
@@ -23,26 +24,17 @@ endif::[]
 // ifndef::ebook-format[:leveloffset: 1]
 toc::[]
 :sectnums!:
-[frontmatter]
-= Frontmatter
-include::frontmatter.adoc[]
 
-== Bootcamp
+include::frontmatter.adoc[]
 include::java.adoc[]
 include::beans-to-boot.adoc[]
 include::boot-and-beyond.adoc[]
 include::spring-security.adoc[]
-
-= OAuth
-
 include::oauth.adoc[]
 include::authorization-server.adoc[]
 include::implementing-authorization-server.adoc[]
 include::persistence.adoc[]
 include::federated-oauth.adoc[]
-
-= Applied Security
-
 include::web.adoc[]
 include::gateway.adoc[]
 include::graphql.adoc[]
@@ -51,4 +43,3 @@ include::soap.adoc[]
 include::mcp.adoc[]
 include::messaging.adoc[]
 include::shell.adoc[]
-

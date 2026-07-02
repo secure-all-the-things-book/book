@@ -74,16 +74,18 @@ include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_b
 What happened?
 Where are all our beans?!
 They're gone.
-All gone.
+(Almost) all gone.
 Spring Boot provides those beans for us, thanks to its marvelous _autoconfiguration_.
 So all that remains are our beans.
 
-When Spring Boot starts up, it scans the CLASSPATH for any `.jar` containing a file at `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`. That file, in turn, contains a newline-delimited list of Java configuration classes. These classes are basically the same as the ones we've seen so far, with some small refinements.
+When Spring Boot starts up, it scans the CLASSPATH for any `.jar` containing a file called  `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`.
+That file, in turn, contains a newline-delimited list of Java configuration classes' fully qualified names.
+Functionally, these classes are the same as the other Java configuration classes we've seen so far, with some small refinements.
 First, keep in mind that Spring Boot will _try_ to load every single one of these configuration classes on startup.
 Sometimes the beans in these configuration classes are not important or useful in a particular situation.
-We don't want Spring Boot contributing beans we don't actually need.
+It would be grossly inefficient if Spring Boot registered beans that we didn't need.
 So, autoconfiguration classes and the `@Bean` methods within are guarded with `@Conditional` annotations.
-These annotations point to implementations of `Condition`.
+These annotations point to implementations of the `Condition` type.
 These `Condition` instances test something about the application or its environment, and if the test comes back positive, the beans are contributed to the `BeanFactory`.
 If not, they are not contributed.
 
@@ -95,9 +97,51 @@ These conditions let Spring Boot avoid defining beans that aren't needed, and de
 If we'd kept our `DriverManagerDataSource` from earlier, Spring Boot would've backed off on contributing its `DataSource`, because it would infer that we want to exert control here.
 In this way, we get the best of both worlds: Spring Boot has sensible defaults that drop away whenever we want to override something.
 
+We can (and should) create our own autoconfiguration if we want to leverage the same convention-over-configuration experience that Spring Boot promotes.
+
+Create an autoconfiguration class of your own.
+Be sure to put the code in a package that is _not_ scanned by Spring's component scanning mechanism.
+In my application, my root package is `com.example.beans_to_boot`, so Spring will discover all classes in that package or deeper.
+So, I'll put the autoconfiguration in a separate, adjacent, package called `com.example.autoconfigure`, not because it's required but because it confirms that we've wired up the autoconfiguration correctly.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/autoconfigure/SillyAutoConfigurationExample.java[]
+----
+
+. `@AutoConfiguration` is yet another meta-annotation.
+You could use `@Configuration` here if you wanted.
+. `@ConditionalOnRandomness` is a conditional annotation that we'll write ourselves in just a moment.
+. `@ConditionalOnProperty` is a Spring Boot conditional annotation that will evaluate to true if the property called `my.config` exists in the `Environment`.
+We further stipulate that the value will be matched if it's not specified.
+If it is specified, and only if the value is `bar`, then this Java configuration bean will be registered.
+If this test evaluates to true, you'll see the output of our `ApplicationRunner` when the application starts up.
+If not, nothing will happen.
+
+Let's look at the implementation of our (admittedly very contrived) condition.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/autoconfigure/ConditionalOnRandomness.java[]
+----
+
+. this annotation is a meta-annotation which we've annotated with Spring Framework's `@Conditional` annotation.
+We pointed it to an implementation of `Condition` that we've written called..
+. `RandomnessCondition`, which evaluates to true whenever the result of `Math.random()` is greater than `0.5`.
+
+Obviously, this is a bit of a toy, but if you restart the program a few times you'll see your `ApplicationRunner` run and not run in seemingly random succession.
+
+Now, create a text file in `src/main/resources/META-INF/spring/` called `org.springframework.boot.autoconfigure.AutoConfiguration.imports` in your project.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports[]
+----
+
+Here, we've got just the one class.
+We could put this autoconfiguration class and the text file in a separate `.jar`, add that to the classpath of any Spring Boot application, and Spring Boot will give your code a chance to run _without_ requiring input from the user at all.
+This is how you ship seamless, out-of-the-box, and productive developer experiences that scale.
+
 == An Amazing Web Server
 
-But Spring Boot autoconfiguration does a whole heckuva lot more than that.
+Spring Boot autoconfiguration does a whole heckuva lot more than register a `DataSource`.
 You might notice that when you start the program, it doesn't just exit as soon as the `Dog` entities have been enumerated.
 Spring Boot started a web server.
 Why?
@@ -117,7 +161,8 @@ And the _amazing_ ASCII art banner?
 
 TIP: If you put a custom banner in `src/main/resources/banner.txt`, Spring Boot will use it instead of the default built-in ASCII art.
 
-Remember when we first introduced `application.properties`? I didn't speak to some of the configuration values in the property file.
+Remember when we first introduced `application.properties`?
+I didn't speak to some of the configuration values in the property file.
 Only those concerned with the `DataSource`.
 Let's revisit some of those.
 
@@ -199,6 +244,8 @@ Your mileage may vary.
 Try it.
 Go to the `target` folder and run `target/beans-to-boot` or whatever your Maven artifact name was.
 
+// todo: AOT and the component model
+
 == Project Leyden
 
 GraalVM native images are my favorite approach for optimization, but they do come with their own caveats.
@@ -218,7 +265,7 @@ include::{code}/beans-to-boot/beans-to-boot/leyden.sh[]
 . clean up and staging
 . use Spring's AOT mode and do a package
 . move the resulting packaged `.jar` to a well-known name, `application.jar`
-. run the program using Spring Boot's `.jar` tools to extract the normally nested Spring Boot `.jar` into a folder called `aot`.
+. run the program using Spring Boot's `.jar` tools to extract the normally nested Spring Boot `.jar` into a folder called `autoconfigure`.
 . run the Java program up until the application context's been refreshed, and dump the analysis out to `app.aot`.
 . cleanup
 . finally, run the program but use the `app.aot` index to dramatically speed up the application.
@@ -232,7 +279,9 @@ You're better off automatically building the container rather than manually defi
 In the world of mystery meat cloud containers, _less is more_.
 
 Spring Boot's Maven and Gradle plugins can do the work for you by deferring to the https://buildpacks.io[Buildpacks project].
-Buildpacks provide recipes for taking application artifacts and packaging them up as containers. These recipes represent the collective wisdom of the Spring and Java communities that maintain them. There are also buildpacks for scores of other languages and ecosystems, including COBOL!
+Buildpacks provide recipes for taking application artifacts and packaging them up as containers.
+These recipes represent the collective wisdom of the Spring and Java communities that maintain them.
+There are also buildpacks for scores of other languages and ecosystems, including COBOL!
 
 Here's how you can use it for your own application.
 
@@ -240,4 +289,6 @@ Here's how you can use it for your own application.
 ./mvnw -DskipTests -Pnative spring-boot:build-image
 ----
 
-Let this run for a bit and it'll give you the name of the container that's just been built. You can run it or `docker push` it to whatever container registry you want. From there, you're off to production!
+Let this run for a bit and it'll give you the name of the container that's just been built.
+You can run it or `docker push` it to whatever container registry you want.
+From there, you're off to production!

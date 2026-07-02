@@ -1,3 +1,5 @@
 :code: ..
 
 = Command Line Interfaces
+
+In this section, we're going to look at how to secure command line interfaces (CLIs) with OAuth and Spring Security. We'll use Spring Shell to build up the CLI and Spring Security's OAuth support, as usual, to do the rest.

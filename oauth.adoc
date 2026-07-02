@@ -49,8 +49,8 @@ As bad as the AI-driven CVE situation is today, can you imagine if every site yo
 You'd have to trust that every one of them doesn't get _pwned_!
 Sleeping would be _much_ more difficult!
 OK, I'll stop.
-I know it's all too deeply upsetting to consider. Mercifully, things improved.
-
+I know it's all too deeply upsetting to consider.
+Mercifully, things improved.
 
 == Open Authorization for an Open Web
 
@@ -82,7 +82,8 @@ There are several different flows for that handoff, each with its own trade-offs
 
 The OAuth client can now make requests on behalf of the user to APIs (these are called _Resource Servers_) using that OAuth token.
 
-These _Resource Servers_ will receive requests and need to validate them. If they receive a request that doesn't have a token, then the request is rejected.
+These _Resource Servers_ will receive requests and need to validate them.
+If they receive a request that doesn't have a token, then the request is rejected.
 If the request has a token, and the token is a stateless JSON Web Token (JWT), then the token is signed and can be validated cryptographically without talking to the Authorization Server for each request.
 This works because the resource server has obtained the Authorization Server's public cryptographic keys on startup.
 The resource server validates the token _in-memory_ using these public keys.
@@ -191,5 +192,3 @@ That's where things are heading.
 Large providers like Apple, Google, and Microsoft are pushing _passwordless_ logins tied to device biometrics, built on WebAuthn - and, increasingly, on passkeys, which are discoverable WebAuthn credentials synced across a vendor's ecosystem so you can sign in from any of your devices.
 
 Spring Authorization Server can be extended to participate in this future too, and by the end of the book you'll do exactly that.
-
-

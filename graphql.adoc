@@ -1,3 +1,4 @@
 :code: ..
 
 = GraphQL
+In this section, we'll look at how to secure Spring GraphQL services with OAuth and method security, alike.

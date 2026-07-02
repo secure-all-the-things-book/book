@@ -1,7 +1,5 @@
 :code: ..
 
-
-
 = Persistent State in the Spring Authorization Server with PostgreSQL and JDBC
 
 Spring makes it easy to substitute implementations with polymorphism.  _Dependency injection_ is one of the key reasons we use Spring.
@@ -472,7 +470,7 @@ It's both space efficient and cryptographically secure.
 <.> We only want to plugin the `OAuth2TokenCustomizer` for the `JwtGeneator`, but need to redeclare the bean that uses it, the `OAuth2TokenGenerator`. most of this is boilerplate that we're copying from the defaults.
 <.> and finally we want to plugin our new `JWKSource` implementation
 
-NOTE:: In this last example we injected some propertues, `jwk.persistence.password` and `jwk.persistence.salt`, which are credentials that need to be stored in a secure fashion!
+NOTE: In this last example we injected some propertues, `jwk.persistence.password` and `jwk.persistence.salt`, which are credentials that need to be stored in a secure fashion!
 
 The machinery is in place, but something needs to start it!
 We want the application to startup and automatically register a new `RsaKeyPair` if none exists in the database (otherwise the Spring Authorization Server wouldn't work!), and we want to be able to rotate the keys automatically.

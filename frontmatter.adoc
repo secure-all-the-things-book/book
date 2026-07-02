@@ -1,4 +1,3 @@
-[[frontmatter]]
 = Frontmatter
 
 _Secure all the things with the Spring Authorization Server_

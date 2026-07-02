@@ -1,3 +1,5 @@
 :code: ..
 
 = Spring Security Fundamentals
+
+In this section we'll look at Spring Security fundamentals.
