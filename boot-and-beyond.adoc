@@ -226,7 +226,7 @@ For it to work, however, the AOT engine will need to know which SQL query dialec
 Add the following bean to help it along.
 
 ----
-include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/boot/AotConfiguration.java[]
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/boot/DataAotConfiguration.java[]
 ----
 
 You can take advantage of native-image technology thusly:
@@ -244,7 +244,39 @@ Your mileage may vary.
 Try it.
 Go to the `target` folder and run `target/beans-to-boot` or whatever your Maven artifact name was.
 
-// todo: AOT and the component model
+GraalVM can have _amazing_ results, but it does require some compromises about which you need to be aware. The way GraalVM works is by starting from your `main` method entry point into the application, scanning every class that you use, and every class that those classes use, and every class that those classes use, and so forth, and onward until its built up a giant graph of which classes your program will use. It retains those and throws every other class away before it compiles your program. It also throws away reflective metadata (you know, the types and instances that you get back when you try to do something like `Customer.class.getMethods()`). It also throws away the metadata for JNI references. And `Serialization`. Also, all the stuff that aren't `.class` files, but that ship in the `.jar` files for your application - things like `.properties` files, images, etc.? It throws all that away, too. Basically, all the stuff that the JVM normally would create and/or load on every startup, but that your program may never need: it throws it all away. The result is a _lightning_ fast native image which uses a tiny fraction of the usual RAM.
+
+But it's not perfect. The analysis that results in this much smaller set of classes happens during compilation. Java's a turing complete language. It's impossible to completely understand at compile time what will happen at runtime. So the GraalVM compiler might throw things out that you might actually end up needing during runtime. So you'll need to tell it what to keep. What _not_ to throw out. Normally, in a GraalVM application, you do this with `.json` configuration files that live in `.jar` files under `/META-INF/native-image/$\{groupId}/$\{artifactId}/*.json`.
+
+The trouble is that these configuration files are fiddly. If you refactor a type in your Java code, your IDE might forget to update the entry in the `.json` configuration file. So, you'll need to update it yourself. It gets tedious.
+
+Spring Framework 6 and Spring Boot 3 introduced an Ahead of Time (AOT) component model that gets evaluated _during compilation_. Remember where we talked about the Spring `BeanFactory`, and said that the `BeanFactory` handles _ingest_ (the loading of bean configuration from various sources like component scanning, Java configuration, etc), then turned everything into metamodel objects of the class  `BeanDefinition`? Those `BeanDefinition` objects give any would be examiner enough information about the objects in the application, including their classes.
+
+Spring's AOT component model builds your application, to that point, giving you access to the `BeanDefinition` objects, and allowing you to programmatically register _hints_, which get translated into the aforementioned `.json` files.
+
+We won't belabor the point, but there are different ways to register these AOT hints, depending on the level of power you need.
+
+For most applications, users should probably get comfortable with `RuntimeHintsRegistrar`.
+
+Let's suppose we wanted to read in a text file (`message`) and write out its contents to the command line when the program starts up. You could easily construct a `Resource` object and then read its contents in the JVM. But that text file won't exist in a GraalVM native image, because it'll have been thrown out. We need to tell GraalVM not to.
+
+Here's the text file.
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/resources/message[]
+----
+
+Now we need to register some code to contribute the AOT hints.
+
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/boot/AotConfiguration.java[]
+----
+. The `AotConfiguration` class is a stock-standard Java configuration class. The `@ImportRuntimeHints` annotation loads the AOT `RuntimeHintsRegistrar` class. This class will be invoked during compilation.
+. Spring's `Resource` abstraction is a nice way to represent anything that could be read (that is, it produces `byte`) or written to. There are many implementations. Here we're using the one to represent resources on the CLASSPATH.
+. the `RuntimeHints` object offers convenient DSL methods to register resources for loading, types for reflection, or serialization, etc.
+. By the time this `ApplicationRunner` executes at runtime, the `message` file _will_ be in the memory of the native image and everything will continue to work, all because of the work we did at compile time to make it so.
+
+Conceptually, that's all there is to it! There are other callback classes besides `RuntimeHintsRegistrar`, but that's a topic for discussion some other day. What's important to know is that you'll almost never need to worry about registering these AOT hints. Spring Boot will do it. Or there'll be configuration in the libraries that you consume. But not _always_. In which case, you'll have to do the work yourself. But at least you now know how.
+
 
 == Project Leyden
 
@@ -284,11 +316,23 @@ These recipes represent the collective wisdom of the Spring and Java communities
 There are also buildpacks for scores of other languages and ecosystems, including COBOL!
 
 Here's how you can use it for your own application.
+If you want to build a container for a standard JVM-based application, do the following.
+
+----
+./mvnw -DskipTests spring-boot:build-image
+----
+
+If you want to build a container for a GraalVM native image, do the following:
 
 ----
 ./mvnw -DskipTests -Pnative spring-boot:build-image
 ----
 
-Let this run for a bit and it'll give you the name of the container that's just been built.
+Let this run for a bit, and it'll give you the name of the container that's just been created.
 You can run it or `docker push` it to whatever container registry you want.
 From there, you're off to production!
+
+== Next Steps
+
+In this section we explored the awesome force-multiplying potential of Spring Boot and saw how it frees you to focus on that which matters, building the best and most valuable application for your customers as possible.
+
