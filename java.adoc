@@ -529,6 +529,22 @@ You'll get to have your cake and eat it too: scalable, but simpler, code.
 // Factor out code for boot chapter to separate git repo; add section on GraalVM to Java chapter; remove GraalVM primer from boot chapter; show AOT example in boot. Show autoconfig in boot chapter
 
 
+== Improving Startup with Project Leyden
+
+Project Leyden is a set of initiatives from the OpenJDK team to improve Java's performance by evaluating more and more about a program's structure earlier, at compilation or as early as possible.
+This effort is ongoing, but has already born fruit.
+You can use Project Leyden with a Spring application to great effect.
+It provides a dramatic improvement on startup time for _all_ Java application workloads.
+
+== Improving Startup and RAM footprint with GraalVM Native Images
+
+We're using the GraalVM distribution of OpenJDK.
+It is not strictly speaking the same as OpenJDK.
+It releases more slowly than OpenJDK, for example.
+GraalVM offers some alluring capabilities, including a polyglot language runtime called Truffle, and the capability to turn Java programs into lightweight, rapid, architecture- and operating system-specific native images.
+The startup time is akin to or better than Project Leyden, and the RAM reductions could be quite considerable.
+GraalVM does require some compromises.
+The resulting binaries are _not_ strictly speaking Java programs anymore and must give up compatibility in certain cases.
 
 == Next Steps
 
