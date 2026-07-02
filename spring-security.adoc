@@ -3,3 +3,17 @@
 = Spring Security Fundamentals
 
 In this section we'll look at Spring Security fundamentals.
+
+// the twin charges of spring security
+// authentication
+// authorization
+// lets setup a simple web application
+// authentcatoin with InMemory
+// auth with JDBC userdetails
+// passwords bad
+// one time tokens
+// passkeys
+// MFA
+// time to concern ourselves with authoriztion
+// first order of business: limiting MFA requirements to just sensitive endpoints
+//
