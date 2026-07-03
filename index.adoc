@@ -26,6 +26,7 @@ toc::[]
 :sectnums!:
 
 include::frontmatter.adoc[]
+include::conventions.adoc[]
 include::java.adoc[]
 include::beans-to-boot.adoc[]
 include::boot-and-beyond.adoc[]

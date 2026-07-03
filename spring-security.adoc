@@ -7,13 +7,21 @@ In this section we'll look at Spring Security fundamentals.
 // the twin charges of spring security
 // authentication
 // authorization
-// lets setup a simple web application
-// authentcatoin with InMemory
+// lets set up a simple web application
+// web apps are protected by a filter that intercpets all requests, extracts some sort of credential, and uses that to authenticate the request
+// spring boot sets up an apache tomcat webserver by default (though you can parameterise it with jetty)
+// the webserver implements the servlet specification which describes a type of fitler
+// u can create ur own filter to look at all incoming requests. u dont even have to use the Servelt apis directly to register the filter.
+// simply register it as a bean
+// filters have priority. order.
+// the sproing security filter lives before any and all other filters (usually)
+// once authenticated, requests flow to
+// authentication with InMemory
 // auth with JDBC userdetails
 // passwords bad
-// one time tokens
+// one-time tokens
 // passkeys
 // MFA
-// time to concern ourselves with authoriztion
+// time to concern ourselves with authorization
 // first order of business: limiting MFA requirements to just sensitive endpoints
-//
+// access control is an important part

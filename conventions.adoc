@@ -1,0 +1,55 @@
+:code: ..
+
+= Conventions
+
+In this book I'll do certain things that are for the purposes of this book and not necessarily the best configuration for code.
+There's a fundamental tension in the way books are written and the way code is written that I wrestle with on every attempt.
+I've long tried to find ways to write that avoid errors in the reproduced code.
+I want all the code printed to be compiled and valid.
+It is for this reason that the vast majority of the code reprinted in this book, and especially of the code reprinted in this book that comes from code I've written for this book, is actually in include of some actual source code.
+It's _not_ code I copied and pasted into some Microsoft Word document or something, and that has long since diverged from the state of the "actual" code.
+
+== Noisy Configuration Classes
+
+Often, you'll see me introduce new beans in new configuration classes when they could've just as easily gone in a previous configuration class.
+This is so that I might avoid reprinting the original beans while keeping code working.
+
+== Spring Profiles
+
+Similarly, I might introduce beans that I don't intend for us to land on, but that are interesting to know about.
+These beans are useful, but not the intended final result.
+In these cases, I'll use a Spring _profile_, which is a marker annotation that makes the bean insert - Spring doesn't "see" it - until you explicitly _activate_ the profile.
+
+----
+@Configuration
+@Profile("example")
+class MyConfig {
+
+ @Bean
+ Bar bar(){
+   // ...
+ }
+
+ @Bean
+ @Profile("foo")
+ Foo foo(){
+   // ...
+ }
+}
+----
+
+Usually, you activate the profile or profiles by passing in a comma-delimited command line switch, e.g.:
+
+----
+./mvnw -Dspring.profiles.active=example,foo spring-boot:run
+----
+
+In this example, both the profile for the configuration class, `example`, and the profile for the nested bean, `foo`, are active and thus both the configuration class and the specific beans inside of it will be active.
+If the profile `example` is active, but not the `foo` profile, then the result would be that _only_ the `bar` bean would be active, since it has no other profile.
+
+As you work through the book, either remove the profile or activate it to ensure the relevant code runs when you run the example.
+
+Generally, however, I try to avoid profiles for "real" code intended for production, as they make it easy to violate the 12-Factor principle of one build for multiple environments.
+And, there are some sticky issues with the use of profiles when building Spring AOT-powered applications.
+All in all, it's worth avoiding.
+
