@@ -94,3 +94,22 @@ Generally, however, I try to avoid profiles for "real" code intended for product
 And, there are some sticky issues with the use of profiles when building Spring AOT-powered applications.
 All in all, it's worth avoiding.
 
+
+== Nullability
+
+Starting from Spring Framework 7 and Spring Boot 4, the entire Spring portfolio adopted the https://jspecify.dev[JSpecify.dev annotations]. These annotations define null restriction on references in the codebase. They give build tools like Apache Maven and Gradle, IDEs like IntelliJ IDEA, and compilers like Java and Kotlin feedback about when a `null` reference is being passed to a place that it should not be.
+
+Sometimes, in the course of this book, I'll present interfaces or types from Spring that feature these annotations. Spring Security is a very good example of this. It's an old project whose origins assumed a world where all authentication attempts would include a password. Later, new ways to authenticate (and arguably more secure ones) developed and the password field in the original `Authentication` became _nullable_. That is, the password wasn't required because there might be other things in the request - a token, a certificate, etc. - that did the work of identifying the user and so the password wasn't needed.
+
+Adopting these JSpecify.dev annotations has been helpful for even the Spring team because it helped us to see places where our suppositions around null references didn't universally hold true. Considering that Spring Security is more than 20 years old, it's not surprising that these occasional inconsistencies sometimes read their ugly head!
+
+Often, in the Spring codebases, you'll see a `package-info.java` class that contains a single package declaration and `@NullMarked`, like this one from `org.springframework.context`:
+
+----
+@NullMarked
+package org.springframework.context;
+
+import org.jspecify.annotations.NullMarked;
+----
+
+`@NullMarked` says that unless shown otherwise, every reference in this package is meant to be non-`null`. Occasionally, you'll see such exceptions marked with `@Nullable` on specific fields.

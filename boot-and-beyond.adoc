@@ -208,7 +208,10 @@ Visit just `/actuator` to see all the sub-endpoints.
 
 We've also got Grafana running in the background.
 As you work through the code in Spring Boot, you might notice that, first of all, you're seeing a good deal more application events.
-Second, if you visit http://localhost:3000 and then navigate to `Drilldown` -> `Metrics`, you can see the same metrics you saw under `/actuator/metrics`.
+Second, if you visit http://localhost:3000 and then navigate to `Drilldown` -> `Metrics`, you can see the same metrics you saw under `/actuator/metrics`, but now graphed over time. Neat!
+
+// todo take a screenshot of the metrics flowing into grafana:3000
+
 
 == GraalVM Native Images
 

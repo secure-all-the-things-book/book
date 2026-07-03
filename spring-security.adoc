@@ -44,7 +44,8 @@ I don't know if writing a book is cheaper than therapy, but it's definitely more
 
 The framework evolved well beyond basic authentication and authorization, cementing a flexible architecture centered around servlet filters, authentication providers, method security, and deep integration with the Spring Framework.
 
-As stewardship expanded to maintainer - including Luke Taylor, Rob Winch, and a growing community of contributors - Spring Security continued to modernize alongside both the Java ecosystem and the changing web. At this point, no single engineer has done more to improve Spring Security than its current lead Rob Winch, about whom you'll no doubt hear more from me in the course of this book.
+As stewardship expanded to maintainer - including Luke Taylor, Rob Winch, and a growing community of contributors - Spring Security continued to modernize alongside both the Java ecosystem and the changing web.
+At this point, no single engineer has done more to improve Spring Security than its current lead Rob Winch, about whom you'll no doubt hear more from me in the course of this book.
 
 The 3.x generation introduced features such as _Spring Expression Language_ (SpEL)-based access control, improved LDAP integration, OpenID support, and built-in protection against common web vulnerabilities like Cross-Site Request Forgery (CSRF).
 Spring Security 3.2 and 4.x shifted the preferred programming model away from verbose XML toward Java-based, type-safe configuration and fluent APIs.
@@ -62,12 +63,69 @@ With that high level overview out of the way, let's talk specifics.
 
 == Spring Security for all Contexts
 
-Spring Security has a good story for securing all manner of differnt workloads. Obviously most of this book assumes that you're build HTTP-based clients and services, but part of the reason I wanted to write this book is precisely because it can do _so much more_! You can use it to secure HTTP clients and services, MCP clients and services, command line interface (CLI) clients, backoffice message code, and so much more.
+Spring Security has a good story for securing all manner of differnt workloads.
+Obviously most of this book assumes that you're build HTTP-based clients and services, but part of the reason I wanted to write this book is precisely because it can do _so much more_!
+You can use it to secure HTTP clients and services, MCP clients and services, command line interface (CLI) clients, backoffice message code, and so much more.
 
 ==  Authentication
 
-Authentication answers the question _who is this request from_? It
+Authentication answers the question: _who is this request from_?
+What's their name?
+Do we know about them?
+And with that information, you can answer other more interesting questions like _do they work for our organization?_ or _are they a customer with a paid subscription in good standing_?
+Identity is everything.
+There's no continuity of service if there are no users for whom to ensure continuity.
+There are no users if there is no identity.
 
+In Spring Security, the core concept of authentication is represented by an object named, unsurprisingly, `Authentication`.
+Spring Security features an `AuthenticationManager` which in turn delegates to a chain of `AuthenticationProvider` types.
+There are _dozens_ of these included in Spring Security, many of them having specific knowledge on how to authenticate a given user in terms of a given specification or protocol or scenario.
+
+Here's the definition of `AuthenticationManager` in Spring Security.
+
+----
+package org.springframework.security.authentication;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+
+@FunctionalInterface
+public interface AuthenticationManager {
+
+	Authentication authenticate(Authentication authentication) throws AuthenticationException;
+
+}
+
+----
+
+The most common implementation of `AuthenticationManager` is `ProviderManager`, which as I say manages a chain of `AuthenticationProvider` instances.
+
+Here's the definition of `AuthenticationProvider` in Spring Security.
+
+----
+package org.springframework.security.authentication;
+
+import org.jspecify.annotations.Nullable;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+
+public interface AuthenticationProvider {
+
+	@Nullable Authentication authenticate(Authentication authentication) throws AuthenticationException;
+
+	boolean supports(Class<?> authentication);
+}
+----
+
+// todo re-render this w/ omnigraffle (i bought a license specifically for this!) in a uniform style once the whole book is done. should i use excalidraw?
+
+image::images/security/authentication.png[]
+. here's a high-level overivew of the flow of authentication requests
+
+----
+include::{code}/security/security/src/test/java/com/example/security/SecurityApplicationTests.java[]
+----
 
 // the twin charges of spring security
 // authentication
