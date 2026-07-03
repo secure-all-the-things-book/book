@@ -153,14 +153,19 @@ Imagine we're an HTTP client using an HTTP form or an HTTP basic request.
 Spring Security's filter would intercept those request, wrap them into a `UsernamePasswordAuthenticationToken` instance, and then ask the `AuthenticationManager` to try to authenticate it.
 Here, we see that it does so successfully.
 
-Now that you know, conceptually, about how to _do authentication_, you'll hopefully appreciate that the hardest part about security is just getting your code in the right place to do authentication in the first place.
+Now that you know, conceptually, about how to _do authentication_, you'll hopefully appreciate that the hardest part about security is getting your code in the right place to do authentication in the first place.
 In a web application, there's a filter that intercepts requests bound for your application, and it is there that code of a kind with the code in that test actually runs.
+We'll of course see how to do so in various other contexts at other places in this book.
 
-Let's take these simple concepts and look at them in practice, in a more fleshed out example implemented using Spring Boot and Spring Security.
+Let's take these simple concepts and look at them in practice, in a more fleshed-out example implemented using Spring Boot and Spring Security.
 
-Visit the Spring Initializr, add `PostgreSQL Driver`, `JDBC API`, `GraalVM Native Support`, `Spring Web`, `Spring Security`, and `WebAuthn for Spring Security` to the build. I always choose Apache Maven and, of course, the latest version of Java or the latest long-term support (LTS) version of Java. Click `Generate` and open the resulting zip file in your IDE.
+Visit the Spring Initializr, add `PostgreSQL Driver`, `JDBC API`, `GraalVM Native Support`, `Spring Web`, `Spring Security`, and `WebAuthn for Spring Security` to the build.
+I always choose Apache Maven and, of course, the latest version of Java or the latest long-term support (LTS) version of Java.
+Click `Generate` and open the resulting zip file in your IDE.
 
-We're going to connect this application to a SQL database. As always, we'll use Docker Compose to make short work of this. I've created a `compose.yml` file here.
+We're going to connect this application to a SQL database.
+As always, we'll use Docker Compose to make short work of this.
+I've created a `compose.yml` file here.
 
 ----
 include::{code}/security/security/compose.yml[]
@@ -172,24 +177,54 @@ Run that in the usual way:
 docker compose up -d
 ----
 
-
-
-
-
 Here's our initial `application.properties` configuration.
 
 ----
 include::{code}/security/security/src/main/resources/application.properties[]
 ----
 
+Let's set up our Spring Security application.
 
+Let's install a single controller that we will protect and that will require an authenticated user to access.
+
+----
+include::{code}/security/security/src/main/java/com/example/security/MeController.java[]
+----
+
+This endpoint is protected.
+You'll need to authenticate to visit this endpoint: `http://localhost:8080/me`.
+
+By default: a Spring Boot application with `org.springframework.boot` : `spring-boot-starter-security` is completely locked down, and all endpoints will require authentication.
+
+Spring Boot registers a _lot_ of common-sense and useful defaults, locking down the application, applying useful authentication methods like HTTP BASIC and form-based login, applying cross-site request forgery (CSRF) protection, and more.
+
+To access any endpoint, a user would need to authenticate.
+But how?
+We could specify a single username and password, for demonstration, using properties, but it's almost too contrived.
+Even for me.
+So let's instead register a bean of type `UserDetailsService`.
+We'll start by registering an `InMemoryUserDetailsManager` to see everything work.
+
+----
+include::{code}/security/security/src/main/java/com/example/security/InMemoryConfiguration.java[]
+----
+
+Start the application and visit the endpoint, and you'll be prompted to authenticate.
+Use `josh@joshlong.com` and `pw` as the username and password, respectively.
+
+You should see the username returned to you in a JSON response. It worked!
+
+Let's change the `UserDetailsService` implementation from our SQL database instead of from in-memory. We'll need some schema.
+
+----
+include::{code}/security/security/src/main/resources/
 
 // the twin charges of spring security
 // authentication
 // authorization
-// lets set up a simple web application
+// let's set up a simple web application
 // web apps are protected by a filter that intercpets all requests, extracts some sort of credential, and uses that to authenticate the request
-// spring boot sets up an apache tomcat webserver by default (though you can parameterise it with jetty)
+// spring boot sets up an apache tomcat webserver by default (though you can parameterize it with jetty)
 // the webserver implements the servlet specification which describes a type of fitler
 // u can create ur own filter to look at all incoming requests. u dont even have to use the Servelt apis directly to register the filter.
 // simply register it as a bean
