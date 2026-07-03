@@ -9,6 +9,47 @@ I want all the code printed to be compiled and valid.
 It is for this reason that the vast majority of the code reprinted in this book, and especially of the code reprinted in this book that comes from code I've written for this book, is actually in include of some actual source code.
 It's _not_ code I copied and pasted into some Microsoft Word document or something, and that has long since diverged from the state of the "actual" code.
 
+== Code
+
+As I work through these examples, I'll be showing lots of code.
+You can follow along at home, either by typing things out or simply referencing the https://github.com/secure-all-the-things-book[code here].
+It's Apache 2 licensed and yours for the taking.
+
+== Docker
+
+I assume the availability of Docker or some sort of container orchestrator on your machines.
+Where appropriate, I've provided Docker Compose `compose.yml` files in each of the chapters' code.
+
+If you're using the Docker tooling, you can spin up the container images thusly:
+
+----
+docker compose up
+----
+
+That will run the Docker images and block, keeping the shell on that process in the foreground.
+If you want to run things and the background them, do:
+
+----
+docker compose up -d
+----
+
+== Formatting
+
+I wrote some tooling to ensure that every example in the book is using the same version of Spring Boot, assumes the same version of Java (or Kotlin), and is using the same version of any projects that aren't managed by Spring Boot's parent `pom.xml`.
+
+I also wrote some tooling to format the `pom.xml` files exactly the same and to format the Java source code exactly the same, too. I'm using the https://github.com/spring-io/spring-javaformat[Spring Java Format Maven plugin]. There's also a variant for Gradle.
+
+The Spring Boot team created this plugin to consistently format the code in Spring Boot itself. This way, it doesn't matter if a contributor to the project  is using emacs, vim, IntelliJ IDEA, Visual Studio Code, Eclipse, etc.: their code can be quickly and consistently formatted to match the project's style. Less quibbling about tabs vs. spaces, and more closed issues. This is a _good thing_!
+
+If you want to format the source code:
+
+----
+./mvnw spring-javaformat:apply
+----
+
+
+
+
 == Noisy Configuration Classes
 
 Often, you'll see me introduce new beans in new configuration classes when they could've just as easily gone in a previous configuration class.
