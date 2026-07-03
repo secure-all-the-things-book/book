@@ -47,7 +47,7 @@ If you want to format the source code:
 ./mvnw spring-javaformat:apply
 ----
 
-
+Sometimes the formatter, which internally is based on the Eclipse IDE's formatter machinery, might format things in a way that reads poorly on a printed page. I sometimes force its hand by add empty line comment delimiters (`//`) at the end of a line, which forces the formatter to wrap to the next line.
 
 
 == Noisy Configuration Classes
