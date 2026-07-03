@@ -61,7 +61,7 @@ You can, of course, annotate the method in the interface with `@Query`, and Spri
 
 Spring Boot has a ton of convenient conventions.
 For example, it'll create a _real_ `DataSource` backed by the HikariCP connection pool, with properties loaded by convention from the Spring `Environment`.
-Spring Boot will, by convention, load any `application.properties` or `application.yml` it finds in `src/main/resources`.
+Spring Boot will, by convention, load any `application.properties` or `application.yml` it finds in `src/main/resources`. So we no longer need our `@PropertySource` annotation.
 
 == AutoConfiguration
 
@@ -210,8 +210,7 @@ We've also got Grafana running in the background.
 As you work through the code in Spring Boot, you might notice that, first of all, you're seeing a good deal more application events.
 Second, if you visit http://localhost:3000 and then navigate to `Drilldown` -> `Metrics`, you can see the same metrics you saw under `/actuator/metrics`, but now graphed over time. Neat!
 
-// todo take a screenshot of the metrics flowing into grafana:3000
-
+image::images/boot-and-beyond/grafana.png[]
 
 == GraalVM Native Images
 

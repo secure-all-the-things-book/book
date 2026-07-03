@@ -156,7 +156,15 @@ Here, we see that it does so successfully.
 Now that you know, conceptually, about how to _do authentication_, you'll hopefully appreciate that the hardest part about security is just getting your code in the right place to do authentication in the first place.
 In a web application, there's a filter that intercepts requests bound for your application, and it is there that code of a kind with the code in that test actually runs.
 
+Let's take these simple concepts and look at them in practice, in a more fleshed out example implemented using Spring Boot and Spring Security.
 
+Visit the Spring Initializr, add `PostgreSQL Driver`, `JDBC API`, `GraalVM Native Support`, `Spring Web`, `Spring Security`, and `WebAuthn for Spring Security` to the build. I always choose Apache Maven and, of course, the latest version of Java or the latest long-term support (LTS) version of Java. Click `Generate` and open the resulting zip file in your IDE.
+
+We're going to connect this application to a SQL database. Here's our initial `application.properties` configuration.
+
+----
+include::{code}/security/security/src/main/resources/application.properties[]
+----
 
 // the twin charges of spring security
 // authentication
