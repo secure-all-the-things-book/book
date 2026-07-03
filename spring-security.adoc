@@ -95,7 +95,6 @@ public interface AuthenticationManager {
 	Authentication authenticate(Authentication authentication) throws AuthenticationException;
 
 }
-
 ----
 
 The most common implementation of `AuthenticationManager` is `ProviderManager`, which as I say manages a chain of `AuthenticationProvider` instances.
@@ -118,14 +117,46 @@ public interface AuthenticationProvider {
 }
 ----
 
+One of the most commonly used `AuthenticationProvider` types is the `DaoAuthenticationProvider`, which ties authentication to users stored in some implementation of `UserDetailsService`. `UserDetailsService` in turn assumes you can load the entire user, including its (encoded and hopefully not plaintext) password from some backing store, like a SQL database, or in-memory.
+
+It sounds like a lot, but keep in mind that you don't have to interact with most of this stuff almost ever.
+Here's a high-level diagram to make clear the relationship between these types.
+
+
 // todo re-render this w/ omnigraffle (i bought a license specifically for this!) in a uniform style once the whole book is done. should i use excalidraw?
 
 image::images/security/authentication.png[]
 . here's a high-level overivew of the flow of authentication requests
 
+And now let's actually pull these pieces together in a simple test.
+We'll construct these objects ourselves, using Spring Security directly.
+
 ----
 include::{code}/security/security/src/test/java/com/example/security/SecurityApplicationTests.java[]
 ----
+
+. you don't store passwords in plaintext, do you?
+Of course not!
+You need to encode it.
+And Spring Security has a nifty composite implementation of the `PasswordEncoder` hierarchy that I try to use for basically everything.
+. we're going to store users _in-memory_.
+Obviously, you could source these users from a SQL database.
+Any implementation of `UserDetailsService` will work.
+We're just going to hardcode our users for this example.
+(Which does make the act of encoding the passwords seem a bit silly, doesn't it?)
+. We'll wire up a lonesome `AuthenticationProvider` of type `DaoAuthenticationProvider` which expects a reference to the aforementioned `UserDetailsService`.
+. we'll wire up an implementation of `AuthenticationManager` called `ProviderManager` to handle any and all `AuthenticationProvider` instances.  `ProviderManager` will give incoming `Authentication` requests to all configured instances of `AuthenticationProvider`.
+If any of them can handle it, then processing stops.
+If not, they either throw an exception or return an `Authentication` with `authenticated == false`.
+. finally, the rubber meets the road.
+Imagine we're an HTTP client using an HTTP form or an HTTP basic request.
+Spring Security's filter would intercept those request, wrap them into a `UsernamePasswordAuthenticationToken` instance, and then ask the `AuthenticationManager` to try to authenticate it.
+Here, we see that it does so successfully.
+
+Now that you know, conceptually, about how to _do authentication_, you'll hopefully appreciate that the hardest part about security is just getting your code in the right place to do authentication in the first place.
+In a web application, there's a filter that intercepts requests bound for your application, and it is there that code of a kind with the code in that test actually runs.
+
+
 
 // the twin charges of spring security
 // authentication

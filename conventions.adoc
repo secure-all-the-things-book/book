@@ -59,7 +59,7 @@ This is so that I might avoid reprinting the original beans while keeping code w
 
 Similarly, I might introduce beans that I don't intend for us to land on, but that are interesting to know about.
 These beans are useful, but not the intended final result.
-In these cases, I'll use a Spring _profile_, which is a marker annotation that makes the bean insert - Spring doesn't "see" it - until you explicitly _activate_ the profile.
+In these cases, I'll use a Spring _profile_, which is a marker annotation that makes the bean inert - Spring doesn't "see" it - until you explicitly _activate_ the profile.
 
 ----
 @Configuration
@@ -79,7 +79,7 @@ class MyConfig {
 }
 ----
 
-Usually, you activate the profile or profiles by passing in a comma-delimited command line switch, e.g.:
+Usually, you activate the profile (or profiles) by passing in a comma-delimited command line switch, e.g.:
 
 ----
 ./mvnw -Dspring.profiles.active=example,foo spring-boot:run
