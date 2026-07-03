@@ -160,11 +160,29 @@ Let's take these simple concepts and look at them in practice, in a more fleshed
 
 Visit the Spring Initializr, add `PostgreSQL Driver`, `JDBC API`, `GraalVM Native Support`, `Spring Web`, `Spring Security`, and `WebAuthn for Spring Security` to the build. I always choose Apache Maven and, of course, the latest version of Java or the latest long-term support (LTS) version of Java. Click `Generate` and open the resulting zip file in your IDE.
 
-We're going to connect this application to a SQL database. Here's our initial `application.properties` configuration.
+We're going to connect this application to a SQL database. As always, we'll use Docker Compose to make short work of this. I've created a `compose.yml` file here.
+
+----
+include::{code}/security/security/compose.yml[]
+----
+
+Run that in the usual way:
+
+----
+docker compose up -d
+----
+
+
+
+
+
+Here's our initial `application.properties` configuration.
 
 ----
 include::{code}/security/security/src/main/resources/application.properties[]
 ----
+
+
 
 // the twin charges of spring security
 // authentication
