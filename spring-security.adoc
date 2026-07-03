@@ -2,7 +2,72 @@
 
 = Spring Security Fundamentals
 
-In this section we'll look at Spring Security fundamentals.
+In this section we'll look at the fundamentals of Spring Security.
+After all, we won't get far without those core concepts in place.
+
+== Spring Security, the Project
+
+Spring Security began in late 2003 when Ben Alex created what was originally called Acegi Security (or the Acegi Security System for Spring) after discussions on the early Spring developer mailing lists about the need for a comprehensive security framework.
+At the time, the Spring Framework lacked a robust security architecture, leaving developers to build custom, application-specific authentication and authorization solutions.
+Acegi was designed from the ground up to leverage Spring’s core principles of dependency injection and aspect-oriented programming, providing a configurable, pluggable security architecture built around a flexible servlet `FilterChain` that allowed developers to bypass rigid container-managed security entirely.
+It quickly gained traction by handling both robust authentication and complex authorization directly within the Spring application context.
+
+Ben released Acegi as an open source project under the Apache License in March 2004. The project rapidly attracted a small but enthusiastic community and gained traction within the Java ecosystem.
+By 2006, Acegi had matured into a production-ready framework, and in 2007 it was officially adopted into the Spring portfolio as an official Spring subproject.
+
+This era, for me, was where I started to really get excited about Spring.
+It's where I decided I wanted to be a part of the story.
+I'd used Spring Framework and all of its wonderful little `Template` classes and its web framework and dependency injection framework and all that in my various applications, but 2006 is where I started to appreciate the big-picture potential: in knowing the Spring component model, I had purchase in all the other domains that Spring would take me.
+Spring Security meant that I was already halfway towards having secure applications and services.
+Spring Batch, also released around this time, let me learn the domain of batch processing in terms of the familiar idioms in Spring.
+I was already halfway there!
+Spring Integration, also released around this time, let me learn the domain of enterprise application integration, messaging, and event-driven architecture in terms of the familiar idioms of Spring.
+I was already halfway there.
+To be clear, there were alternatives for these particular usecases, but none of them integrated so deeply with Spring and its guiding philosophies.
+I'd have to learn a whole different paradigm, ecosystem, and maybe even language and runtime to get any footing in those alternatives.
+Spring opened doors and let me cut to the heart of the matter.
+
+Later that year, Acegi was rebranded as _Spring Security_, with Ben Alex handing the leadership reins over to Luke Taylor to guide the framework into its next major chapter: the release of Spring Security 2.0 in April 2008.
+
+The transition into the Spring portfolio brought even tighter integration with the Spring ecosystem and continued refinement of the framework’s architecture.
+Under this new era of stewardship, Spring Security 2.0 introduced namespace-based XML configuration, _dramatically_ reducing the boilerplate that had made earlier Acegi configurations notoriously verbose.
+I can't stress this enough.
+Spring Framework's main configuration mechanism _used_ to be XML, and in 1.0, the only way to wire up objects was to define instances of every bean required for a given application, no matter how many were required.
+There was no mechanism for composition.
+No way to say, _I want all *these* beans in *that* namespace, now_.
+We'd have to type them out, one by one, and configure them all, one by one.
+As you can imagine, in the domain of security, there are _many_ moving parts, and every wayward developer had to understand all of them to get even the simplest application up and running.
+You won't have to deal with that in this book, of course.
+We've had nearly decades of Java configuration, and more than two decades since XML namespaces and schema were introduced.
+I just wanted to register that it used to be unwieldy.
+I don't know if writing a book is cheaper than therapy, but it's definitely more validating.
+
+The framework evolved well beyond basic authentication and authorization, cementing a flexible architecture centered around servlet filters, authentication providers, method security, and deep integration with the Spring Framework.
+
+As stewardship expanded to maintainer - including Luke Taylor, Rob Winch, and a growing community of contributors - Spring Security continued to modernize alongside both the Java ecosystem and the changing web. At this point, no single engineer has done more to improve Spring Security than its current lead Rob Winch, about whom you'll no doubt hear more from me in the course of this book.
+
+The 3.x generation introduced features such as _Spring Expression Language_ (SpEL)-based access control, improved LDAP integration, OpenID support, and built-in protection against common web vulnerabilities like Cross-Site Request Forgery (CSRF).
+Spring Security 3.2 and 4.x shifted the preferred programming model away from verbose XML toward Java-based, type-safe configuration and fluent APIs.
+
+The framework’s evolution accelerated as application architectures shifted toward cloud-native systems and distributed services.
+Spring Security 5 introduced first-class support for OAuth 2.0, OpenID Connect, reactive applications built with Spring WebFlux, and a modernized password encoding strategy.
+Spring Security 6, aligned with Spring Framework 6 and Java 17+, further refined its Lambda-based DSL, strengthened secure-by-default behavior, retired legacy APIs, introduced native support for modern WebAuthn passkeys, and fully embraced modern Java and Spring practices.
+Spring Security 7 introduced multi-factor authentication, pulled in the Spring Authorization Server and Spring Security Kerberos projects, unifying them with the rest of the Spring Security efforts.
+
+Today, Spring Security is a highly modular, extensible framework that secures everything from traditional servlet-based applications to reactive services and OAuth 2.0 Authorization Servers.
+It provides first-class support for JWTs, decentralized identity, modern authorization models, and deep integration with Spring Boot and the broader Spring ecosystem.
+Despite more than two decades of evolution, it remains faithful to Ben Alex’s original vision: providing a powerful, reusable, and extensible security framework that integrates naturally with Spring applications.
+
+With that high level overview out of the way, let's talk specifics.
+
+== Spring Security for all Contexts
+
+Spring Security has a good story for securing all manner of differnt workloads. Obviously most of this book assumes that you're build HTTP-based clients and services, but part of the reason I wanted to write this book is precisely because it can do _so much more_! You can use it to secure HTTP clients and services, MCP clients and services, command line interface (CLI) clients, backoffice message code, and so much more.
+
+==  Authentication
+
+Authentication answers the question _who is this request from_? It
+
 
 // the twin charges of spring security
 // authentication
