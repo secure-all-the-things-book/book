@@ -59,12 +59,12 @@ Today, Spring Security is a highly modular, extensible framework that secures ev
 It provides first-class support for JWTs, decentralized identity, modern authorization models, and deep integration with Spring Boot and the broader Spring ecosystem.
 Despite more than two decades of evolution, it remains faithful to Ben Alex’s original vision: providing a powerful, reusable, and extensible security framework that integrates naturally with Spring applications.
 
-With that high level overview out of the way, let's talk specifics.
+With that high-level overview out of the way, let's talk specifics.
 
 == Spring Security for all Contexts
 
-Spring Security has a good story for securing all manner of differnt workloads.
-Obviously most of this book assumes that you're build HTTP-based clients and services, but part of the reason I wanted to write this book is precisely because it can do _so much more_!
+Spring Security has a good story for securing all manners of different workloads.
+Most of this book assumes that you're building HTTP-based clients and services, but part of the reason I wanted to write this book is precisely because it can do _so much more_!
 You can use it to secure HTTP clients and services, MCP clients and services, command line interface (CLI) clients, backoffice message code, and so much more.
 
 ==  Authentication
@@ -150,15 +150,59 @@ If any of them can handle it, then processing stops.
 If not, they either throw an exception or return an `Authentication` with `authenticated == false`.
 . finally, the rubber meets the road.
 Imagine we're an HTTP client using an HTTP form or an HTTP basic request.
-Spring Security's filter would intercept those request, wrap them into a `UsernamePasswordAuthenticationToken` instance, and then ask the `AuthenticationManager` to try to authenticate it.
+Spring Security's filter would intercept those requests, wrap them into a `UsernamePasswordAuthenticationToken` instance, and then ask the `AuthenticationManager` to try to authenticate it.
 Here, we see that it does so successfully.
+
+== Filters
+
+Now that you know, conceptually, about how to _do authentication_, you'll hopefully appreciate that the hardest part about security is getting your code in the right place to do authentication in the first place.
+In a web application, Spring Security installs a filter that intercepts requests bound for your application, and it is there that code of a kind with the code in that test actually runs.
+
+Filters are a natural way to implement this sort of gatekeeper logic on your application.
+Spring Security uses filters all over the place to ensure that it is able to put up certain pages for certain use cases (like login pages).
+You can leverage this mechanism too.
+Spring has two modalities: reactive and non-reactive.
+In this book I'm assuming we're using the non-reactive stack.
+When you bring in Spring Boot's `spring-boot-starter-webmvc` starter, it configures Apache Tomcat by default.
+You could optionally also use Jetty.
+Spring Boot provides a natural way to contribute filters, side-stepping the tedious configuration required when interacting with the lower-level Servlet engine.
+
+Here's an example.
+
+----
+include::{code}/security/security/src/main/java/com/example/security/CustomFilterConfiguration.java[]
+----
+
+. You can register beans of type `FilterRegistrationBean` and they'll let you wire up all the same things you might've configured when using `web.xml` or programmatic `Servlet` registration.
+We can specify in which order the filter is to be processed.
+I want this to be processed dead-last, _after_ all the other filters have run.
+Here, we're specifying the URL patterns to which to map our `Filter` and whether the `Filter` supports the  _async_ support introduced in Servlet 3.0, in 2009.
+. I use the word _filter_ to refer to a conceptual thing, but in the Servlet API there are at least two interesting classes to be aware of: `Filter` and `HttpFilter`.
+We're interested in `HttpFilter` here because we want to intercept HTTP requests, not just generic unspecified requests bound for the server.
+. Spring Security installs a filter _before_ our filter, and one of the things it does is _wrap_ the raw native `HttpServletRequest` that comes from the native Servlet container in a new class that provides answers to `getUserPrincipal()` by sourcing the information from the Spring Security authenticated principal.
+. We _should_ be last, and the request _should_ be secured, but if for some reason there's no authenticated principal in the request, then let's just continue the filter chain, letting somebody else have a chance at resolving this.
+There's nothing we can do.
+
+Where does that user come from?
+Who put it there?
+Behind the scenes, when Spring Security authenticates a request, it creates an object of type `Authentication` and stores it in a place that the current ongoing request can get to it.
+Often, but not always, this is a `ThreadLocal<?>`.
+You can access the current authenticated user with `SecurityContextHolder`:
+
+----
+var authentication = SecurityContextHolder
+                        .getContextHolderStrategy()
+                        .getContext()
+                        .getAuthentication();
+var authenticationName = authentication.getName();
+----
+
+The name returned here and the name returned from `getUserPrincipal` in the example above should be the same, pointing to the same reference.
 
 == Authentication in a Web Application
 
-Now that you know, conceptually, about how to _do authentication_, you'll hopefully appreciate that the hardest part about security is getting your code in the right place to do authentication in the first place.
-In a web application, there's a filter that intercepts requests bound for your application, and it is there that code of a kind with the code in that test actually runs.
 We'll see how to do so in various other contexts at other places in this book.
-
+But for now, let's start with a web application.
 Let's take these simple concepts and look at them in practice, in a more fleshed-out example implemented using Spring Boot and Spring Security.
 
 Visit the Spring Initializr, add `PostgreSQL Driver`, `JDBC API`, `GraalVM Native Support`, `Spring Web`, `Spring Security`, and `WebAuthn for Spring Security` to the build.
@@ -263,6 +307,9 @@ Restart the program.
 You should see data in your PostgreSQL `users` and `authorities` tables.
 
 Open up the browser and hit the same endpoint and authenticate with username `josh@joshlong.com` and password `pw`.
+You should authenticate just fine.
+But _how_?
+We'll need to dive into password encoding before we have a good answer.
 
 == Password Encoding
 
@@ -277,23 +324,28 @@ include::{code}/security/security/src/main/java/com/example/security/PasswordCon
 A `PasswordEncoder` is an object that takes plaintext Strings and _encodes_ them with an algorithm.
 Spring Security ships with dozens of implementations for algorithms like SHA (_do not_ use this one!), SHA 256 (maybe don't use this one either), PBKDF2, SCrypt, BCrypt, Argon, etc.
 Many of the implementations have duplicate implementations, in fact, because there is dual support in Spring Security for various algorithms from the third-party BounceCastle library _and_ from the third-party Password4J library.
-Indeed, most of the really good implementations come from these libraries and require their presence on the CLASSPATH.
+Indeed, most of the good implementations come from either the BouncyCastle or Password4J libraries and require their presence on the CLASSPATH.
 
-You could use these algorithms directly if you wanted.
+You could use these algorithms directly by constructing the relevant instances of the `PasswordEncoder`, like so:
 
 ----
 var bcrypt = new BCryptPasswordEncoder();
 ----
 
-I always prefer to use the one that comes from `PasswordEncoderFactories`, which is a composite  `PasswordEncoder`.
+I always prefer instead to use the composite that comes from `PasswordEncoderFactories`, which is a composite  `PasswordEncoder`.
 It maintains a dictionary of different algorithm names mapped to an instance of their implementation.
 Security is a fast-moving space.
 Algorithms that are deemed secure and uncrackable today might be deemed cracked and insecure tomorrow.
 Spring Security reserves the right to bump the default algorithm as it evolves, should the need arise.
 Right now, the best algorithm provided out-of-the-box with no need for any other dependency is `BCryptPasswordEncoder`.
+
 When you use the `DelegatingPasswordEncoder` from `PasswordEncoderFactories` today, at the time of this writing in mid-2026, the default algorithm used is `bcrypt` (which maps to an instance of  `BCryptPasswordEncoder`, as shown above).
-That might change tomorrow.
-So the `DelegatingPasswordEncoder` prefixes all passwords with the name of the algorithm used to encode it.
+That might change tomorrow as the algorithms are discovered to be less secure.
+If you have Bounce Castle or Password4J on the CLASSPATH, I'd prefer Argon.
+Use Argon2 when available because it is memory-hard and tunable for memory, CPU time, and parallelism, making large-scale GPU/ASIC cracking harder.
+OWASP currently recommends Argon2 as the first choice.
+
+The `DelegatingPasswordEncoder` prefixes all passwords with the name of the algorithm used to encode it.
 
 Let's walk through the (rough) authentication flow, with the `PasswordEncoder` in mind.
 
@@ -302,15 +354,20 @@ Let's walk through the (rough) authentication flow, with the `PasswordEncoder` i
 * the configured `AuthenticationManager` is asked to authenticate the request.
 * the `AuthenticationManager`, in this case, is probably an instance of `ProviderManager`, so it in turn delegates to a chain of `AuthenticationProvider` instances, which get a chance to authenticate the `Authentication` request.
 * finally, the  `DaoAuthenticationProvider` instance loads the user from the `UserDetailsService` using the presented username.
-* It needs to check that the passwords match, so it obtains an instance of the `DelegatingPasswordEncoder` and checks that the presented password (in plaintext) matches the one stored in the database (encoded, and prefixed with an algorithm name) by calling `PasswordEncoder#matches(CharSequence plain, String encoded)`. Internally, this uses the prefix to identify the ultimate implementation of `PasswordEncoder` to use, then encodes the presented password with that implementation.
+* It needs to check that the passwords match, so it obtains an instance of the `DelegatingPasswordEncoder` and checks that the presented password (in plaintext) matches the one stored in the database (encoded, and prefixed with an algorithm name) by calling `PasswordEncoder#matches(CharSequence plain, String encoded)`.
+Internally, this uses the prefix to identify the ultimate implementation of `PasswordEncoder` to use, then encodes the presented password with that implementation.
+
+You can of course configure your own `DelegatingPasswordEncoder` if you like to use Argon (or anything else).
+Add Password4J to the CLASSPATH: `com.password4j` : `password4j` : `1.8.4`.
+I'm using that version in the middle of 2026. (You should use whichever version is the latest-and-greatest as you read this.)
+
+----
+include::{code}/security/security/src/main/java/com/example/security/CustomPasswordEncoderConfiguration.java[]
+----
+
+. this implementation configures the Password4J-powered Argon2 implementation as the _default_ encoder, with optional support for BCrypt.
 
 
-
-// the twin charges of spring security
-// authentication
-// authorization
-// let's set up a simple web application
-// web apps are protected by a filter that intercpets all requests, extracts some sort of credential, and uses that to authenticate the request
 // spring boot sets up an apache tomcat webserver by default (though you can parameterize it with jetty)
 // the webserver implements the servlet specification which describes a type of fitler
 // u can create ur own filter to look at all incoming requests. u dont even have to use the Servelt apis directly to register the filter.
