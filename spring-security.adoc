@@ -126,7 +126,7 @@ Here's a high-level diagram to make clear the relationship between these types.
 // todo re-render this w/ omnigraffle (i bought a license specifically for this!) in a uniform style once the whole book is done. should i use excalidraw?
 
 image::images/security/authentication.png[]
-. here's a high-level overivew of the flow of authentication requests
+. here's a high-level overview of the flow of authentication requests
 
 And now let's actually pull these pieces together in a simple test.
 We'll construct these objects ourselves, using Spring Security directly.
@@ -153,9 +153,11 @@ Imagine we're an HTTP client using an HTTP form or an HTTP basic request.
 Spring Security's filter would intercept those request, wrap them into a `UsernamePasswordAuthenticationToken` instance, and then ask the `AuthenticationManager` to try to authenticate it.
 Here, we see that it does so successfully.
 
+== Authentication in a Web Application
+
 Now that you know, conceptually, about how to _do authentication_, you'll hopefully appreciate that the hardest part about security is getting your code in the right place to do authentication in the first place.
 In a web application, there's a filter that intercepts requests bound for your application, and it is there that code of a kind with the code in that test actually runs.
-We'll of course see how to do so in various other contexts at other places in this book.
+We'll see how to do so in various other contexts at other places in this book.
 
 Let's take these simple concepts and look at them in practice, in a more fleshed-out example implemented using Spring Boot and Spring Security.
 
@@ -183,8 +185,10 @@ Here's our initial `application.properties` configuration.
 include::{code}/security/security/src/main/resources/application.properties[]
 ----
 
-Let's set up our Spring Security application.
+. define SQL database connection information
+. tell Spring Boot to evaluate `src/main/resources/{schema,data}.sql`
 
+Let's set up our Spring Security application.
 Let's install a single controller that we will protect and that will require an authenticated user to access.
 
 ----
@@ -194,7 +198,7 @@ include::{code}/security/security/src/main/java/com/example/security/MeControlle
 This endpoint is protected.
 You'll need to authenticate to visit this endpoint: `http://localhost:8080/me`.
 
-By default: a Spring Boot application with `org.springframework.boot` : `spring-boot-starter-security` is completely locked down, and all endpoints will require authentication.
+By default, a Spring Boot application with `org.springframework.boot` : `spring-boot-starter-security` is completely locked down, and all endpoints will require authentication.
 
 Spring Boot registers a _lot_ of common-sense and useful defaults, locking down the application, applying useful authentication methods like HTTP BASIC and form-based login, applying cross-site request forgery (CSRF) protection, and more.
 
@@ -203,21 +207,104 @@ But how?
 We could specify a single username and password, for demonstration, using properties, but it's almost too contrived.
 Even for me.
 So let's instead register a bean of type `UserDetailsService`.
+
+== In-Memory Users
+
 We'll start by registering an `InMemoryUserDetailsManager` to see everything work.
 
 ----
 include::{code}/security/security/src/main/java/com/example/security/InMemoryConfiguration.java[]
 ----
 
+. we can specify whatever we want for the `username`.
+In this case I'm using something that looks like an email, but there's no schema or requirements here.
+. users have _authorities_, which help us determine what privileges a given user has.
+We'll look at these in more depth when we look at authorization.
+
 Start the application and visit the endpoint, and you'll be prompted to authenticate.
 Use `josh@joshlong.com` and `pw` as the username and password, respectively.
 
-You should see the username returned to you in a JSON response. It worked!
+You should see the username returned to you in a JSON response.
+It worked!
 
-Let's change the `UserDetailsService` implementation from our SQL database instead of from in-memory. We'll need some schema.
+== DAO-backed authentication
+
+Let's change the `UserDetailsService` implementation from our SQL database instead of from in-memory.
+We'll need some schema to define the tables in which our users and the enumeration of their _authorities_ will reside.
+
+I've placed the following file in `src/main/resources/schema.sql`.
 
 ----
-include::{code}/security/security/src/main/resources/
+include::{code}/security/security/src/main/resources/schema.sql[]
+----
+
+I've placed the following file in `src/main/resources/data.sql`.
+
+----
+include::{code}/security/security/src/main/resources/data.sql[]
+----
+
+I've taken this schema directly from the Spring Security documentation and the source code for Spring Security.
+We're using PostgreSQL, but there are equivalent schemas that you could use for various other databases, too.
+
+Delete the conflicting `InMemoryUserDetailsManager` bean from earlier.
+Let's replace it with one that delegates to these newly minted SQL tables and their data.
+
+----
+include::{code}/security/security/src/main/java/com/example/security/SecurityConfiguration.java[]
+----
+
+. this implementation of `UserDetailsService` reads user data from the aforementioned SQL tables
+. this property is a relatively new feature.
+
+It allows Spring Security to update the password in the SQL database if the encoding used isn't the default configured encoding in the system.
+
+Restart the program.
+You should see data in your PostgreSQL `users` and `authorities` tables.
+
+Open up the browser and hit the same endpoint and authenticate with username `josh@joshlong.com` and password `pw`.
+
+== Password Encoding
+
+Looking at the output, you'll notice that the passwords written to the database were basically garbled (_encoded_) text preceded by a prefix in curly brackets: `{`, the algorithm name, and `}`.
+
+This was intentional: I wanted these passwords to work with the `PasswordEncoder` configured here:
+
+----
+include::{code}/security/security/src/main/java/com/example/security/PasswordConfiguration.java[]
+----
+
+A `PasswordEncoder` is an object that takes plaintext Strings and _encodes_ them with an algorithm.
+Spring Security ships with dozens of implementations for algorithms like SHA (_do not_ use this one!), SHA 256 (maybe don't use this one either), PBKDF2, SCrypt, BCrypt, Argon, etc.
+Many of the implementations have duplicate implementations, in fact, because there is dual support in Spring Security for various algorithms from the third-party BounceCastle library _and_ from the third-party Password4J library.
+Indeed, most of the really good implementations come from these libraries and require their presence on the CLASSPATH.
+
+You could use these algorithms directly if you wanted.
+
+----
+var bcrypt = new BCryptPasswordEncoder();
+----
+
+I always prefer to use the one that comes from `PasswordEncoderFactories`, which is a composite  `PasswordEncoder`.
+It maintains a dictionary of different algorithm names mapped to an instance of their implementation.
+Security is a fast-moving space.
+Algorithms that are deemed secure and uncrackable today might be deemed cracked and insecure tomorrow.
+Spring Security reserves the right to bump the default algorithm as it evolves, should the need arise.
+Right now, the best algorithm provided out-of-the-box with no need for any other dependency is `BCryptPasswordEncoder`.
+When you use the `DelegatingPasswordEncoder` from `PasswordEncoderFactories` today, at the time of this writing in mid-2026, the default algorithm used is `bcrypt` (which maps to an instance of  `BCryptPasswordEncoder`, as shown above).
+That might change tomorrow.
+So the `DelegatingPasswordEncoder` prefixes all passwords with the name of the algorithm used to encode it.
+
+Let's walk through the (rough) authentication flow, with the `PasswordEncoder` in mind.
+
+* a user enters a username and a password in a form on your website and then submits the request
+* Spring Security intercepts the request and constructs a `UsernamePasswordAuthenticationToken` with the username and password as parameters.
+* the configured `AuthenticationManager` is asked to authenticate the request.
+* the `AuthenticationManager`, in this case, is probably an instance of `ProviderManager`, so it in turn delegates to a chain of `AuthenticationProvider` instances, which get a chance to authenticate the `Authentication` request.
+* finally, the  `DaoAuthenticationProvider` instance loads the user from the `UserDetailsService` using the presented username.
+* It needs to check that the passwords match, so it obtains an instance of the `DelegatingPasswordEncoder` and checks that the presented password (in plaintext) matches the one stored in the database (encoded, and prefixed with an algorithm name) by calling `PasswordEncoder#matches(CharSequence plain, String encoded)`. Internally, this uses the prefix to identify the ultimate implementation of `PasswordEncoder` to use, then encodes the presented password with that implementation.
+
+
 
 // the twin charges of spring security
 // authentication
