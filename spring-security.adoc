@@ -611,8 +611,9 @@ Nothing fancy.
 
 With all this in place, start the application and hit http://localhost:8080. Enter the username (`josh@joshlong.com`).
 It'll tell you that you've got console mail.
-Consult the console, and you'll see link. Copy and paste it into the browser, and you should see your username.
+Consult the console, and you'll see a link. Copy and paste it into the browser, and you should see your username.
 
+Easy! My friend James Ward took this exact same approach and did something super interesting, straddling
 
 
 // one-time tokens
