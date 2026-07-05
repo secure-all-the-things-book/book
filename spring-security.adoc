@@ -359,13 +359,30 @@ Internally, this uses the prefix to identify the ultimate implementation of `Pas
 
 You can of course configure your own `DelegatingPasswordEncoder` if you like to use Argon (or anything else).
 Add Password4J to the CLASSPATH: `com.password4j` : `password4j` : `1.8.4`.
-I'm using that version in the middle of 2026. (You should use whichever version is the latest-and-greatest as you read this.)
+I'm using that version in the middle of 2026. (You should use whichever version is the latest-and-greatest as you're reading this.)
 
 ----
 include::{code}/security/security/src/main/java/com/example/security/CustomPasswordEncoderConfiguration.java[]
 ----
 
 . this implementation configures the Password4J-powered Argon2 implementation as the _default_ encoder, with optional support for BCrypt.
+. we're registering an encoder for `sha256`, but keep in mind that this implementation is deprecated!
+In a happier world, we wouldn't use it.
+
+Make sure you replace the other `PasswordEncoder` implementation from the `PasswordConfiguration` class with this one if you'd like to use it.
+
+We've configured custom password encoding so that we can handle the data in the SQL database that uses `sha256` encoding.
+It's a deprecated algorithm and we'd certainly prefer it if people weren't using it at this point.
+The trouble is, there's always _legacy_.
+Maybe people used that algorithm before and now they need to migrate the passwords to the new algorithm. Encoded passwords are, by definition, _very_ difficult to unencode, and so we can't convert them to a new password unless we somehow have the plaintext.
+The only time the system has the plaintext version of the password is when the user logs in and presents a password that when encoded with the same algorithm matches the one in the database. Earlier, when we configured the `JdbcUserDetailsManager`, we set `setEnableUpdatePassword` to `true`. This allow Spring Security to re-encode a password in the database that's encoded using something besides the current _default_ password encoder when the user authenticates successfully.
+
+Consult the `data.sql`, or your database, and you'll see that the user `user@anotherdomain.site` has a password encoded with `sha256`. So, restart the application and visit http://localhost:8080/me and then authenticate as `user@anotherdomain.site` and `pw`. Check the database again and you'll see its been migrated to use the _default_ password encoder. If you're using the `PasswordEncoder` from `PasswordEncoderFactories`, you'll see its been encoded using `bcrypt`. If you're using the custom `PasswordEncoder` we setup above, you'll see it's been encoded using `argon@Password4j`. Either way, _much_ better than `sha256`! Take a victory lap, you've earned it. You can say that you're storing passwords as safely as possible.
+
+== But Passwords are Bad
+
+
+
 
 
 // spring boot sets up an apache tomcat webserver by default (though you can parameterize it with jetty)
