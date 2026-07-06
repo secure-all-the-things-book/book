@@ -625,7 +625,9 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_authentication_around_the_world">Authentication Around the World</a></li>
 <li><a href="#_one_time_tokens_or_magic_links">One-Time Tokens, or "Magic Links"</a></li>
 <li><a href="#_the_powerful_passkeys">The Powerful Passkeys</a></li>
+<li><a href="#_concepts_well_need_to_understand_for_webauthn">Concepts We&#8217;ll Need To Understand for WebAuthn</a></li>
 <li><a href="#_implementing_passkeys_in_spring_security">Implementing Passkeys in Spring Security</a></li>
+<li><a href="#_persistence">Persistence</a></li>
 </ul>
 </li>
 <li><a href="#_introducing_oauth">Introducing OAuth</a>
@@ -5637,6 +5639,10 @@ In a web application, Spring Security installs a filter that intercepts requests
 <div class="paragraph">
 <p>Filters are a natural way to implement this sort of gatekeeper logic on your application.
 Spring Security uses filters all over the place to ensure that it is able to put up certain pages for certain use cases (like login pages).
+These filters aren&#8217;t routes in your application, they are seen <em>before</em> your application gets a chance to respond.
+Filters have ordering relative to each other.
+Some filters run earlier, some run later.
+If you want to override the behavior of one of Spring Security&#8217;s filters, you could in the worst case put another filter earlier in the chain and duplicate or vary the code in the configured instance.
 You can leverage this mechanism too.
 Spring has two modalities: reactive and non-reactive.
 In this book I&#8217;m assuming we&#8217;re using the non-reactive stack.
@@ -6606,10 +6612,80 @@ In this case, it&#8217;ll resolve to <code>src/main/resources/templates/ott-sent
 <p>Nothing fancy.</p>
 </div>
 <div class="paragraph">
-<p>With all this in place, start the application and hit <a href="http://localhost:8080" class="bare">http://localhost:8080</a>. Enter the username (<code>josh@joshlong.com</code>).
-It&#8217;ll tell you that you&#8217;ve got console mail.
-Consult the console, and you&#8217;ll see a link.
-Copy and paste it into the browser, and you should see your username.</p>
+<p>With all this in place, start the application and hit <a href="http://localhost:8080" class="bare">http://localhost:8080</a>. Enter the username (<code>josh@joshlong.com</code>).</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/images/security/ott/ott-01.png" alt="ott 01">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>the signin form now has a new capability: <em>Request a One-Time Token</em>.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>then you&#8217;ll get that, um, <em>minimal</em> Thymeleaf page we put together.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/images/security/ott/ott-02.png" alt="ott 02">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>I know, I know.
+Stick to my day job.
+Web design&#8217;s not my thing.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Meanwhile, an out-of-band message has been sent, in this case, to my IDE&#8217;s console logs.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/images/security/ott/ott-03.png" alt="ott 03">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>I&#8217;ve got console mail!</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Click on the link, and it&#8217;ll take you to an input where you can plug in the one-time token.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/images/security/ott/ott-04.png" alt="ott 04">
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+If you are trying to follow the authentication flow in an incognito window in, say, Apple&#8217;s Safari browser, make sure to copy and paste the link from the console into the browser.
+Clicking on the link will start a <em>brand-new</em>  browser whose session is divorced from the first one in the incognito window.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>And now you should see your username in the HTTP response.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/images/security/ott/ott-05.png" alt="ott 05">
+</div>
 </div>
 <div class="paragraph">
 <p>Easy!</p>
@@ -6678,9 +6754,142 @@ When you authenticate, the private key is unlocked using something that’s easi
 </div>
 </div>
 <div class="sect2">
+<h3 id="_concepts_well_need_to_understand_for_webauthn">Concepts We&#8217;ll Need To Understand for WebAuthn</h3>
+<div class="paragraph">
+<p>Remember, WebAuthn works by creating a key tied to a particular domain (to prevent spoofing).
+So when you work with WebAuthn you need to specify at minimum three things:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>the relaying party ID</strong> - The RP ID is the domain that a passkey is bound to.
+It’s the security anchor for WebAuthn.
+When a passkey is created, it is cryptographically tied to this RP ID.
+The browser will only allow that passkey to be used on that domain (or a matching subdomain, depending on the RP ID).</p>
+</li>
+<li>
+<p><strong>the relaying party name</strong> - a human-readable display name.</p>
+</li>
+<li>
+<p><strong>allowed origins</strong> - The allowed origins are the exact web origins that are permitted to call the WebAuthn APIs.
+You need to specify <em>everything</em>: the schema (<code>http</code> or <code>https</code>), the exact domain, and the port (if applicable).</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
 <h3 id="_implementing_passkeys_in_spring_security">Implementing Passkeys in Spring Security</h3>
 <div class="paragraph">
-<p>Now for the easy part. Whereas the explanation took a fair bit of time, the implementation is trivial.</p>
+<p>Now for the easy part.
+Whereas the explanation took a fair bit of time, the implementation is trivial.
+Let&#8217;s get a minimum viable product working, first.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>package com.example.security.webauthn;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+
+@Configuration
+class WebAuthnConfiguration {
+
+    @Bean
+    Customizer&lt;HttpSecurity&gt; webAuthnCustomizer() {
+        return security -&gt; security //
+                .webAuthn(c -&gt; c //
+                        .allowedOrigins("http://localhost:8080")//
+                        .rpId("localhost")<i class="conum" data-value="1"></i><b>(1)</b>
+                        .rpName("bootifulpasskeys")<i class="conum" data-value="2"></i><b>(2)</b>
+                );
+    }
+}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It&#8217;s not even worth annotating this code.
+Now that you know the concepts, the code is as plain as can be.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s try it out.
+Open your browser to <a href="http://localhost:8080" class="bare">http://localhost:8080</a>, <em>not</em> <a href="http://127.0.0.1:8080" class="bare">http://127.0.0.1:8080</a>, as that&#8217;s a different origin URL!
+First order of business: we need to <em>register</em> a passkey.
+You can&#8217;t authenticate with a passkey if the server doesn&#8217;t have your public key.
+So, unfortunately, we need to authenticate using one of the other pre-configured mechanisms (like one-time tokens or usernames and passwords), <em>then</em> register the passkey.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/images/security/webauthn/webauthn-01.png" alt="webauthn 01">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>sign in in the usual way</p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/images/security/webauthn/webauthn-02.png" alt="webauthn 02">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>once you&#8217;re authenticated, visit <code>/webauthn/register</code></p>
+</li>
+</ol>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/images/security/webauthn/webauthn-04.png" alt="webauthn 04">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Register the passkey</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>I&#8217;m on an Apple laptop, and I am using an incognito browser instance.
+As a result the only option I have is to use Apple&#8217;s Passwords.app, whose secrets are stored securely in iCloud, and federated across various Apple devices like my iPhone, Apple Watch, iPad, and MacBook Pro.
+If I were using a non-incognito browser window, I&#8217;d have access to my plugins and there I&#8217;d have access to my BitWarden secrets manager.
+The secret I&#8217;m saving is tied to my Apple TouchID.
+My <em>finger</em>!
+But the key is used to authenticate access to the private key, and I can authenticate that in many ways.
+If I&#8217;m on my iPhone, I can authenticate access to my private key by using Apple FaceID (my face!) too.
+So, even though I&#8217;m registering the key on my MacBook Pro with my fingerprint, I can still access the same website on my iPhone using my FaceID.
+No need to register a second key.</p>
+</div>
+<div class="paragraph">
+<p>What if I don&#8217;t trust this device, for some reason?
+Perhaps I&#8217;m signed in on a corporate laptop, and they have full access to all my sensors, input readers, etc.
+If I click <em>More Options</em>, it&#8217;ll show me the option to create a QR Code, which I can then scan with my private and trusted computing device (like my iPhone).
+I can finish registering the Passkey on the iPhone, and it&#8217;ll be set on this browser instance.</p>
+</div>
+<div class="paragraph">
+<p>If you&#8217;re using the Google ecosystem, you&#8217;ll have (I&#8217;d imagine) roughly the same streamlined experience.
+It works on all the major browsers on Linux, too, but there you&#8217;d probably store the Passkey in your password manager of choice.
+This all even works on <em>Windows</em>!</p>
+</div>
+<div class="paragraph">
+<p>Now logout by visiting <code>/logout</code> or simply starting a new incognito window.
+You&#8217;ll see the same sign in options as before.
+This time, choose <em>Sign in with a Passkey</em>.
+On an Apple device, I just present my fingerprint and (in my best "hacker voice") <em>I&#8217;m in</em>!</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_persistence">Persistence</h3>
+<div class="paragraph">
+<p>If you restart the Spring Boot application, you&#8217;ll have to re-register your Passkey, because everything was stored in memory.
+Mercifully, Spring Security ships with JDBC-backed implementations of the persistence for the parts that need it.
+Let&#8217;s look at that.</p>
 </div>
 </div>
 </div>
@@ -9717,7 +9926,7 @@ Now, all the other machinery in Spring Security that consults this thread local 
 <div id="footer">
 <div id="footer-text">
 Version 1.0<br>
-Last updated 2026-07-06 04:56:51 UTC
+Last updated 2026-07-06 06:17:54 UTC
 </div>
 </div>
 </body>
