@@ -27,9 +27,9 @@ The `api` will refuse to send back data unless that token is specified.
 Let's look at the Java code first.
 
 [source,java]
------
+----
 include::{code}/gateway/gateway-reactive/src/main/java/com/example/gateway_reactive/SecurityConfiguration.java[]
------
+----
 <.> you could probably get away with not defining this bean at all _if_ you were willing to deal with default behavior of CSRF tokens, which I am not.
 In the interest of simplicity, I'm disabling them, but in so doing I am also disabling all the other things Spring Security assumed I wanted.
 So we will also go through and re-enable those things.
@@ -53,9 +53,9 @@ You may specify one or more filters that act on the incoming requests, changing 
 Finally, the request, after it has passed through any and all filters, is sent to a final destination, which we specify with a URI.
 
 [source,java]
------
+----
 include::{code}/gateway/gateway-reactive/src/main/java/com/example/gateway_reactive/GatewayConfiguration.java[]
------
+----
 
 <.> the first route matches all requests to `/api/**`, notes and forwards any OAuth JWTs to the backend service, and changes the path of the request from `gateway:8082/api/foo` to `api:8081/foo`, dropping the `/api/` bit.
 <.> the second route takes every other request and sends it unchecked on to the HTTP endpoint service up the static HTMl 5 and JavaScript assets.
@@ -64,9 +64,9 @@ That's just about all the Java code for this service, but its role and importanc
 Let's look at the property file that ties it all together.
 
 [source,properties]
------
+----
 include::{code}/gateway/gateway-reactive/src/main/resources/application.properties[]
------
+----
 
 <.> this process will run on port `8082`.
 <.> it will use the issuer URI to validate JWTs if it detects them

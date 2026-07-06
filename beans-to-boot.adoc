@@ -50,6 +50,7 @@ You should have a project with the usual folder structure: `pom.xml` and `src/{t
 Rename the file `Main.java`, and gut the code inside.
 It should look something like this when you're done:
 
+[source,java]
 ----
 package com.example.beans_to_boot;
 
@@ -71,6 +72,7 @@ Let's introduce a _trivial_ example to reinforce the idea.
 We're going to read `Dog` data from a SQL database, PostgreSQL, running on our machine.
 We'll use the following Docker Compose file to stand up the instance of our database.
 
+[source,yaml]
 ----
 include::{code}/beans-to-boot/beans-to-boot/compose.yml[]
 ----
@@ -86,52 +88,58 @@ Put the following SQL files in `src/main/resources/schema.sql` and `src/main/res
 
 Here's `schema.sql`:
 
+[source,sql]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/resources/schema.sql[]
 ----
 
 and here's `data.sql`:
 
+[source,sql]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/resources/data.sql[]
 ----
 
 Run `docker compose up -d`, then make sure to pass that SQL to PostgreSQL:
 
-```shell
+[source,shell]
+----
 cat schema.sql | PGPASSWORD=secret psql -Umyuser -hlocalhost mydatabase
 cat data.sql | PGPASSWORD=secret psql -Umyuser -hlocalhost mydatabase
-```
+----
 
 // raw start
 == A Repository of Knowledge... About Dogs
 
 We're going to be working with data about dogs, so we'll need a layer to read that data and make it available to us.
-Here's a strawman first cut at this code, with several less-than-ideal design decisions.
+Here's a straw man first cut at this code, with several less-than-ideal design decisions.
 Let's look at the moving parts.
 We'll introduce all of them now and only the things that change as we progress.
 
 First, the holder for data coming from our `dog` table.
 
------
+[source,java]
+----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/raw/Dog.java[]
------
+----
 
 . A Java record is a marvelous thing.
 
 We'll be implementing a repository.
 Here's the interface for that repository.
 
------
+[source,java]
+----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/raw/DogRepository.java[]
------
+----
 
 .It seems simple enough...
 And here's the default implementation of that interface.
 
------
+[source,java]
+----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/raw/DefaultDogRepository.java[]
------
+----
 
 . Everything about this arrangement makes me itch: `DataSource` objects are expensive and should be pooled, centralized, and reused for many objects.
 I don't love credentials hardcoded into the source code.
@@ -144,9 +152,10 @@ You definitely don't want these things leaking.
 And of course here's the entry point into this example.
 All `Main` classes will have the same basic formula: use an instance of `DogRepository` to read data and iterate over the data.
 
------
+[source,java]
+----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/raw/Main.java[]
------
+----
 
 . First we create an instance...
 . ...then we pass it to a `test` method, which expects an instance of an interface and doesn't care about how we got it.
@@ -160,9 +169,10 @@ You probably already saw this coming.
 We should centralize that `DataSource` definition.
 Here's the updated `Main` and `DefaultDogRepository`.
 
------
+[source,java]
+----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/di/Main.java[]
------
+----
 
 And here's the `DogRepository` implementation.
 There shouldn't be much to say.
@@ -194,9 +204,10 @@ In a production environment, you'd likely replace it with a more appropriately c
 In a test environment, you'd replace it with a mock.
 Either way, you only need to change one thing in one place and pass it into constructors as you go.
 
------
+[source,java]
+----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/di/DefaultDogRepository.java[]
------
+----
 
 Nothing fancy.
 Just object-oriented programming, constructors, and leveraging the power of polymorphism.
@@ -225,9 +236,10 @@ Right?)
 
 Let's rework this code to leverage one of Spring's many amazing _portable service abstractions_, the `JdbcClient`.
 
------
+[source,java]
+----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/psb/DefaultDogRepository.java[]
------
+----
 
 <.> Look!
 There's the query we were talking about!
@@ -295,6 +307,7 @@ NOTE: There's also a reactive variant, but let's stick to blocking semantics for
 
 Here's the basic shape of Spring's `PlatformTransactionManager`.
 
+[source,java]
 ----
 package org.springframework.transaction;
 
@@ -329,6 +342,7 @@ I suppose we could extract it into another class that implements the same `DogRe
 
 Here's our new `TransactionalDogRepository`.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/tx1/TransactionalDogRepository.java[]
 ----
@@ -337,6 +351,7 @@ It's wrapped the core functionality, finding records, in a transaction.
 
 In order for this arrangement to work, we have to spin up a `PlatformTransactionManager` and rework our `Main` class.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/tx1/Main.java[]
 ----
@@ -398,6 +413,7 @@ I deleted thousands of lines of code when I first found these gems.
 
 Let's refactor the `TransactionalDogRepository` to build on the `TransactionTemplate` instead.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/tx2/TransactionalDogRepository.java[]
 ----
@@ -406,6 +422,7 @@ _So_ much better!
 
 Here's the refactored `Main` class, too.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/tx2/Main.java[]
 ----
@@ -449,6 +466,7 @@ We're going to ask Java to do two things at once: create a class that implements
 
 We provide a callback (here it's shown as a lambda, but it's actually an instance of the JDK's `InvocationHandler` type) that will be invoked whenever anybody invokes a method on the newly generated instance.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/jdkproxy/Transactions.java[]
 ----
@@ -468,6 +486,7 @@ It'll allow us to achieve the same sort of runtime metaprogramming shenanigans y
 
 Let's rework our `Main` class, jettisoning the old, artisanal, hand-crafted `TransactionalDogRepository` and instead using this new shortcut to simplify things.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/jdkproxy/Main.java[]
 ----
@@ -510,6 +529,7 @@ No other changes are required.
 You can see we've even kept the same `doInTx` method.
 The concepts are the same; both the JDK implementation and the CGLIB implementation need a pointer to the current executing method, the arguments of the method, and the method itself.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/cglibproxy/Transactions.java[]
 ----
@@ -535,6 +555,7 @@ Conceptually, the flow is simple: Spring ingests your configuration, produces `B
 
 Here's our rewritten `Main` class, this time using Spring Framework to wire things together.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/springframework/Main.java[]
 ----
@@ -548,6 +569,7 @@ In this case it's a Java configuration class called `DogConfiguration`.
 
 Here's that class.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/springframework/DogConfiguration.java[]
 ----
@@ -597,6 +619,7 @@ Similarly, when the application shuts down, there are two equivalent approaches 
 
 Here's our reworked `DogRepository` to demonstrate this.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/lifecycle/DogRepository.java[]
 ----
@@ -617,12 +640,14 @@ Then we got generics-capable `ApplicationListener<T>`, where listeners would onl
 Then, finally, we got `@EventListener`, which is my go-to approach these days.
 Here's an example showing two different listeners for Spring's `ContextRefreshedEvent`, which is published right after Spring has updated the bean graph with the input configuration.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/lifecycle/Listener.java[]
 ----
 
 And, of course, we've wired that up in the `DogConfiguration` class.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/lifecycle/DogConfiguration.java[]
 ----
@@ -661,6 +686,7 @@ It is, however, an ideal place in which to introduce generic, cross-cutting conc
 
 We can see this in action by creating a `BeanFactoryPostProcessor` called `MyBeanFactoryPostProcessor`.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/pp/MyBeanFactoryPostProcessor.java[]
 ----
@@ -671,6 +697,7 @@ We don't really care about the bean itself, but we can inspect the resulting `Be
 Make sure to register the `BeanFactoryPostProcessor` accordingly.
 It needs to be invoked very early on in the lifecycle of the application, so use `static` on the bean method.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/pp/BppConfiguration.java[]
 ----
@@ -680,18 +707,21 @@ We'll have to remember to do this for all objects.
 But suppose we had some generic mechanism by which to identify that we wanted to participate in transactions, like a marker interface.
 Let's call it `Tx`.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/pp/Tx.java[]
 ----
 
 Add that to the implementation of `DogRepository`:
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/pp/DogRepository.java[]
 ----
 
 What we need now is some code to sift through all the objects right as they're about to be pressed into service and, if they have this marker interface, wrap them in a transactional composite.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/pp/TxBeanPostProcessor.java[]
 ----
@@ -704,6 +734,7 @@ With this done, we no longer need to manually call `Transactions` for any partic
 The framework will do this automatically for any bean that implements `Tx`.
 Register the new `TxBeanPostProcessor` using a `static` `@Bean` method so Spring is able to invoke the bean much earlier in the lifecycle.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/pp/DogConfiguration.java[]
 ----
@@ -722,6 +753,7 @@ It's called `@Transactional`, and it's been in the framework for 20+ years.
 Let's refactor to use `@Transactional`.
 We just need to enable it with `@EnableTransactionManagement`.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/transactional/DogConfiguration.java[]
 ----
@@ -793,6 +825,7 @@ Just add `@Component` to it and Spring will discover it just like it does any of
 
 Here's our reworked `DogConfiguration` supporting component scanning, and with no explicit Java bean configuration method for the `DogRepository`.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/componentscan/DogConfiguration.java[]
 ----
@@ -803,6 +836,7 @@ By default this will look in the current package (`com.example.beans_to_boot`) a
 The `DogRepository` no longer appears in the `DogConfiguration` class.
 We've simply annotated it with a stereotype annotation, `@Repository`.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/componentscan/DogRepository.java[]
 ----
@@ -839,6 +873,7 @@ NOTE: I will confess, there _are_ some existing ways to access that runtime dyna
 Let's look at an example where we rewire _almost_ the entire application using `BeanRegistrar`.
 We'll retain one bean with component scanning (the `DogRepository`) and we'll retain one bean (the `DriverManagerDataSource`) using Java configuration.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/beanregistrar/DogBeanRegistrar.java[]
 ----
@@ -884,6 +919,7 @@ As you move up the abstraction stack, you get even more sophisticated alternativ
 
 Let's load our configuration values from a local configuration file called `application.properties`.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/environment/DogConfiguration.java[]
 ----
@@ -899,6 +935,7 @@ If it's not a valid URI, the conversion will fail and the program will stop just
 
 We've added a new `.properties` file to the example.
 
+[source,properties]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/resources/application.properties[]
 ----

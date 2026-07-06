@@ -22,6 +22,7 @@ Where appropriate, I've provided Docker Compose `compose.yml` files in each of t
 
 If you're using the Docker tooling, you can spin up the container images thusly:
 
+[source,shell]
 ----
 docker compose up
 ----
@@ -29,6 +30,7 @@ docker compose up
 That will run the Docker images and block, keeping the shell on that process in the foreground.
 If you want to run things and the background them, do:
 
+[source,shell]
 ----
 docker compose up -d
 ----
@@ -48,6 +50,7 @@ This is a _good thing_!
 
 If you want to format the source code:
 
+[source,text]
 ----
 ./mvnw spring-javaformat:apply
 ----
@@ -66,6 +69,7 @@ Similarly, I might introduce beans that I don't intend for us to land on, but th
 These beans are useful, but not the intended final result.
 In these cases, I'll use a Spring _profile_, which is a marker annotation that makes the bean inert - Spring doesn't "see" it - until you explicitly _activate_ the profile.
 
+[source,java]
 ----
 @Configuration
 @Profile("example")
@@ -86,6 +90,7 @@ class MyConfig {
 
 Usually, you activate the profile (or profiles) by passing in a comma-delimited command line switch, e.g.:
 
+[source,shell]
 ----
 ./mvnw -Dspring.profiles.active=example,foo spring-boot:run
 ----
@@ -116,6 +121,7 @@ Considering that Spring Security is more than 20 years old, it's not surprising 
 
 Often, in the Spring codebases, you'll see a `package-info.java` class that contains a single package declaration and `@NullMarked`, like this one from `org.springframework.context`:
 
+[source,java]
 ----
 @NullMarked
 package org.springframework.context;
@@ -145,12 +151,9 @@ I usually then run IntelliJ IDEA: `idea pom.xml` from the command line.
 
 I do this _so often_ that I've even got a little Java script you can use.
 
+[source,java]
 ----
 include::snippets/uao.java[]
 ----
 
 I've created an alias to that script in my shell called `uao`.
-
-
-
-

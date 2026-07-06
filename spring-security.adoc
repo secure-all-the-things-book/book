@@ -112,6 +112,7 @@ There are _dozens_ of these included in Spring Security, many of them having spe
 
 Here's the definition of `AuthenticationManager` in Spring Security.
 
+[source,java]
 ----
 package org.springframework.security.authentication;
 
@@ -122,7 +123,6 @@ import org.springframework.security.core.AuthenticationException;
 public interface AuthenticationManager {
 
 	Authentication authenticate(Authentication authentication) throws AuthenticationException;
-
 }
 ----
 
@@ -130,6 +130,7 @@ The most common implementation of `AuthenticationManager` is `ProviderManager`, 
 
 Here's the definition of `AuthenticationProvider` in Spring Security.
 
+[source,java]
 ----
 package org.springframework.security.authentication;
 
@@ -160,6 +161,7 @@ image::images/security/authentication.png[]
 And now let's actually pull these pieces together in a simple test.
 We'll construct these objects ourselves, using Spring Security directly.
 
+[source,java]
 ----
 include::{code}/security/security/src/test/java/com/example/security/SecurityApplicationTests.java[]
 ----
@@ -202,6 +204,7 @@ Spring Boot provides a natural way to contribute filters, side-stepping the tedi
 
 Here's an example.
 
+[source,java]
 ----
 include::{code}/security/security/src/main/java/com/example/security/CustomFilterConfiguration.java[]
 ----
@@ -222,6 +225,7 @@ Behind the scenes, when Spring Security authenticates a request, it creates an o
 Often, but not always, this is backed by a `ThreadLocal<?>`.
 You can access the current authenticated user with `SecurityContextHolder`:
 
+[source,text]
 ----
 var authentication = SecurityContextHolder
                         .getContextHolderStrategy()
@@ -246,18 +250,21 @@ We're going to connect this application to a SQL database.
 As always, we'll use Docker Compose to make short work of this.
 I've created a `compose.yml` file here.
 
+[source,yaml]
 ----
 include::{code}/security/security/compose.yml[]
 ----
 
 Run that in the usual way:
 
+[source,shell]
 ----
 docker compose up -d
 ----
 
 Here's our initial `application.properties` configuration.
 
+[source,properties]
 ----
 include::{code}/security/security/src/main/resources/application.properties[]
 ----
@@ -268,6 +275,7 @@ include::{code}/security/security/src/main/resources/application.properties[]
 Let's set up our Spring Security application.
 Let's install a single controller that we will protect and that will require an authenticated user to access.
 
+[source,java]
 ----
 include::{code}/security/security/src/main/java/com/example/security/MeController.java[]
 ----
@@ -289,6 +297,7 @@ So let's instead register a bean of type `UserDetailsService`.
 
 We'll start by registering an `InMemoryUserDetailsManager` to see everything work.
 
+[source,java]
 ----
 include::{code}/security/security/src/main/java/com/example/security/InMemoryConfiguration.java[]
 ----
@@ -311,12 +320,14 @@ We'll need some schema to define the tables in which our users and the enumerati
 
 I've placed the following file in `src/main/resources/schema.sql`.
 
+[source,sql]
 ----
 include::{code}/security/security/src/main/resources/schema.sql[]
 ----
 
 I've placed the following file in `src/main/resources/data.sql`.
 
+[source,sql]
 ----
 include::{code}/security/security/src/main/resources/data.sql[]
 ----
@@ -327,6 +338,7 @@ We're using PostgreSQL, but there are equivalent schemas that you could use for 
 Delete the conflicting `InMemoryUserDetailsManager` bean from earlier.
 Let's replace it with one that delegates to these newly minted SQL tables and their data.
 
+[source,java]
 ----
 include::{code}/security/security/src/main/java/com/example/security/SecurityConfiguration.java[]
 ----
@@ -350,6 +362,7 @@ Looking at the output, you'll notice that the passwords written to the database 
 
 This was intentional: I wanted these passwords to work with the `PasswordEncoder` configured here:
 
+[source,java]
 ----
 include::{code}/security/security/src/main/java/com/example/security/PasswordConfiguration.java[]
 ----
@@ -361,6 +374,7 @@ Indeed, most of the good implementations come from either the BouncyCastle or Pa
 
 You could use these algorithms directly by constructing the relevant instances of the `PasswordEncoder`, like so:
 
+[source,text]
 ----
 var bcrypt = new BCryptPasswordEncoder();
 ----
@@ -394,6 +408,7 @@ You can of course configure your own `DelegatingPasswordEncoder` if you like to 
 Add Password4J to the CLASSPATH: `com.password4j` : `password4j` : `1.8.4`.
 I'm using that version in the middle of 2026. (You should use whichever version is the latest-and-greatest as you're reading this.)
 
+[source,java]
 ----
 include::{code}/security/security/src/main/java/com/example/security/CustomPasswordEncoderConfiguration.java[]
 ----
@@ -493,6 +508,7 @@ So far we've just registered beans of the right type in the right place, and thi
 Remember when I told you that there's a giant filter sitting in between your requests and the back-end application logic?
 Well, we can configure how that works by defining the `SecurityFilterChain` ourselves, like this.
 
+[source,java]
 ----
 include::{code}/security/security/src/main/java/com/example/security/SecurityFilterChainConfiguration.java[]
 ----
@@ -508,6 +524,7 @@ By default, Spring Boot declares a bean of type `SecurityFilterChain` that:
 Historically, if you wanted to change this, you'd have to define a `SecurityFilterChain` bean of your own and you'd instantly lose the default protection Spring Boot gave you.
 So, your first order of business was to immediately redefine the same bean, which looks more or less like this:
 
+[source,java]
 ----
 include::{code}/security/security/src/main/java/com/example/security/BootsDefaultSecurityFilterChainConfiguration.java[]
 ----
@@ -552,6 +569,7 @@ Let's try it out.
 First, we'll need to enable one-time tokens.
 Do so within a `Customizer<HttpSecurity>`.
 
+[source,java]
 ----
 include::{code}/security/security/src/main/java/com/example/security/ott/OttConfiguration.java[]
 ----
@@ -571,6 +589,7 @@ You can use this as a chance to set up any state and then look the user up and e
 
 But again, I want to keep things simple, so I'll simply print on the console the URL to which the authenticating user should go.
 
+[source,java]
 ----
 include::{code}/security/security/src/main/java/com/example/security/ott/ConsoleOneTimeTokenGenerationSuccessHandler.java[]
 ----
@@ -597,6 +616,7 @@ Spring Boot has no way of knowing whether these headers are trustworthy!
 When we set up the application, we configured Thymeleaf so that we could produce HTML views like the one we're presenting to the user after sending the authentication link.
 Let's do that here.
 
+[source,java]
 ----
 include::{code}/security/security/src/main/java/com/example/security/ott/OttController.java[]
 ----
@@ -607,6 +627,7 @@ In this case, it'll resolve to `src/main/resources/templates/ott-sent.html`.
 
 Here's the Thymeleaf page:
 
+[source,html]
 ----
 include::{code}/security/security/src/main/resources/templates/ott-sent.html[]
 ----
@@ -717,6 +738,7 @@ Now for the easy part.
 Whereas the explanation took a fair bit of time, the implementation is trivial.
 Let's get a minimum viable product working, first.
 
+[source,java]
 ----
 include::{code}/security/security/src/main/java/com/example/security/webauthn/WebAuthnConfiguration.java[]
 ----
@@ -768,9 +790,6 @@ On an Apple device, I just present my fingerprint and (in my best "hacker voice"
 If you restart the Spring Boot application, you'll have to re-register your Passkey, because everything was stored in memory.
 Mercifully, Spring Security ships with JDBC-backed implementations of the persistence for the parts that need it.
 Let's look at that.
-
-
-
 
 
 // MFA

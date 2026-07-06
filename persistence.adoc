@@ -88,9 +88,9 @@ Also, we're going to need to encode passwords so that they're not lying around a
 Define a bean of type `PasswordEncoder` for use in your program.
 
 [source,java]
------
+----
 include::{code}/authorization-server/authorization-server/src/main/java/com/example/authorization_server/SecurityConfiguration.java[]
------
+----
 
 <1> this is a sort of compose `PasswordEncoder`, checking the prefix of the password string for information as to which encoder to use.
 We've already seen it action.
@@ -112,16 +112,16 @@ Spring Security ships with some usable schema on the classpath, but unfortunatel
 So we'll modify it accordingly, as shown in `src/main/resources/sql/schema/users.sql`.
 
 [source,sql]
------
+----
 include::{code}/authorization-server/authorization-server/src/main/resources/sql/schema/users.sql[]
------
+----
 
 We could also define the users with SQL in a file under the `sql/data/` folder, but I want you to see what it looks like to use the Java API to programmatically register a user, so here is both the `UserDetailsService` registration and a bean that uses the `UserDetailsService` to write some data to the database.
 
 [source,java]
------
+----
 include::{code}/authorization-server/authorization-server/src/main/java/com/example/authorization_server/UsersConfiguration.java[]
------
+----
 
 <1> this is a convenient pattern: define the prototype for all new users once and then reuse the builder
 <2> Poor Rob Winch's eyes! why are there passwords just strewn about our Java source code?
@@ -170,9 +170,9 @@ Create a file `src/main/resources/sql/schema/oauth2-authorization-schema.sql`.
 The changes we've made replace all `blob` types with `text`.
 
 [source,sql]
------
+----
 include::{code}/authorization-server/authorization-server/src/main/resources/sql/schema/oauth2-authorization-schema.sql[]
------
+----
 
 `OAuth2AuthorizationConsentService` handles representations of an OAuth 2.0 "consent" to an Authorization request, which holds state related to the set of authorities granted to a client by the resource owner.
 It's the same story as before: there's schema on the classpath (`org/springframework/security/oauth2/server/authorization/oauth2-authorization-consent-schema.sql`) but it doesn't work with PostgresSQL and, importantly, even if it did it would fail on the second run through because Spring Boot would try to define the table twice, in effect.
@@ -181,9 +181,9 @@ Create a file `src/main/resources/sql/schema/oauth2-authorization-consent-schema
 The changes we've made replace all `blob` types with `text`.
 
 [source,sql]
------
+----
 include::{code}/authorization-server/authorization-server/src/main/resources/sql/schema/oauth2-authorization-consent-schema.sql[]
------
+----
 
 == Persisting the HTTP Sessions Themselves
 
@@ -200,12 +200,8 @@ It wraps the containers' default `HttpSession`.
 All interactions you have pass through the wrapper, which in turn delegates to any of a number of implementations backed by technology that is far faster and more reliable in the ways of making data consistently available.You can use implementations for, among other things, Hazelcast, Redis, and of course any 'ol SQL `DataSource`.
 We're choosing to continue to leverage our investment in PostgreSQL, so we'll use the Spring Session JDBC module.
 
-Add the following dependency to the build:
+Add the following dependency to the build: `org.springframework.session`:`spring-session-jdbc`
 
-[source,groovy]
-----
-	implementation 'org.springframework.session:spring-session-jdbc'
-----
 
 There is a property, `spring.session.jdbc.initialize-schema=always`, that once specified will cause Spring Session to install the JDBC schema for you in the database.
 It worked for me (surprise!), in PostgreSQL.
@@ -213,9 +209,9 @@ But, I just really want the schema to all be in one place where I can version co
 Create a file `src/main/resources/sql/schema/spring-session-jdbc.sql`.
 
 [source,sql]
------
+----
 include::{code}/authorization-server/authorization-server/src/main/resources/sql/schema/spring-session-jdbc.sql[]
------
+----
 
 We've looked at how to persist almost all aspect of the domain of the Spring Authorization Server with JDBC.
 All aspects, except _keys_.
@@ -320,7 +316,7 @@ It's a trusted module that can be loaded into the database even if you're not a 
 Log in to your PostgreSQL instance.
 If you're using the `compose.yml` file, then you can run:
 
-[source,shell]
+[source,sql]
 ----
 PGPASSWORD=postgres psql -U postgres -h localhoslt postgres
 ----
@@ -328,14 +324,14 @@ PGPASSWORD=postgres psql -U postgres -h localhoslt postgres
 Once in, you'll need to load the plugin.
 It's usually bundled with your PostgreSQL distribution.
 
-[source,shell]
+[source,sql]
 ----
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 ----
 
 You can then confirm that it's worked by using one of the functions provided, like this:
 
-[source,shell]
+[source,sql]
 ----
 SELECT crypt('hello, world', gen_salt('bf'));
 ----
@@ -352,7 +348,7 @@ We'll need a password and a salt fort he encryption, hwoever, and those keys sho
 We talked about this!
 Store _those_ keys somewhere like Hashicorp Vault or your hyperscaler's key management solution.
 
-=== Generating New Keys Programatically
+=== Generating New Keys Programmatically
 
 First thing's first: we'll need a way to generate new keys programmatically.
 Can't rotate 'em if we can't generate 'em!
@@ -482,7 +478,7 @@ You could have a `@Scheduled` method that runs every 24 hours and rotates the ke
 You could create a (secured) HTTP endpoint that publishes the event.
 You could create a (secured) Actuator endpoint that publishes the event.
 You could write some code to listen to new messages coming in from Kafka and then publish the event in response.
-The skies the limit!
+The sky is the limit!
 The first we're going to publish the event, howeve?
 On startup, but only if we discover there are no keys in the repository.
 Let's see that event wiring.

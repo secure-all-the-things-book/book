@@ -74,7 +74,7 @@ And it's fast.
 I can't give you specific numbers or anything because it is so highly workload-sensitive, but large organizations like Netflix have talked about how more recent iterations in Java have helped them improve their workload performance merely by upgrading.
 Upgrading the JVM is one of the easiest ways to gain performance and reduce memory utilization, and it's one of the easiest, comparably, too.
 
-== AutoCloseable
+== The Amazing `AutoCloseable`
 
 Java manages most memory for you, but it can't be responsible for the state outside the humble confines of the JVM.
 So, for example, you wouldn't like it if Java _garbage-collected_ your connection to the database, and you wouldn't like it if Java garbage-collected your open socket connections without warning.
@@ -94,7 +94,7 @@ Let's look at some examples.
 I'll read a file on the filesystem to demonstrate this new feature.
 But something needs to ensure that there's a file to read in the first place, so I've extracted all that out into a separate class, `Utils`:
 
-[source,java,indent=0]
+[source,java]
 ----
 include::{code}/java/java/src/test/java/com/example/java/closeable/Utils.java[]
 ----
@@ -107,7 +107,7 @@ Otherwise, if you're doing things the old-fashioned way, you'll find yourself re
 
 Now, let's look at an example of what _not_ to do.
 
-[source,java,indent=0]
+[source,java]
 ----
 include::{code}/java/java/src/test/java/com/example/java/closeable/TraditionalResourceHandlingTest.java[]
 ----
@@ -126,7 +126,7 @@ Yuck.
 We can do better with Java 7's `try-with-resources` construct.
 Let's rework the example accordingly.
 
-[source,java,indent=0]
+[source,java]
 ----
 include::{code}/java/java/src/test/java/com/example/java/closeable/TryWithResourcesTest.java[]
 ----
@@ -136,7 +136,7 @@ include::{code}/java/java/src/test/java/com/example/java/closeable/TryWithResour
 Java 10 introduced type inference for variables given enough context.
 As a result, Java is a strongly typed language with less typing - pressing of keys - required.
 
-[source,java,indent=0]
+[source,java]
 ----
 include::{code}/java/java/src/test/java/com/example/java/typeinference/TypeInferenceTest.java[]
 ----
@@ -167,7 +167,7 @@ The agony of having a column of nice, clean `var`s punctuated occasionally by st
 There is a way around it with casts, but I admit it isn't much better.
 Let's look at some examples.
 
-[source,java,indent=0]
+[source,java]
 ----
 include::{code}/java/java/src/test/java/com/example/java/typeinference/LambdasAndTypeInferenceTest.java[]
 ----
@@ -185,7 +185,7 @@ Your sensibilities may vary, and given how new this feature is, I wouldn't be su
 Java has a new _enhanced_ switch, which forms the basis of the gradual addition of _pattern matching_ to the Java language.
 It simplifies things considerably:
 
-[source,java,indent=0]
+[source,java]
 ----
 include::{code}/java/java/src/test/java/com/example/java/switches/TraditionalSwitchExpressionTest.java[]
 ----
@@ -203,6 +203,7 @@ Otherwise, the execution flow will drop down to other branches, producing undesi
 The first example is a classic `switch` statement.
 There's nothing wrong, _per se_, but it's tedious, and I tend to avoid writing them.
 
+[source,java]
 ----
 include::{code}/java/java/src/test/java/com/example/java/switches/EnhancedSwitchExpressionTest.java[]
 ----
@@ -216,6 +217,7 @@ This one is a super-small feature that punches well above its weight: Java suppo
 Hooray!
 There are a million opportunities for multiline `String`s: SQL queries, HTML, Markdown, Asciidoctor, Velocity templating (such as for emails), unit testing, etc.
 
+[source,java]
 ----
 include::{code}/java/java/src/test/java/com/example/java/MultilineStringsTest.java[]
 ----
@@ -248,6 +250,7 @@ Suppose you want to return information about `Customer` entities _and_ their ass
 Unfortunately, Java doesn't support multiple return types or provide suitable tuple types, so you need to create something to hold both types.
 Records to the rescue!
 
+[source,java]
 ----
 include::{code}/java/java/src/test/java/com/example/java/records/SimpleRecordsTest.java[]
 ----
@@ -281,7 +284,7 @@ Maybe one day that'll change?
 Behind the scenes, a record creates a default constructor whose parameters match the types and arity of the record header.
 Records can have other constructors, but they need to delegate to the default constructor.
 
-[source,java,indent=0]
+[source,java]
 ----
 include::{code}/java/java/src/test/java/com/example/java/records/RecordConstructorsTest.java[]
 ----
@@ -319,7 +322,7 @@ They let you constrain the number of subclasses to a known set.
 
 Let's look at an example.
 
-[source,java,indent=0]
+[source,java]
 ----
 include::{code}/java/java/src/test/java/com/example/java/SealedTypesTest.java[]
 ----
@@ -344,7 +347,7 @@ Furthermore, sealed subtypes are `final`, inhibiting tools like Spring and Hiber
 This feature is one of those things that I don't use all that often in application code, but it's pretty useful when writing infrastructure code that deals with polymorphism.
 Essentially, the feature spares you from having to create an intermediate variable and casting after you've already done an `instanceof` check.
 
-[source,java,indent=0]
+[source,java]
 ----
 include::{code}/java/java/src/test/java/com/example/java/SmartCastsTest.java[]
 ----
@@ -381,7 +384,7 @@ This is an ideal filter when you're trying to sift through a stream of values.
 You can also create and use your own custom functional interfaces.
 Let's look at some examples.
 
-[source,java,indent=0]
+[source,java]
 ----
 include::{code}/java/java/src/test/java/com/example/java/LambdasTest.java[]
 ----

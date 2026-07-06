@@ -18,6 +18,7 @@ But first, let's refactor.
 
 Here's the updated `Main` class.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/boot/Main.java[]
 ----
@@ -43,6 +44,7 @@ We've got an object mapper (not quite a _full_ ORM, but close enough) framework 
 Spring Data JDBC is capable, and it's already been configured.
 Let's rework our repository to leverage it, rather than hand-rolling SQL ourselves.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/boot/DogRepository.java[]
 ----
@@ -67,6 +69,7 @@ Spring Boot will, by convention, load any `application.properties` or `applicati
 
 We imported the `DogBeanRegistrar`, so we might as well look at it.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/boot/Main.java[]
 ----
@@ -104,6 +107,7 @@ Be sure to put the code in a package that is _not_ scanned by Spring's component
 In my application, my root package is `com.example.beans_to_boot`, so Spring will discover all classes in that package or deeper.
 So, I'll put the autoconfiguration in a separate, adjacent, package called `com.example.autoconfigure`, not because it's required but because it confirms that we've wired up the autoconfiguration correctly and that this configuration class will be loaded and evaluated regardless of the fact that it's not discovered by the component scanning machinery.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/autoconfigure/SillyAutoConfigurationExample.java[]
 ----
@@ -119,6 +123,7 @@ If not, nothing will happen.
 
 Let's look at the implementation of our (admittedly very contrived) condition.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/autoconfigure/ConditionalOnRandomness.java[]
 ----
@@ -129,6 +134,7 @@ We pointed it to an implementation of `Condition` that we've written called...
 
 Now, create a text file in `src/main/resources/META-INF/spring/` called `org.springframework.boot.autoconfigure.AutoConfiguration.imports` in your project.
 
+[source,imports]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports[]
 ----
@@ -163,6 +169,7 @@ So we now have a full web framework and web server in play.
 
 Here, I even wrote a trivial Spring MVC controller that loads all the results from the repository.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/boot/DogController.java[]
 ----
@@ -179,6 +186,7 @@ I didn't speak to some of the configuration values in the property file.
 Only those concerned with the `DataSource`.
 Let's revisit some of those.
 
+[source,properties]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/resources/application.properties[]
 ----
@@ -198,6 +206,7 @@ There are many endpoints, but most of them are not visible unless you _expose_ t
 
 If you want to see all the Actuator endpoints and the full health endpoint, you might use the following configuration properties.
 
+[source,text]
 ----
 management.endpoints.web.exposure.include=*
 management.endpoint.health.show-details=always
@@ -235,12 +244,14 @@ For it to work, however, the AOT engine will need to know which SQL query dialec
 
 Add the following bean to help it along.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/boot/DataAotConfiguration.java[]
 ----
 
 You can take advantage of native-image technology thusly:
 
+[source,shell]
 ----
 ./mvnw -DskipTests -Pnative native:compile
 ----
@@ -296,12 +307,14 @@ We need to tell GraalVM not to.
 
 Here's the text file.
 
+[source,text]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/resources/message[]
 ----
 
 Now we need to register some code to contribute the AOT hints.
 
+[source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/boot/AotConfiguration.java[]
 ----
@@ -336,6 +349,7 @@ The thrust of it is that you run the program in a special mode: the JVM dumps ou
 On my machine, this application is almost 50% faster on startup as a result of using Project Leyden.
 Here's an example of doing this training run and then getting great results.
 
+[source,shell]
 ----
 include::{code}/beans-to-boot/beans-to-boot/leyden.sh[]
 ----
@@ -364,12 +378,14 @@ There are also buildpacks for scores of other languages and ecosystems, includin
 Here's how you can use it for your own application.
 If you want to build a container for a standard JVM-based application, do the following.
 
+[source,text]
 ----
 ./mvnw -DskipTests spring-boot:build-image
 ----
 
 If you want to build a container for a GraalVM native image, do the following:
 
+[source,text]
 ----
 ./mvnw -DskipTests -Pnative spring-boot:build-image
 ----

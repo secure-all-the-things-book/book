@@ -29,7 +29,7 @@ include::{code}/authorization-server/authorization-server/snippets/default-user.
 This gets us off the ground, but as soon as you want two or more users, you'll need to specify them a different way.
 The easiest is probably to define a bean of type   `InMemoryUserDetailsManager`, like this.
 
-[code,java]
+[source,java]
 ----
 include::{code}/authorization-server/authorization-server/snippets/UserDetailsConfiguration.java[]
 ----
@@ -56,7 +56,7 @@ Worse: you've probably already entered this somewhere else on the internet and d
 Maybe you change house or email address, or whatever, and you've forgotten to go back to the site and change your information.
 Yelp know this, so they offer another path forward: `Continue with Google` and `Continue with Apple`.
 
-image::./images/yelp-signup.png[]
+image::images/yelp-signup.png[]
 
 Click the button and another window on Google or Apple's sites pop up.
 

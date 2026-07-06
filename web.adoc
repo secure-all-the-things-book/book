@@ -20,46 +20,46 @@
 // The domain's a trivial one: customer data, like a CRM (customer relationship manager). Each `Customer` entity has an `id` field, a `name` field, and an `email`.
 //
 // [source,java]
-// -----
+// ----
 // include::{code}/api/api/src/main/java/bootiful/api/Customer.java[]
-// -----
+// ----
 //
 // And of course there's a Spring Data JDBC repository to make working with that data easier...
 //
 // [source,java]
-// -----
+// ----
 // include::api/src/main/java/bootiful/api/CustomerRepository.java[]
-// -----
+// ----
 //
 // The Spring Data JDBC repository talks to a SQL table, called `customer`, whose definition we must specify.
 //
 // [source,sql]
-// -----
+// ----
 // include::api/src/main/resources/schema.sql[]
-// -----
+// ----
 //
 // Let's insert some `customer` records, just for good measure, so that we have something to look at, and so that the system is in a well-known state.
 //
 // [source,sql]
-// -----
+// ----
 // include::api/src/main/resources/data.sql[]
-// -----
+// ----
 //
 // And if we write data in a database but have no HTTP controller by which to examine the data, did we actually write any data at all? Philosophers disagree, but just to be safe let's build an HTTP controller with good ol' Spring MVC.
 //
 // [source,java]
-// -----
+// ----
 // include::api/src/main/java/bootiful/api/CustomerHttpController.java[]
-// -----
+// ----
 //
 // Remember we're going to be securing this with Spring Security's OAuth support, and just to be sure everything's worked, we'll have a simple HTTP endpoint that injects and then spits out the current authenticated user's username, so you can see who the system thinks is authenticated at the moment.
 //
 // This is particularly useful in the client, which is goign to want to at least acknowldge that the user has successfully authenticated with a message like, `Welcome <USER>`, where `<USER>` might be `jlong`. You might also leak other inforamation to the client, like the first name and last name.
 //
 // [source,java]
-// -----
+// ----
 // include::api/src/main/java/bootiful/api/MeHttpController.java[]
-// -----
+// ----
 //
 // And, finally, we've got a little integration that sends a message using the AMQP protocol via RabbitMQ to another service called `processor`.
 // We'll introduce that thing later.
@@ -81,17 +81,17 @@
 // We'll use that JWT later to validate the request is from a trusted, authenticated, user.
 //
 // [source,java]
-// -----
+// ----
 // include::api/src/main/java/bootiful/api/EmailController.java[]
-// -----
+// ----
 //
 // And there's a bit of Spring Integration plumbing to route those requests to our RabbitMQ broker running in a separate process.
 // This `IntegrationFlow` looks at requests (which come in the shape of a `Message<T>` object, which has headers and a payload) coming in from the injected `MessageChannel`, transforms them into JSON data, and then sends them, along with a JWT token associated to the current authenticated user, on to the broker, where it'll eventually get delivered to the consumer, `processor`.
 //
 // [source,java]
-// -----
+// ----
 // include::api/src/main/java/bootiful/api/EmailRequestsIntegrationFlowConfiguration.java[]
-// -----
+// ----
 //
 // <1> inbound adapters translate events from the real world into Spring Framework `Message<T>` objects.
 // Outbound adapters translate `Message<T>` objects into events in the real world.
@@ -175,9 +175,9 @@ include::{code}/web/client/src/test/java/com/example/client/ClientCredentialsCli
 You can use this token to then issue a request to the HTTP server:
 
 [source,shell]
------
+----
 curl -H "Authorization: Bearer $TOKEN" http://localhost:8081/customers
------
+----
 
 And there's the data!
 At long last, reunited with the data.
