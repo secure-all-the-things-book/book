@@ -23,7 +23,7 @@ Spring Batch, also released around this time, let me learn the domain of batch p
 I was already halfway there!
 Spring Integration, also released around this time, let me learn the domain of enterprise application integration, messaging, and event-driven architecture in terms of the familiar idioms of Spring.
 I was already halfway there.
-To be clear, there were alternatives for these particular usecases, but none of them integrated so deeply with Spring and its guiding philosophies.
+To be clear, there were alternatives for these particular use cases, but none of them integrated so deeply with Spring and its guiding philosophies.
 I'd have to learn a whole different paradigm, ecosystem, and maybe even language and runtime to get any footing in those alternatives.
 Spring opened doors and let me cut to the heart of the matter.
 
@@ -38,13 +38,13 @@ No way to say, _I want all *these* beans in *that* namespace, now_.
 We'd have to type them out, one by one, and configure them all, one by one.
 As you can imagine, in the domain of security, there are _many_ moving parts, and every wayward developer had to understand all of them to get even the simplest application up and running.
 You won't have to deal with that in this book, of course.
-We've had nearly decades of Java configuration, and more than two decades since XML namespaces and schema were introduced.
+We've had nearly two decades of Java configuration, and more than two decades since XML namespaces and schemas were introduced.
 I just wanted to register that it used to be unwieldy.
 I don't know if writing a book is cheaper than therapy, but it's definitely more validating.
 
 The framework evolved well beyond basic authentication and authorization, cementing a flexible architecture centered around servlet filters, authentication providers, method security, and deep integration with the Spring Framework.
 
-As stewardship expanded to maintainer - including Luke Taylor, Rob Winch, and a growing community of contributors - Spring Security continued to modernize alongside both the Java ecosystem and the changing web.
+As stewardship expanded to a group of maintainers - including Luke Taylor, Rob Winch, and a growing community of contributors - Spring Security continued to modernize alongside both the Java ecosystem and the changing web.
 At this point, no single engineer has done more to improve Spring Security than its current lead Rob Winch, about whom you'll no doubt hear more from me in the course of this book.
 
 The 3.x generation introduced features such as _Spring Expression Language_ (SpEL)-based access control, improved LDAP integration, OpenID support, and built-in protection against common web vulnerabilities like Cross-Site Request Forgery (CSRF).
@@ -63,11 +63,11 @@ With that high-level overview out of the way, let's talk specifics.
 
 == Spring Security for all Contexts
 
-Spring Security has a good story for securing all manners of different workloads.
+Spring Security has a good story for securing all manner of different workloads.
 Most of this book assumes that you're building HTTP-based clients and services, but part of the reason I wanted to write this book is precisely because it can do _so much more_!
-You can use it to secure HTTP clients and services, MCP clients and services, command line interface (CLI) clients, backoffice message code, and so much more.
+You can use it to secure HTTP clients and services, MCP clients and services, command line interface (CLI) clients, back-office messaging code, and so much more.
 
-==  Authentication
+== Authentication
 
 Authentication answers the question: _who is this request from_?
 What's their name?
@@ -77,29 +77,29 @@ Identity is everything.
 There's no continuity of service if there are no users for whom to ensure continuity.
 There are no users if there is no identity.
 
-Authentication works by _challening_ the user for proof of some sort of _factor_, the demonstration of which confirms the identity of the user.
+Authentication works by _challenging_ the user for proof of some sort of _factor_, the demonstration of which confirms the identity of the user.
 A password is a widespread example of this.
 Anybody can claim to be Rob Winch, lead of Spring Security, but if they don't have his supersecret, well-guarded password, they're not logging into his email or gaining access to his systems.
 A password demonstrates that the user has knowledge that presumably only they should have.
 
 There are many other factors.
-One-time tokens, Passkeys, and certificates are all examples of authentication factors.
+One-time tokens, passkeys, and certificates are all examples of authentication factors.
 
 A well-secured system will use multiple factors for authentication, sometimes called multi-factor auth or _MFA_.
 When should you choose which factor?
 Authentication factors usually fall into three buckets:
 
 * *knowledge* - something you know.
-Examples are passwords, PINs, passphrases, secure questions, etc.
-Some weaknesses of factor are that it can be guessed, phished, reused, leaked, or written down.
+Examples are passwords, PINs, passphrases, security questions, etc.
+Some weaknesses of this factor are that it can be guessed, phished, reused, leaked, or written down.
 
 * *possession* - something you have.
-Examples of this is a phone, hardware security key, a smart card, an authenticator app, a passkey stored onyour device, etc.
-Some weakness of this factor are that the device or token can be lost, stolen, cloned in a weak system, or intercepted if it relies on text messages (SMS).
+Examples of this are a phone, a hardware security key, a smart card, an authenticator app, a passkey stored on your device, etc.
+Some weaknesses of this factor are that the device or token can be lost, stolen, cloned in a weak system, or intercepted if it relies on text messages (SMS).
 
-* *inherence* – something you are.
+* *inherence* - something you are.
 Examples of this are fingerprints, face scans, iris scans, voiceprints, etc.
-Some weaknesses associated with this factor are that biometrics can be spoofed, mishandled, or impossible to _rotate_ if compromised.
+Some weaknesses of this factor are that biometrics can be spoofed, mishandled, or impossible to _rotate_ if compromised.
 
 Sometimes the demonstrated ability of the user to authenticate in more than one way is, itself, a factor.
 A user might have access to most of a given system if they present _just_ a single factor, like a password, but might have access to more sensitive facets of the system if they present multiple factors.
@@ -174,7 +174,7 @@ Any implementation of `UserDetailsService` will work.
 We're just going to hardcode our users for this example.
 (Which does make the act of encoding the passwords seem a bit silly, doesn't it?)
 . We'll wire up a lonesome `AuthenticationProvider` of type `DaoAuthenticationProvider` which expects a reference to the aforementioned `UserDetailsService`.
-. we'll wire up an implementation of `AuthenticationManager` called `ProviderManager` to handle any and all `AuthenticationProvider` instances.  `ProviderManager` will give incoming `Authentication` requests to all configured instances of `AuthenticationProvider`.
+. We'll wire up an implementation of `AuthenticationManager` called `ProviderManager` to handle any and all `AuthenticationProvider` instances. `ProviderManager` will give incoming `Authentication` requests to all configured instances of `AuthenticationProvider`.
 If any of them can handle it, then processing stops.
 If not, they either throw an exception or return an `Authentication` with `authenticated == false`.
 . finally, the rubber meets the road.
@@ -205,7 +205,7 @@ include::{code}/security/security/src/main/java/com/example/security/CustomFilte
 . You can register beans of type `FilterRegistrationBean` and they'll let you wire up all the same things you might've configured when using `web.xml` or programmatic `Servlet` registration.
 We can specify in which order the filter is to be processed.
 I want this to be processed dead-last, _after_ all the other filters have run.
-Here, we're specifying the URL patterns to which to map our `Filter` and whether the `Filter` supports the  _async_ support introduced in Servlet 3.0, in 2009.
+Here, we're specifying the URL patterns to which to map our `Filter` and whether the `Filter` supports the _async_ processing introduced in Servlet 3.0, in 2009.
 . I use the word _filter_ to refer to a conceptual thing, but in the Servlet API there are at least two interesting classes to be aware of: `Filter` and `HttpFilter`.
 We're interested in `HttpFilter` here because we want to intercept HTTP requests, not just generic unspecified requests bound for the server.
 . Spring Security installs a filter _before_ our filter, and one of the things it does is _wrap_ the raw native `HttpServletRequest` that comes from the native Servlet container in a new class that provides answers to `getUserPrincipal()` by sourcing the information from the Spring Security authenticated principal.
@@ -215,7 +215,7 @@ There's nothing we can do.
 Where does that user come from?
 Who put it there?
 Behind the scenes, when Spring Security authenticates a request, it creates an object of type `Authentication` and stores it in a place that the current ongoing request can get to it.
-Often, but not always, this is a `ThreadLocal<?>`.
+Often, but not always, this is backed by a `ThreadLocal<?>`.
 You can access the current authenticated user with `SecurityContextHolder`:
 
 ----
@@ -300,9 +300,9 @@ Use `josh@joshlong.com` and `pw` as the username and password, respectively.
 You should see the username returned to you in a JSON response.
 It worked!
 
-== DAO-backed authentication
+== DAO-Backed Authentication
 
-Let's change the `UserDetailsService` implementation from our SQL database instead of from in-memory.
+Let's change the `UserDetailsService` implementation to read from our SQL database instead of from in-memory.
 We'll need some schema to define the tables in which our users and the enumeration of their _authorities_ will reside.
 
 I've placed the following file in `src/main/resources/schema.sql`.
@@ -351,8 +351,8 @@ include::{code}/security/security/src/main/java/com/example/security/PasswordCon
 ----
 
 A `PasswordEncoder` is an object that takes plaintext Strings and _encodes_ them with an algorithm.
-Spring Security ships with dozens of implementations for algorithms like SHA (_do not_ use this one!), SHA 256 (maybe don't use this one either), PBKDF2, SCrypt, BCrypt, Argon, etc.
-Many of the implementations have duplicate implementations, in fact, because there is dual support in Spring Security for various algorithms from the third-party BounceCastle library _and_ from the third-party Password4J library.
+Spring Security ships with dozens of implementations for algorithms like SHA (_do not_ use this one!), SHA 256 (maybe don't use this one either), PBKDF2, SCrypt, BCrypt, Argon2, etc.
+Many of the implementations are duplicated, in fact, because there is dual support in Spring Security for various algorithms from the third-party BouncyCastle library _and_ from the third-party Password4J library.
 Indeed, most of the good implementations come from either the BouncyCastle or Password4J libraries and require their presence on the CLASSPATH.
 
 You could use these algorithms directly by constructing the relevant instances of the `PasswordEncoder`, like so:
@@ -361,16 +361,16 @@ You could use these algorithms directly by constructing the relevant instances o
 var bcrypt = new BCryptPasswordEncoder();
 ----
 
-I always prefer instead to use the composite that comes from `PasswordEncoderFactories`, which is a composite  `PasswordEncoder`.
+I always prefer instead to use the composite that comes from `PasswordEncoderFactories`, which is itself a composite `PasswordEncoder`.
 It maintains a dictionary of different algorithm names mapped to an instance of their implementation.
 Security is a fast-moving space.
 Algorithms that are deemed secure and uncrackable today might be deemed cracked and insecure tomorrow.
 Spring Security reserves the right to bump the default algorithm as it evolves, should the need arise.
 Right now, the best algorithm provided out-of-the-box with no need for any other dependency is `BCryptPasswordEncoder`.
 
-When you use the `DelegatingPasswordEncoder` from `PasswordEncoderFactories` today, at the time of this writing in mid-2026, the default algorithm used is `bcrypt` (which maps to an instance of  `BCryptPasswordEncoder`, as shown above).
+When you use the `DelegatingPasswordEncoder` from `PasswordEncoderFactories` today, at the time of this writing in mid-2026, the default algorithm used is `bcrypt` (which maps to an instance of `BCryptPasswordEncoder`, as shown above).
 That might change tomorrow as the algorithms are discovered to be less secure.
-If you have Bounce Castle or Password4J on the CLASSPATH, I'd prefer Argon.
+If you have BouncyCastle or Password4J on the CLASSPATH, I'd prefer Argon2.
 Use Argon2 when available because it is memory-hard and tunable for memory, CPU time, and parallelism, making large-scale GPU/ASIC cracking harder.
 OWASP currently recommends Argon2 as the first choice.
 
@@ -382,11 +382,11 @@ Let's walk through the (rough) authentication flow, with the `PasswordEncoder` i
 * Spring Security intercepts the request and constructs a `UsernamePasswordAuthenticationToken` with the username and password as parameters.
 * the configured `AuthenticationManager` is asked to authenticate the request.
 * the `AuthenticationManager`, in this case, is probably an instance of `ProviderManager`, so it in turn delegates to a chain of `AuthenticationProvider` instances, which get a chance to authenticate the `Authentication` request.
-* finally, the  `DaoAuthenticationProvider` instance loads the user from the `UserDetailsService` using the presented username.
+* finally, the `DaoAuthenticationProvider` instance loads the user from the `UserDetailsService` using the presented username.
 * It needs to check that the passwords match, so it obtains an instance of the `DelegatingPasswordEncoder` and checks that the presented password (in plaintext) matches the one stored in the database (encoded, and prefixed with an algorithm name) by calling `PasswordEncoder#matches(CharSequence plain, String encoded)`.
 Internally, this uses the prefix to identify the ultimate implementation of `PasswordEncoder` to use, then encodes the presented password with that implementation.
 
-You can of course configure your own `DelegatingPasswordEncoder` if you like to use Argon (or anything else).
+You can of course configure your own `DelegatingPasswordEncoder` if you like to use Argon2 (or anything else).
 Add Password4J to the CLASSPATH: `com.password4j` : `password4j` : `1.8.4`.
 I'm using that version in the middle of 2026. (You should use whichever version is the latest-and-greatest as you're reading this.)
 
@@ -411,14 +411,14 @@ This allows Spring Security to re-encode a password in the database that's encod
 
 Consult the `data.sql`, or your database, and you'll see that the user `user@anotherdomain.site` has a password encoded with `sha256`.
 So, restart the application and visit http://localhost:8080/ and then authenticate as `user@anotherdomain.site` and `pw`.
-Check the database again, and you'll see its been migrated to use the _default_ password encoder.
+Check the database again, and you'll see it's been migrated to use the _default_ password encoder.
 If you're using the `PasswordEncoder` from `PasswordEncoderFactories`, you'll see it's been encoded using `bcrypt`.
 If you're using the custom `PasswordEncoder` we set up above, you'll see it's been encoded using `argon@Password4j`.
 Either way, _much_ better than `sha256`!
 Take a victory lap, you've earned it.
 You can say that you're storing passwords as safely as possible.
 
-== But Passwords are Bad!
+== But Passwords Are Bad!
 
 Yah, I said it!
 Passwords are a terrible _factor_ for authentication.
@@ -428,7 +428,7 @@ But they're also harder to maintain, most people don't have the tools to deploy 
 Humans aren't built to remember dozens of high-quality, unique, and complex passwords.
 It would be great if everybody used a good password manager like Bitwarden, 1Password, LastPass, etc.
 But they don't.
-Or, worse, they might've accidentally started using password managers in one context (e.g., Google Chrome) but gotten locked out because they switched away from whatever that context was (e.g.: Windows to macOS, Android to iPhone, Google Chrome to Safari, etc).
+Or, worse, they might've accidentally started using password managers in one context (e.g., Google Chrome) but gotten locked out because they switched away from whatever that context was (e.g., Windows to macOS, Android to iPhone, Google Chrome to Safari, etc.).
 The result?
 People don't develop good password hygiene.
 They reuse passwords.
@@ -437,7 +437,7 @@ Or, worse, in a text file on the public cloud.
 
 Insufficient engineering practices are often to blame.
 In the example above, we showed how to store passwords in an encoded fashion _and_ how to migrate them to better encodings whenever possible.
-Sometimes folks don't do the right thing. https://krebsonsecurity.com/2019/03/facebook-stored-hundreds-of-millions-of-user-passwords-in-plain-text-for-years/?utm_source=chatgpt.com[Meta (formerly known as Facebook) was caught storing hundreds of millions of user passwords in plain text] for years in 2019. In 2019, it also came out https://www.wired.com/story/google-stored-gsuite-passwords-plaintext/?utm_source=chatgpt.com[that Google had stored some passwords in plaintext] since 2005. The https://en.wikipedia.org/wiki/2012_Yahoo_Voices_hack?utm_source=chatgpt.com[2012 Yahoo! Voices attack]  revealed that Yahoo! had stored around 450 thousand passwords in plaintext.
+Sometimes folks don't do the right thing. https://krebsonsecurity.com/2019/03/facebook-stored-hundreds-of-millions-of-user-passwords-in-plain-text-for-years/?utm_source=chatgpt.com[Meta (formerly known as Facebook) was caught storing hundreds of millions of user passwords in plain text] for years in 2019. In 2019, it also came out https://www.wired.com/story/google-stored-gsuite-passwords-plaintext/?utm_source=chatgpt.com[that Google had stored some passwords in plaintext] since 2005. The https://en.wikipedia.org/wiki/2012_Yahoo_Voices_hack?utm_source=chatgpt.com[2012 Yahoo! Voices attack] revealed that Yahoo! had stored around 450,000 passwords in plaintext.
 If it can happen to these organizations, it can happen to anyone.
 (Why can't everyone just use Spring Security?)
 
@@ -448,11 +448,11 @@ We can both be right.
 
 Sometimes, it boils down to bad "best practices." Should you rotate your passwords every month?
 No.
-Password roration used to be recommended because the assumption was that passwords could be stolen without anyone noticing.
-Changing hem periodically would reduce the window during which an attacker could use them.
-This made sense before the widespread adoptions of multifactor authentication, breach detection, password managers, and monitoring for compromised credentials.
+Password rotation used to be recommended because the assumption was that passwords could be stolen without anyone noticing.
+Changing them periodically would reduce the window during which an attacker could use them.
+This made sense before the widespread adoption of multifactor authentication, breach detection, password managers, and monitoring for compromised credentials.
 But periodic rotation makes security _worse_.
-Research showed the people tend to increment the number (`Passw0rd1` -> `Passw0rd2`) or make tiny, predictable modifications, or write passwords down, or choose weaker passwords because they're tired of changing them.
+Research shows that people tend to increment the number (`Passw0rd1` -> `Passw0rd2`) or make tiny, predictable modifications, or write passwords down, or choose weaker passwords because they're tired of changing them.
 All of which makes passwords _easier_ to guess or derive.
 It's much better to securely store a long, secure password in a password manager rather than changing it without proper handling every month (or whenever).
 
@@ -460,34 +460,34 @@ It's much better to securely store a long, secure password in a password manager
 
 Indeed, for government work in many government contexts, passwords are discouraged or disallowed.
 
-In the *United States*, the office of Management and Budget issued the federal Zero Trust strategy requiring agencies to adopt phishing-resistant multifactor authentication (MFA) for users whenever possible.
+In the *United States*, the Office of Management and Budget issued the federal Zero Trust strategy requiring agencies to adopt phishing-resistant multifactor authentication (MFA) for users whenever possible.
 
-The *European Union* is one of the strongest proponents of MFA: the NIS2 directive explicitly includes the use of multifactor authentication or continuous authentication solutions which are appropriate as one of the required cybersecurity risk-management measures for covered entities (energy, healthcare, banking, transportation, cloud providers, public administration, digital infrastructure, etc).
+The *European Union* is one of the strongest proponents of MFA: the NIS2 directive explicitly includes the use of multifactor authentication or continuous authentication solutions, where appropriate, as one of the required cybersecurity risk-management measures for covered entities (energy, healthcare, banking, transportation, cloud providers, public administration, digital infrastructure, etc.).
 The European Union's Digital Operational Resilience Act (DORA) for financial institutions requires strong identity and access management.
 While it does not literally say "passwords are banned," password-only authentication generally won't satisfy modern expectations for privileged or high-risk access.
-And the Revised Payment Services Directive introduced _Strong Customer Authentication_ (SCA) that requires authentication using at least two independent factors from categories such as knowledge, possession, inherence.
+And the Revised Payment Services Directive introduced _Strong Customer Authentication_ (SCA), which requires authentication using at least two independent factors from categories such as knowledge, possession, and inherence.
 A password alone is not enough for many electronic payment transactions.
 
-The *United Kingdom* has the _National Cyber Security Centre_ strongly recommends MFA for important accounts and increasingly recommends phishing-resistant authentication for government systems.
+The *United Kingdom*'s _National Cyber Security Centre_ strongly recommends MFA for important accounts and increasingly recommends phishing-resistant authentication for government systems.
 
 The Monetary Authority of *Singapore* requires strong authentication for many banking and financial services.
 Banks generally must use multi-factor authentication for customer access and sensitive transactions.
 
 *Japan* does not broadly prohibit passwords.
-However government cybersecurity guidance strongly encourages MFA and major financial institutions require additional authentication.
-Passkeys are increasingly being adopted across both government and private sectors
+However, government cybersecurity guidance strongly encourages MFA, and major financial institutions require additional authentication.
+Passkeys are increasingly being adopted across both government and private sectors.
 
 *South Korea* has historically had some of the world’s strongest online authentication requirements.
-Although earlier systems relied heavily on certificates, modern regulations increasingly permit: FIDO authentication, biometrics, and MFA instead of password-only systems.
+Although earlier systems relied heavily on certificates, modern regulations increasingly permit FIDO authentication, biometrics, and MFA instead of password-only systems.
 
 We won't be completely escaping passwords for a while, but every journey of a thousand miles starts with but a single step.
 It starts with us.
 Let's explore some alternatives to passwords.
 But before we can do that, we need to think about how to customize a Spring Security application.
-So far we've jsut registered beans of the right type in the right place and things have sort of worked out.
+So far we've just registered beans of the right type in the right place, and things have sort of worked out.
 
-Remember when i told you that theres a giant filter sitting in between your requests and the backend application lgoic?
-Well we cna configure how that works by definiing the `SecurityFilterChain` ourself, like this.
+Remember when I told you that there's a giant filter sitting in between your requests and the back-end application logic?
+Well, we can configure how that works by defining the `SecurityFilterChain` ourselves, like this.
 
 ----
 include::{code}/security/security/src/main/java/com/example/security/SecurityFilterChainConfiguration.java[]
@@ -514,9 +514,9 @@ But for the brief moment between overriding the old bean and fleshing out the ne
 Not a good result.
 In Spring Security 7, we introduced a way to iteratively _add_ to the default security, instead of replacing it wholesale; we only need to define a bean of type `Customizer<HttpSecurity>`.
 For most of this book, I will do exactly that _almost_ everywhere.
-I show you the `SecurityFilterChain` approach because on the occasion where you want to more authorization more granular or when reading older code and older text, you'll need to appreciate what's happening.
+I show you the `SecurityFilterChain` approach because on the occasions when you want to make authorization more granular, or when reading older code and older text, you'll need to appreciate what's happening.
 
-== One Time Tokens or "Magic Links"
+== One-Time Tokens, or "Magic Links"
 
 You ever use Slack?
 
@@ -528,9 +528,9 @@ When you authenticate, it prompts you to enter your email.
 You oblige it, and it sends you an email.
 You click on the link in your email, and now you're authenticated.
 You have access to your email, so therefore you are who you say you are.
-Here, its an email.
+Here, it's an email.
 But it could be any out-of-band messaging medium.
-E-mail, WhatsApp/SMS (though these two, and anything tied to a spoofable phone number is increasingly less encouraged these days), Discord, etc.
+Email, WhatsApp/SMS (though these two, and anything tied to a spoofable phone number, are increasingly discouraged these days), Discord, etc.
 
 Do these services require a password?
 Almost certainly.
@@ -553,7 +553,7 @@ include::{code}/security/security/src/main/java/com/example/security/ott/OttConf
 ----
 
 . first, tell Spring Security to allow one-time tokens as an authentication mechanism, pointing it to an implementation of `OneTimeTokenGenerationSuccessHandler`, which we'll look at momentarily.
-. then we need to make publicly accessible an HTML page (visible under the path '/login/ott/sent`) that we intend for the users to see when authenticating.
+. then we need to make publicly accessible an HTML page (visible under the path `/login/ott/sent`) that we intend for the users to see when authenticating.
 
 In the configuration class, I've extracted out the HTML page's path into a `static final` constant so that I can reference it in a few other places for consistency.
 To be 100% honest with you, I'd normally write basically all of the code to do with wiring this up in the same outer `OttConfiguration` class, using a lambda and private static inner classes to do the work.
@@ -563,7 +563,7 @@ And since I had more than one class about the same _thing_, I've put them all in
 
 What is this `OneTimeTokenGenerationSuccessHandler`, I hear you say?
 It's a callback interface that gets involved once the user has entered their username on the login page.
-You can use this as a chance to setup any state and then look the user up and email them, call or text their phone number or WhatsApp, etc.
+You can use this as a chance to set up any state and then look the user up and email them, call or text their phone number or WhatsApp, etc.
 
 But again, I want to keep things simple, so I'll simply print on the console the URL to which the authenticating user should go.
 
@@ -572,7 +572,7 @@ include::{code}/security/security/src/main/java/com/example/security/ott/Console
 ----
 
 . this is a built-in `OneTimeTokenGenerationSuccessHandler` that simply redirects to a particular view.
-We will want to do that, eventually
+We will want to do that, eventually.
 . but first, we need to know where to send the user.
 Spring MVC provides this handy convenience class called `ServletUriComponentsBuilder` that makes building up a relative URL pretty darned easy.
 . finally, we print out where we expect the user to go to access the system.
@@ -617,7 +617,7 @@ Copy and paste it into the browser, and you should see your username.
 Easy!
 
 // todo get james to confirm this so we can remove the question in parenthesis :)
-My friend https://linkedin.com/in/jamesward[James Ward] did something interesting with this mechanism for another book we're jointly writing, (and perhaps he'll do it for this book?) where users who bought the book on a website would have had to enter their emails.
+My friend https://linkedin.com/in/jamesward[James Ward] did something interesting with this mechanism for another book we're jointly writing (and perhaps he'll do it for this book?), where users who bought the book on a website would have had to enter their emails.
 Those emails are turned into users in a database.
 Somebody comes along, signs in, and that grants an OAuth token which is then used to provision and provide access to an MCP service that in turn has access to the chapters of the book.
 Users can point their Claude Codes and Gooses and JetBrains Airs to the MCP service and consume the content and ask questions about it as MCP resources.
@@ -627,9 +627,9 @@ One-time tokens are great for passwordless authentication.
 It's important to remember their limitations, too.
 They are _not_ signup links to confirm emails.
 Nor are they password-reset links.
-And of course, if somebody loses access to the account where they out-of-band communication is sent (email, SMS, whatever), then they're now effectively locked out of _two_ systems!
+And of course, if somebody loses access to the account where the out-of-band communication is sent (email, SMS, whatever), then they're now effectively locked out of _two_ systems!
 
-One-time tokens are an easy to way build upon the considerable infrastructure technical _and_ legal infrastructure companies like Google, Microsoft, Apple, etc., have built up to handle managing passwords and fight breaches and the like.
+One-time tokens are an easy way to build upon the considerable technical _and_ legal infrastructure that companies like Google, Microsoft, Apple, etc., have built up to manage passwords and fight breaches and the like.
 They allow you to secure a system while avoiding passwords.
 That said, there is a password in the mix.
 It's just not _your_ password to manage.
