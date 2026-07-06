@@ -634,9 +634,46 @@ They allow you to secure a system while avoiding passwords.
 That said, there is a password in the mix.
 It's just not _your_ password to manage.
 
-== Passkeys
+== The Powerful Passkeys
 
-// passkeys
+Passwords are the weakest link.
+By the early 2000s, companies like PayPal began exploring alternative authentication methods, recognizing that the password model was fundamentally broken.
+The industry-wide acknowledgment that passwords needed to be eliminated entirely came in 2013 with the founding of the FIDO Alliance (Fast Identity Online).
+Major technology companies like Microsoft, Google, Apple, Meta, and others created the FIDO Alliance with a mission to eliminate password-based authentication through open standards.
+You can see the https://fidoalliance.org/members/[full roster of contributing members] here.
+
+The FIDO Alliance’s work produced two major specifications.
+FIDO U2F (Universal Second Factor) enabled secure two-factor authentication using hardware security keys, while FIDO2—developed in close collaboration with the World Wide Web Consortium (W3C)—introduced a more comprehensive approach.
+FIDO2 consists of two complementary standards: the Client to Authenticator Protocol (CTAP), which defines how external authenticators communicate with client devices, and Web Authentication (WebAuthn), which provides the standardized browser API that allows websites to register and authenticate users using cryptographic credentials.
+WebAuthn was officially released as a W3C Recommendation in 2019 and is now widely supported across modern browsers.
+This is the bit that makes this interesting for me: what we're about to look at isn't some hypothetical, would-be-nice thing that might ship in the not-too-distant future; it's already here!
+
+Rather than creating a shared secret like a password, a user’s device generates a unique public/private key pair for each website or application.
+The private key never leaves the user’s device.
+It's kept secure in hardware such as a phone’s Secure Enclave, while only the corresponding public key is registered with the service.
+When signing in, the device proves possession of the private key by cryptographically signing a challenge from the server, typically after the user authenticates locally using biometrics, a PIN, or another device-unlock mechanism.
+Because there is no reusable password to steal, passkeys dramatically reduce the risk of phishing (a public key stored by the server is useless to attackers), credential stuffing, and password database breaches (because servers do not store reusable secrets).
+
+However, early FIDO2 deployments had significant limitations.
+They often required dedicated hardware security keys such as YubiKeys or were tied to a single device, meaning users could lose access if that device was lost.
+The major breakthrough came in 2022–2023 when Apple, Google, and Microsoft committed to expanding the FIDO standard to support what became known as “passkeys”—FIDO credentials that could be securely synchronized across a user’s trusted devices through cloud-based credential managers such as LastPass, BitWarden, 1Passwod, iCloud Keychain, Google Password Manager, and Windows Hello.
+Now a passkey could be created once and used seamlessly across phones, tablets, and computers while remaining protected by each device’s secure hardware and local authentication.
+This eliminated much of the backup-and-recovery problem while maintaining strong security.
+
+The term “passkey” itself represents an evolution in how these technologies are presented to end users.
+By synchronizing FIDO credentials across devices and making the underlying cryptography largely invisible, the industry adopted “passkey” to describe these user-friendly, discoverable credentials.
+When you use a passkey today, you’re benefiting from over a decade of standards work and billions of dollars in platform investment.
+FIDO Alliance standards provided the vision and interoperability framework; the W3C standardized the browser-facing WebAuthn API; browser vendors and operating system providers implemented the technology; and online services integrated support into their applications.
+
+So, all together now: Passkeys rely on public-key cryptography.
+Each passkey consists of a unique public/private key pair, with the private key securely stored on one of your trusted devices.
+When you authenticate, the private key is unlocked using something that’s easier for you to remember or present—such as your face, your fingerprint, or your device PIN—and then used to prove your identity cryptographically.
+
+
+== Implementing Passkeys in Spring Security
+
+Now for the easy part. Whereas the explanation took a fair bit of time, the implementation is trivial.
+
 // MFA
 // exchanging passwords for short term creds w/ oauth (see next chapters!)
 // time to concern ourselves with authorization

@@ -1,0 +1,23 @@
+name: CI
+
+env:
+  PIPELINE_ORG_NAME: secure-all-the-things-book
+  PIPELINE_REPO_NAME: pipeline
+  GH_PAT: ${{ secrets.GH_PAT }}
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: ${GITHUB_WORKSPACE}/.github/workflows/trigger_book_build.sh
+
+
+
