@@ -6,7 +6,7 @@ Are you using the latest version of Java yet?
 
 No?
 That's a real pity, because it's basically a different language from the one you might've known.
-As of this writing, the latest Long Term Support (LTS) release is Java {java-lts-version}.
+As of this writing, the latest Long-Term Support (LTS) release is Java {java-lts-version}.
 There are new releases of Java coming out every six months.
 By the time you read this, we could easily be on many versions beyond that.
 This book was written with Java {java-lts-version} in mind, but you should be using whatever the latest-and-greatest version of Java available to you happens to be.
@@ -71,16 +71,13 @@ Next, Java 11 introduced the ZGC garbage collector to reduce pauses further.
 Finally, Java 14 introduced the Shenandoah GC, which keeps pause times low and does so in a manner independent of the heap's size.
 
 And it's fast.
-I can't give you a specific number or anything because it is so highly workload-sensitive, but https://www.optaplanner.org/blog/20{java-lts-version}/09/15/HowMuchFasterIsJava17.html[this post from the folks at OptaPlanner] is persuasive.
-They saw an average improvement of 8.66% for their CPU-intensive workloads when using the G1 GC, measured after a discarded 30-second warmup period.
-These numbers reflect the jump from Java 11 (not Java 8) to Java 17. I can only imagine the numbers from Java 8 to Java 17 are even better.
-And the numbers for Java {java-lts-version}, even better still!
-And that number is just an average: some workloads improved by as much as 23%!
+I can't give you specific numbers or anything because it is so highly workload-sensitive, but large organizations like Netflix have talked about how more recent iterations in Java have helped them improve their workload performance merely by upgrading.
+Upgrading the JVM is one of the easiest ways to gain performance and reduce memory utilization, and it's one of the easiest, comparably, too.
 
 == AutoCloseable
 
 Java manages most memory for you, but it can't be responsible for the state outside the humble confines of the JVM.
-So, for example, you wouldn't like it if Java _garbage collected_ your connection to the database, and you wouldn't like it if Java garbage-collected your open socket connections without warning.
+So, for example, you wouldn't like it if Java _garbage-collected_ your connection to the database, and you wouldn't like it if Java garbage-collected your open socket connections without warning.
 Therefore, the interfaces you use to interact with these external resources typically have a `close()` method that you, the client, need to call when your work with the external resource is finished.
 
 You mustn't neglect to call that method!
@@ -148,7 +145,7 @@ include::{code}/java/java/src/test/java/com/example/java/typeinference/TypeInfer
 The compiler knows it, and you know it because the right side of the expression makes it clear.
 So, all things being equal, why not use the more concise version?
 <2> Indeed, in this case, the compiler knows _more_ about the type than it would before, particularly in the case of anonymous subclasses.
-Suppose you need a throwaway object in which to stash some data temporarily?
+Suppose you need a throwaway object in which to stash some data temporarily.
 If you created an anonymous subclass of `Object` and assigned it to a variable of type `Object`, there'd be no way to dereference fields defined on the anonymous subclass.
 Traditionally, there was no way to reify _anonymous_ subclass types because they were _anonymous_.
 But with `var`, you don't need to account for the type; you can let the compiler infer it.
@@ -206,7 +203,6 @@ Otherwise, the execution flow will drop down to other branches, producing undesi
 The first example is a classic `switch` statement.
 There's nothing wrong, _per se_, but it's tedious, and I tend to avoid writing them.
 
-[source,java,indent=0]
 ----
 include::{code}/java/java/src/test/java/com/example/java/switches/EnhancedSwitchExpressionTest.java[]
 ----
@@ -216,10 +212,10 @@ Each branch produces a value, and that value is the result of the `switch` expre
 
 == Multiline Strings
 
-This one is a super-small feature that punches well above its weight: Java supports multiline `String`s: hooray!
+This one is a super-small feature that punches well above its weight: Java supports multiline `String`s.
+Hooray!
 There are a million opportunities for multiline `String`s: SQL queries, HTML, Markdown, Asciidoctor, Velocity templating (such as for emails), unit testing, etc.
 
-[source,java,indent=0]
 ----
 include::{code}/java/java/src/test/java/com/example/java/MultilineStringsTest.java[]
 ----
@@ -233,7 +229,7 @@ Short and simple.
 
 == Records
 
-Records are perhaps my second favorite new feature in Java.
+Records are perhaps my second-favorite new feature in Java.
 If you've ever used case classes in Scala, or data classes in Kotlin, you'll feel _almost_ right at home.
 
 Java introduced records, which are a new kind of type.
@@ -252,7 +248,6 @@ Suppose you want to return information about `Customer` entities _and_ their ass
 Unfortunately, Java doesn't support multiple return types or provide suitable tuple types, so you need to create something to hold both types.
 Records to the rescue!
 
-[source,java,indent=0]
 ----
 include::{code}/java/java/src/test/java/com/example/java/records/SimpleRecordsTest.java[]
 ----
@@ -329,7 +324,7 @@ Let's look at an example.
 include::{code}/java/java/src/test/java/com/example/java/SealedTypesTest.java[]
 ----
 
-<1>  we'll start with a `Shape` and permit two direct subclasses, `Oval` and `Polygon`.
+<1> we'll start with a `Shape` and permit two direct subclasses, `Oval` and `Polygon`.
 <2> a subclass of a sealed type must be `final` or `sealed` and explicitly name its subclasses.
 A sealed type's subclasses may themselves be sealed types, permitting further subtypes.
 <3> the following declaration does not compile, as it is not one of the explicitly permitted subclasses
@@ -356,7 +351,7 @@ include::{code}/java/java/src/test/java/com/example/java/SmartCastsTest.java[]
 
 <1> this is a classic example, where we determine the subtype and then create a variable cast to the appropriate type.
 If ever we change the type definition, we have to replace it both in the cast and in the `instanceof` check.
-<2> the more excellent, newer alternative uses a smart-cast, sparing us the extra variable and cast.
+<2> the newer, more elegant alternative uses a smart-cast, sparing us the extra variable and cast.
 
 This feature looks almost exactly like a similar feature in Kotlin, and I love it.
 
@@ -410,13 +405,13 @@ include::{code}/java/java/src/test/java/com/example/java/patternmatching/Pattern
 <.> for our examples, we're going to work with a shallow hierarchy rooted in a type called `BrowserClient`.
 Imagine that when an HTTP request comes in, we adapt the request into one of either a known `Customer` or an `UnknownUser`.
 <.> we'll do some analysis of the incoming user type and display a message as appropriate.
-Since we're going to prepare these same messages two different ways, I've extracted them out into separate environment variables.
+Since we're going to prepare these same messages two different ways, I've extracted them out into separate variables.
 <.> let's use the smart `if` statement to deduce which message to present.
 Note that we're now switching on an instance of `BrowserClient`.
 In the first line, we do two things at once: we check that the variable is an instance of `Customer`, and if so, we hoist out - we _extract_ - not just the `Customer` variable, but the constituent component fields of the record itself - `id` and `name` - into their own new variables.
 Super concise.
 In the second test, we don't need a pointer to the `UnknownUser` or its field, so we do nothing with it save match it.
-<.> the if / else structure worked fine, but it meant that we had to stash a variable and then make sure that only one branch of the test was ever evaluated.
+<.> the `if`/`else` structure worked fine, but it meant that we had to stash a variable and then make sure that only one branch of the test was ever evaluated.
 The structure as written also gives us nothing in the way of comfort.
 What happens when we add a new type to the hierarchy?
 We need to handle that branch, but the compiler will let us ignore it.
@@ -526,13 +521,11 @@ If you want to easily scale it up, consider using virtual threads and Java {java
 Who knows, you may not need to add new instances.
 You'll get to have your cake and eat it too: scalable, but simpler, code.
 
-// Factor out code for boot chapter to separate git repo; add section on GraalVM to Java chapter; remove GraalVM primer from boot chapter; show AOT example in boot. Show autoconfig in boot chapter
-
 
 == Improving Startup with Project Leyden
 
 Project Leyden is a set of initiatives from the OpenJDK team to improve Java's performance by evaluating more and more about a program's structure earlier, at compilation or as early as possible.
-This effort is ongoing, but has already born fruit.
+This effort is ongoing, but has already borne fruit.
 You can use Project Leyden with a Spring application to great effect.
 It provides a dramatic improvement on startup time for _all_ Java application workloads.
 
