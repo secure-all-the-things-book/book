@@ -616,14 +616,26 @@ Copy and paste it into the browser, and you should see your username.
 
 Easy!
 
+// todo get james to confirm this so we can remove the question in parenthesis :)
 My friend https://linkedin.com/in/jamesward[James Ward] did something interesting with this mechanism for another book we're jointly writing, (and perhaps he'll do it for this book?) where users who bought the book on a website would have had to enter their emails.
 Those emails are turned into users in a database.
 Somebody comes along, signs in, and that grants an OAuth token which is then used to provision and provide access to an MCP service that in turn has access to the chapters of the book.
 Users can point their Claude Codes and Gooses and JetBrains Airs to the MCP service and consume the content and ask questions about it as MCP resources.
 Super innovative!
 
+One-time tokens are great for passwordless authentication.
+It's important to remember their limitations, too.
+They are _not_ signup links to confirm emails.
+Nor are they password-reset links.
+And of course, if somebody loses access to the account where they out-of-band communication is sent (email, SMS, whatever), then they're now effectively locked out of _two_ systems!
 
-// one-time tokens
+One-time tokens are an easy to way build upon the considerable infrastructure technical _and_ legal infrastructure companies like Google, Microsoft, Apple, etc., have built up to handle managing passwords and fight breaches and the like.
+They allow you to secure a system while avoiding passwords.
+That said, there is a password in the mix.
+It's just not _your_ password to manage.
+
+== Passkeys
+
 // passkeys
 // MFA
 // exchanging passwords for short term creds w/ oauth (see next chapters!)
