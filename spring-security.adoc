@@ -611,9 +611,16 @@ Nothing fancy.
 
 With all this in place, start the application and hit http://localhost:8080. Enter the username (`josh@joshlong.com`).
 It'll tell you that you've got console mail.
-Consult the console, and you'll see a link. Copy and paste it into the browser, and you should see your username.
+Consult the console, and you'll see a link.
+Copy and paste it into the browser, and you should see your username.
 
-Easy! My friend James Ward took this exact same approach and did something super interesting, straddling
+Easy!
+
+My friend https://linkedin.com/in/jamesward[James Ward] did something interesting with this mechanism for another book we're jointly writing, (and perhaps he'll do it for this book?) where users who bought the book on a website would have had to enter their emails.
+Those emails are turned into users in a database.
+Somebody comes along, signs in, and that grants an OAuth token which is then used to provision and provide access to an MCP service that in turn has access to the chapters of the book.
+Users can point their Claude Codes and Gooses and JetBrains Airs to the MCP service and consume the content and ask questions about it as MCP resources.
+Super innovative!
 
 
 // one-time tokens
