@@ -189,6 +189,10 @@ In a web application, Spring Security installs a filter that intercepts requests
 
 Filters are a natural way to implement this sort of gatekeeper logic on your application.
 Spring Security uses filters all over the place to ensure that it is able to put up certain pages for certain use cases (like login pages).
+These filters aren't routes in your application, they are seen _before_ your application gets a chance to respond.
+Filters have ordering relative to each other.
+Some filters run earlier, some run later.
+If you want to override the behavior of one of Spring Security's filters, you could in the worst case put another filter earlier in the chain and duplicate or vary the code in the configured instance.
 You can leverage this mechanism too.
 Spring has two modalities: reactive and non-reactive.
 In this book I'm assuming we're using the non-reactive stack.
@@ -610,9 +614,32 @@ include::{code}/security/security/src/main/resources/templates/ott-sent.html[]
 Nothing fancy.
 
 With all this in place, start the application and hit http://localhost:8080. Enter the username (`josh@joshlong.com`).
-It'll tell you that you've got console mail.
-Consult the console, and you'll see a link.
-Copy and paste it into the browser, and you should see your username.
+
+image::images/security/ott/ott-01.png[]
+. the signin form now has a new capability: _Request a One-Time Token_.
+
+then you'll get that, um, _minimal_ Thymeleaf page we put together.
+
+image::images/security/ott/ott-02.png[]
+. I know, I know.
+Stick to my day job.
+Web design's not my thing.
+
+Meanwhile, an out-of-band message has been sent, in this case, to my IDE's console logs.
+
+image::images/security/ott/ott-03.png[]
+. I've got console mail!
+
+Click on the link, and it'll take you to an input where you can plug in the one-time token.
+
+image::images/security/ott/ott-04.png[]
+
+TIP: If you are trying to follow the authentication flow in an incognito window in, say, Apple's Safari browser, make sure to copy and paste the link from the console into the browser.
+Clicking on the link will start a _brand-new_  browser whose session is divorced from the first one in the incognito window.
+
+And now you should see your username in the HTTP response.
+
+image::images/security/ott/ott-05.png[]
 
 Easy!
 
@@ -669,14 +696,86 @@ So, all together now: Passkeys rely on public-key cryptography.
 Each passkey consists of a unique public/private key pair, with the private key securely stored on one of your trusted devices.
 When you authenticate, the private key is unlocked using something that’s easier for you to remember or present—such as your face, your fingerprint, or your device PIN—and then used to prove your identity cryptographically.
 
+== Concepts We'll Need To Understand for WebAuthn
+
+Remember, WebAuthn works by creating a key tied to a particular domain (to prevent spoofing).
+So when you work with WebAuthn you need to specify at minimum three things:
+
+* *the relaying party ID* - The RP ID is the domain that a passkey is bound to.
+It’s the security anchor for WebAuthn.
+When a passkey is created, it is cryptographically tied to this RP ID.
+The browser will only allow that passkey to be used on that domain (or a matching subdomain, depending on the RP ID).
+
+* *the relaying party name* - a human-readable display name.
+
+* *allowed origins* - The allowed origins are the exact web origins that are permitted to call the WebAuthn APIs.
+You need to specify _everything_: the schema (`http` or `https`), the exact domain, and the port (if applicable).
 
 == Implementing Passkeys in Spring Security
 
-Now for the easy part. Whereas the explanation took a fair bit of time, the implementation is trivial.
+Now for the easy part.
+Whereas the explanation took a fair bit of time, the implementation is trivial.
+Let's get a minimum viable product working, first.
+
+----
+include::{code}/security/security/src/main/java/com/example/security/webauthn/WebAuthnConfiguration.java[]
+----
+
+It's not even worth annotating this code.
+Now that you know the concepts, the code is as plain as can be.
+
+Let's try it out.
+Open your browser to http://localhost:8080, _not_ http://127.0.0.1:8080, as that's a different origin URL!
+First order of business: we need to _register_ a passkey.
+You can't authenticate with a passkey if the server doesn't have your public key.
+So, unfortunately, we need to authenticate using one of the other pre-configured mechanisms (like one-time tokens or usernames and passwords), _then_ register the passkey.
+
+image::images/security/webauthn/webauthn-01.png[]
+. sign in in the usual way
+
+image::images/security/webauthn/webauthn-02.png[]
+. once you're authenticated, visit `/webauthn/register`
+
+image::images/security/webauthn/webauthn-04.png[]
+. Register the passkey
+
+I'm on an Apple laptop, and I am using an incognito browser instance.
+As a result the only option I have is to use Apple's Passwords.app, whose secrets are stored securely in iCloud, and federated across various Apple devices like my iPhone, Apple Watch, iPad, and MacBook Pro.
+If I were using a non-incognito browser window, I'd have access to my plugins and there I'd have access to my BitWarden secrets manager.
+The secret I'm saving is tied to my Apple TouchID.
+My _finger_!
+But the key is used to authenticate access to the private key, and I can authenticate that in many ways.
+If I'm on my iPhone, I can authenticate access to my private key by using Apple FaceID (my face!) too.
+So, even though I'm registering the key on my MacBook Pro with my fingerprint, I can still access the same website on my iPhone using my FaceID.
+No need to register a second key.
+
+What if I don't trust this device, for some reason?
+Perhaps I'm signed in on a corporate laptop, and they have full access to all my sensors, input readers, etc.
+If I click _More Options_, it'll show me the option to create a QR Code, which I can then scan with my private and trusted computing device (like my iPhone).
+I can finish registering the Passkey on the iPhone, and it'll be set on this browser instance.
+
+If you're using the Google ecosystem, you'll have (I'd imagine) roughly the same streamlined experience.
+It works on all the major browsers on Linux, too, but there you'd probably store the Passkey in your password manager of choice.
+This all even works on _Windows_!
+
+Now logout by visiting `/logout` or simply starting a new incognito window.
+You'll see the same sign in options as before.
+This time, choose _Sign in with a Passkey_.
+On an Apple device, I just present my fingerprint and (in my best "hacker voice") _I'm in_!
+
+== Persistence
+
+If you restart the Spring Boot application, you'll have to re-register your Passkey, because everything was stored in memory.
+Mercifully, Spring Security ships with JDBC-backed implementations of the persistence for the parts that need it.
+Let's look at that.
+
+
+
+
 
 // MFA
 // exchanging passwords for short term creds w/ oauth (see next chapters!)
 // time to concern ourselves with authorization
 // first order of business: limiting MFA requirements to just sensitive endpoints
 // access control is an important part
-// pas
+// authentication events in spring security
