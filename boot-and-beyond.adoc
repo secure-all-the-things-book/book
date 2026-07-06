@@ -39,7 +39,7 @@ We can register as many as we want, for whatever purpose, and know that this log
 == Spring Data JDBC
 
 We're using Spring Boot now.
-We've got a full object-relational mapper (ORM) framework on the CLASSPATH.
+We've got an object mapper (not quite a _full_ ORM, but close enough) framework on the CLASSPATH.
 Spring Data JDBC is capable, and it's already been configured.
 Let's rework our repository to leverage it, rather than hand-rolling SQL ourselves.
 
@@ -78,7 +78,7 @@ They're gone.
 Spring Boot provides those beans for us, thanks to its marvelous _autoconfiguration_.
 So all that remains are our beans.
 
-When Spring Boot starts up, it scans the CLASSPATH for any `.jar` containing a file called  `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`.
+When Spring Boot starts up, it scans the CLASSPATH for any `.jar` containing a file called `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`.
 That file, in turn, contains a newline-delimited list of Java configuration classes' fully qualified names.
 Functionally, these classes are the same as the other Java configuration classes we've seen so far, with some small refinements.
 First, keep in mind that Spring Boot will _try_ to load every single one of these configuration classes on startup.
@@ -124,7 +124,7 @@ include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_b
 ----
 
 . this annotation is a meta-annotation which we've annotated with Spring Framework's `@Conditional` annotation.
-We pointed it to an implementation of `Condition` that we've written called..
+We pointed it to an implementation of `Condition` that we've written called...
 . `RandomnessCondition`, which evaluates to true whenever the result of `Math.random()` is greater than `0.5`.
 
 Now, create a text file in `src/main/resources/META-INF/spring/` called `org.springframework.boot.autoconfigure.AutoConfiguration.imports` in your project.
@@ -136,20 +136,20 @@ include::{code}/beans-to-boot/beans-to-boot/src/main/resources/META-INF/spring/o
 Here, we've got just the one class.
 This is a bit of a toy, but if you restart the program a few times, you'll see your `ApplicationRunner` run (or not run) in seemingly random alternation.
 
-We could have put this autoconfiguration class and the text file in a separate `.jar`, add that to the classpath of any Spring Boot application, and Spring Boot will give your code a chance to run _without_ requiring input from the user at all.
-This is how you describe seamless, out-of-the-box, sensible defaults and configurations for your users.
+We could have put this autoconfiguration class and the text file in a separate `.jar`, added that to the CLASSPATH of any Spring Boot application, and Spring Boot would give your code a chance to run _without_ requiring input from the user at all.
+This is how you provide seamless, out-of-the-box, sensible defaults and configurations for your users.
 
 But how do you distribute them?
 In a `.jar`, of course.
 But here again, Spring Boot's design philosophies pay dividends.
 Spring Boot uses something called _starter_ dependencies.
 These are dependencies that serve only to aggregate other Maven dependencies and to manage their versions.
-When you work with a Spring Boot project, as generated from the Spring Initializr, you should only ever have to change one at most four versions.
+When you work with a Spring Boot project, as generated from the Spring Initializr, you should only ever have to change one version - at most, four.
 All the other Spring dependencies for the rest of the codebase come from the Spring Boot parent artifact, which ensures that versions line up.
 If one dependency uses one version of Log4J, for example, and another uses a different one, Spring Boot will pick one and ensure it works for all the dependencies it supports.
 
 Recall that Spring Boot has conditional annotations, one of which is `@ConditionalOnClass`.
-A bean so annotated will only be registered _if_ the class is on the classpath.
+A bean so annotated will only be registered _if_ the class is on the CLASSPATH.
 Spring Boot _starters_ _activate_ different conditionals because they bring in different cohorts of dependencies.
 
 == An Amazing Web Server
@@ -218,12 +218,7 @@ This application runs really quickly and scalably, but could it be faster and us
 Sure!
 One way you might help with that is to embrace GraalVM native images. https://graalvm.org[GraalVM] is an OpenJDK distribution that carries with it some amazing extras.
 You'll need to have it installed on your machine.
-I'm using SDKMAN.io, so all I needed to do was:
 
-----
-sdk install java 25.0.2-graalce
-sdk default java 25.0.2-graalce
-----
 
 I'm interested in the `native-image` compiler tool that comes with GraalVM.
 It takes a Java program's `.class` files and turns them into native, operating-system- and architecture-specific machine code.
@@ -260,7 +255,7 @@ Try it.
 Go to the `target` folder and run `target/beans-to-boot` or whatever your Maven artifact name was.
 
 GraalVM can have _amazing_ results, but it does require some compromises about which you need to be aware.
-The way GraalVM works is by starting from your `main` method entry point into the application, scanning every class that you use, and every class that those classes use, and every class that those classes use, and so forth, and onward until its built up a giant graph of which classes your program will use.
+The way GraalVM works is by starting from your `main` method entry point into the application, scanning every class that you use, and every class that those classes use, and every class that those classes use, and so forth, and onward until it's built up a giant graph of which classes your program will use.
 It retains those and throws every other class away before it compiles your program.
 It also throws away reflective metadata (you know, the types and instances that you get back when you try to do something like `Customer.class.getMethods()`).
 It also throws away the metadata for JNI references.
@@ -272,7 +267,7 @@ The result is a _lightning_ fast native image which uses a tiny fraction of the 
 
 But it's not perfect.
 The analysis that results in this much smaller set of classes happens during compilation.
-Java's a turing complete language.
+Java's a Turing-complete language.
 It's impossible to completely understand at compile time what will happen at runtime.
 So the GraalVM compiler might throw things out that you might actually end up needing during runtime.
 So you'll need to tell it what to keep.
@@ -284,9 +279,9 @@ If you refactor a type in your Java code, your IDE might forget to update the en
 So, you'll need to update it yourself.
 It gets tedious.
 
-Spring Framework 6 and Spring Boot 3 introduced an Ahead of Time (AOT) component model that gets evaluated _during compilation_.
-Remember where we talked about the Spring `BeanFactory`, and said that the `BeanFactory` handles _ingest_ (the loading of bean configuration from various sources like component scanning, Java configuration, etc), then turned everything into metamodel objects of the class  `BeanDefinition`?
-Those `BeanDefinition` objects give any would be examiner enough information about the objects in the application, including their classes.
+Spring Framework 6 and Spring Boot 3 introduced an Ahead-of-Time (AOT) component model that gets evaluated _during compilation_.
+Remember when we talked about the Spring `BeanFactory` and said that it handles _ingest_ (the loading of bean configuration from various sources like component scanning, Java configuration, etc.), then turns everything into metamodel objects of the class `BeanDefinition`?
+Those `BeanDefinition` objects give any would-be examiner enough information about the objects in the application, including their classes.
 
 Spring's AOT component model builds your application, to that point, giving you access to the `BeanDefinition` objects, and allowing you to programmatically register _hints_, which get translated into the aforementioned `.json` files.
 
@@ -332,7 +327,7 @@ But at least you now know how.
 == Project Leyden
 
 GraalVM native images are my favorite approach for optimization, but they do come with their own caveats.
-They don't always work without finessing, and I won't get into all that here, but there is a whole Spring Ahead-of-Time (AOT) component model that allows you to add supplementary configuration to your Spring Boot applications so that they behave well in a GraalVM native-image context.
+They don't always work without sometimes considerable finessing, and I won't get into all that here, but there is a whole Spring Ahead-of-Time (AOT) component model that allows you to add supplementary configuration to your Spring Boot applications so that they behave well in a GraalVM native-image context.
 
 If you want a standard way to improve the startup time (and not much else) of your application, you can also use Project Leyden, part of the core Java SDK.
 It works reliably on _every_ program, with no compromises, but the results aren't quite as impressive, either.
@@ -359,7 +354,7 @@ For most scheduling solutions, you'll need a container containing your applicati
 This doesn't mean that you'll need a `Dockerfile`, however.
 Quite the contrary.
 You're better off automatically building the container rather than manually defining it.
-In the world of mystery meat cloud containers, _less is more_.
+In the world of mystery-meat cloud containers, _less is more_.
 
 Spring Boot's Maven and Gradle plugins can do the work for you by deferring to the https://buildpacks.io[Buildpacks project].
 Buildpacks provide recipes for taking application artifacts and packaging them up as containers.
@@ -385,7 +380,7 @@ From there, you're off to production!
 
 == Next Steps
 
-In this section we explored the awesome force-multiplying potential of Spring Boot and saw how it frees you to focus on that which matters, building the best and most valuable application for your customers as possible.
+In this section we explored the awesome force-multiplying potential of Spring Boot and saw how it frees you to focus on that which matters: building the best, most valuable application possible for your customers.
 
 At this point, you're grounded enough in the concepts that you at least know where to start looking when working with new features in a Spring Boot world.
 This will serve you well as we move up the abstraction stack in subsequent chapters.
