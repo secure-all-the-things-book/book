@@ -533,7 +533,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <span id="author" class="author">Josh Long</span><br>
 <span id="email" class="email"><a href="mailto:josh@joshlong.com">josh@joshlong.com</a></span><br>
 <span id="revnumber">version 1.0,</span>
-<span id="revdate">2026-07-02</span>
+<span id="revdate">2026-07-06</span>
 </div>
 </div>
 <div id="content">
@@ -542,7 +542,19 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <div id="toc" class="toc">
 <div id="toctitle" class="title">Table of Contents</div>
 <ul class="sectlevel1">
-<li><a href="#_frontmatter">Frontmatter</a>
+<li><a href="#_frontmatter">Frontmatter</a></li>
+<li><a href="#_conventions">Conventions</a>
+<ul class="sectlevel2">
+<li><a href="#_code">Code</a></li>
+<li><a href="#_docker">Docker</a></li>
+<li><a href="#_formatting">Formatting</a></li>
+<li><a href="#_noisy_configuration_classes">Noisy Configuration Classes</a></li>
+<li><a href="#_spring_profiles">Spring Profiles</a></li>
+<li><a href="#_nullability">Nullability</a></li>
+<li><a href="#_spring_initializr_project_configuration">Spring Initializr Project Configuration</a></li>
+</ul>
+</li>
+<li><a href="#_your_first_cup_of_java">Your First Cup of Java</a>
 <ul class="sectlevel2">
 <li><a href="#_operations_improvements">Operations Improvements</a></li>
 <li><a href="#_performance">Performance</a></li>
@@ -598,6 +610,25 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 </ul>
 </li>
 <li><a href="#_spring_security_fundamentals">Spring Security Fundamentals</a>
+<ul class="sectlevel2">
+<li><a href="#_spring_security_the_project">Spring Security, the Project</a></li>
+<li><a href="#_spring_security_for_all_contexts">Spring Security for all Contexts</a></li>
+<li><a href="#_authentication">Authentication</a></li>
+<li><a href="#_authentication_in_spring_security">Authentication in Spring Security</a></li>
+<li><a href="#_filters">Filters</a></li>
+<li><a href="#_authentication_in_a_web_application">Authentication in a Web Application</a></li>
+<li><a href="#_in_memory_users">In-Memory Users</a></li>
+<li><a href="#_dao_backed_authentication">DAO-Backed Authentication</a></li>
+<li><a href="#_password_encoding">Password Encoding</a></li>
+<li><a href="#_but_passwords_are_bad">But Passwords Are Bad!</a></li>
+<li><a href="#_bad_received_wisdom">Bad "Received Wisdom"</a></li>
+<li><a href="#_authentication_around_the_world">Authentication Around the World</a></li>
+<li><a href="#_one_time_tokens_or_magic_links">One-Time Tokens, or "Magic Links"</a></li>
+<li><a href="#_the_powerful_passkeys">The Powerful Passkeys</a></li>
+<li><a href="#_implementing_passkeys_in_spring_security">Implementing Passkeys in Spring Security</a></li>
+</ul>
+</li>
+<li><a href="#_introducing_oauth">Introducing OAuth</a>
 <ul class="sectlevel2">
 <li><a href="#_the_all_or_nothing_problem">The All-or-Nothing Problem</a></li>
 <li><a href="#_open_authorization_for_an_open_web">Open Authorization for an Open Web</a></li>
@@ -714,17 +745,230 @@ Their use does not imply endorsement or affiliation.</p>
 </div>
 <div class="paragraph">
 <p>If any code samples or other technology this work contains or describes is subject to open source licenses or the intellectual property rights of others, it is your responsibility to ensure that your use thereof complies with such licenses and/or rights.
-:code: ..
-:java-lts-version: 25
-= Your First Cup of Java</p>
+:code: ..</p>
 </div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_conventions">Conventions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In this book I&#8217;ll do certain things that are for the purposes of this book and not necessarily the best configuration for code.
+There&#8217;s a fundamental tension in the way books are written and the way code is written that I wrestle with on every attempt.
+I&#8217;ve long tried to find ways to write that avoid errors in the reproduced code.
+I want all the code printed to be compiled and valid.
+It is for this reason that the vast majority of the code reprinted in this book, and especially of the code reprinted in this book that comes from code I&#8217;ve written for this book, is actually in include of some actual source code.
+It&#8217;s <em>not</em> code I copied and pasted into some Microsoft Word document or something, and that has long since diverged from the state of the "actual" code.</p>
+</div>
+<div class="sect2">
+<h3 id="_code">Code</h3>
+<div class="paragraph">
+<p>As I work through these examples, I&#8217;ll be showing lots of code.
+You can follow along at home, either by typing things out or simply referencing the <a href="https://github.com/secure-all-the-things-book">code here</a>.
+It&#8217;s Apache 2 licensed and yours for the taking.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_docker">Docker</h3>
+<div class="paragraph">
+<p>I assume the availability of Docker or some sort of container orchestrator on your machines.
+Where appropriate, I&#8217;ve provided Docker Compose <code>compose.yml</code> files in each of the chapters' code.</p>
+</div>
+<div class="paragraph">
+<p>If you&#8217;re using the Docker tooling, you can spin up the container images thusly:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>docker compose up</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>That will run the Docker images and block, keeping the shell on that process in the foreground.
+If you want to run things and the background them, do:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>docker compose up -d</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_formatting">Formatting</h3>
+<div class="paragraph">
+<p>I wrote some tooling to ensure that every example in the book is using the same version of Spring Boot, assumes the same version of Java (or Kotlin), and is using the same version of any projects that aren&#8217;t managed by Spring Boot&#8217;s parent <code>pom.xml</code>.</p>
+</div>
+<div class="paragraph">
+<p>I also wrote some tooling to format the <code>pom.xml</code> files exactly the same and to format the Java source code exactly the same, too.
+I&#8217;m using the <a href="https://github.com/spring-io/spring-javaformat">Spring Java Format Maven plugin</a>.
+There&#8217;s also a variant for Gradle.</p>
+</div>
+<div class="paragraph">
+<p>The Spring Boot team created this plugin to consistently format the code in Spring Boot itself.
+This way, it doesn&#8217;t matter if a contributor to the project is using emacs, vim, IntelliJ IDEA, Visual Studio Code, Eclipse, etc.: their code can be quickly and consistently formatted to match the project&#8217;s style.
+Less quibbling about tabs vs. spaces, and more closed issues.
+This is a <em>good thing</em>!</p>
+</div>
+<div class="paragraph">
+<p>If you want to format the source code:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>./mvnw spring-javaformat:apply</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Sometimes the formatter, which internally is based on the Eclipse IDE&#8217;s formatter machinery, might format things in a way that reads poorly on a printed page.
+I sometimes force its hand by add empty line comment delimiters (<code>//</code>) at the end of a line, which forces the formatter to wrap to the next line.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_noisy_configuration_classes">Noisy Configuration Classes</h3>
+<div class="paragraph">
+<p>Often, you&#8217;ll see me introduce new beans in new configuration classes when they could&#8217;ve just as easily gone in a previous configuration class.
+This is so that I might avoid reprinting the original beans while keeping code working.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_spring_profiles">Spring Profiles</h3>
+<div class="paragraph">
+<p>Similarly, I might introduce beans that I don&#8217;t intend for us to land on, but that are interesting to know about.
+These beans are useful, but not the intended final result.
+In these cases, I&#8217;ll use a Spring <em>profile</em>, which is a marker annotation that makes the bean inert - Spring doesn&#8217;t "see" it - until you explicitly <em>activate</em> the profile.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>@Configuration
+@Profile("example")
+class MyConfig {
+
+ @Bean
+ Bar bar(){
+   // ...
+ }
+
+ @Bean
+ @Profile("foo")
+ Foo foo(){
+   // ...
+ }
+}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Usually, you activate the profile (or profiles) by passing in a comma-delimited command line switch, e.g.:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>./mvnw -Dspring.profiles.active=example,foo spring-boot:run</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In this example, both the profile for the configuration class, <code>example</code>, and the profile for the nested bean, <code>foo</code>, are active and thus both the configuration class and the specific beans inside of it will be active.
+If the profile <code>example</code> is active, but not the <code>foo</code> profile, then the result would be that <em>only</em> the <code>bar</code> bean would be active, since it has no other profile.</p>
+</div>
+<div class="paragraph">
+<p>As you work through the book, either remove the profile or activate it to ensure the relevant code runs when you run the example.</p>
+</div>
+<div class="paragraph">
+<p>Generally, however, I try to avoid profiles for "real" code intended for production, as they make it easy to violate the 12-Factor principle of one build for multiple environments.
+And, there are some sticky issues with the use of profiles when building Spring AOT-powered applications.
+All in all, it&#8217;s worth avoiding.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_nullability">Nullability</h3>
+<div class="paragraph">
+<p>Starting from Spring Framework 7 and Spring Boot 4, the entire Spring portfolio adopted the <a href="https://jspecify.dev">JSpecify.dev annotations</a>.
+These annotations define null restriction on references in the codebase.
+They give build tools like Apache Maven and Gradle, IDEs like IntelliJ IDEA, and compilers like Java and Kotlin feedback about when a <code>null</code> reference is being passed to a place that it should not be.</p>
+</div>
+<div class="paragraph">
+<p>Sometimes, in the course of this book, I&#8217;ll present interfaces or types from Spring that feature these annotations.
+Spring Security is a very good example of this.
+It&#8217;s an old project whose origins assumed a world where all authentication attempts would include a password.
+Later, new ways to authenticate (and arguably more secure ones) developed and the password field in the original <code>Authentication</code> became <em>nullable</em>.
+That is, the password wasn&#8217;t required because there might be other things in the request - a token, a certificate, etc. - that did the work of identifying the user and so the password wasn&#8217;t needed.</p>
+</div>
+<div class="paragraph">
+<p>Adopting these JSpecify.dev annotations has been helpful for even the Spring team because it helped us to see places where our suppositions around null references didn&#8217;t universally hold true.
+Considering that Spring Security is more than 20 years old, it&#8217;s not surprising that these occasional inconsistencies sometimes read their ugly head!</p>
+</div>
+<div class="paragraph">
+<p>Often, in the Spring codebases, you&#8217;ll see a <code>package-info.java</code> class that contains a single package declaration and <code>@NullMarked</code>, like this one from <code>org.springframework.context</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>@NullMarked
+package org.springframework.context;
+
+import org.jspecify.annotations.NullMarked;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>@NullMarked</code> says that unless shown otherwise, every reference in this package is meant to be non-<code>null</code>.
+Occasionally, you&#8217;ll see such exceptions marked with <code>@Nullable</code> on specific fields.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_spring_initializr_project_configuration">Spring Initializr Project Configuration</h3>
+<div class="paragraph">
+<p>In this book we&#8217;ll look at a <em>lot</em> of code, and I&#8217;ll always go to the Spring Initializr and tell you how to consturct a project of similar makeup.
+I will basically always choose Apache Maven and I will basically always choose the latest and greatest version of Java or the latest and greatest long-term support (LTS) version of Java or Kotlin.
+At the time of this book&#8217;s writing, the latest LTS is Java 25.</p>
+</div>
+<div class="paragraph">
+<p>I may forget to stipulate the artifact ID.
+Use whatever you want there in this case.</p>
+</div>
+<div class="paragraph">
+<p>If you&#8217;re using the <a href="https://spring.io/tools">Spring Tools</a> for Visual Studio Code or Eclipse, or if you&#8217;re using IntelliJ IDEA, you will have wizards inside of the IDE that&#8217;ll guide you through the same steps as you would go through on the Spring Initializr.
+Indeed, those in-IDE wizards are frontends to the same webservice that powers the Spring Initializr, so the results are exactly the same.
+Feel free to use those, but for consistency, I&#8217;ll refer to the Spring Initializr experience.</p>
+</div>
+<div class="paragraph">
+<p>The Spring Initializr gives you a <code>.zip</code> file that you have to unzip.
+Inside you&#8217;ll find a <code>pom.xml</code> (or <code>build.gradle</code> or <code>build.gradle.kts</code> if you go those routes).
+I usually then run IntelliJ IDEA: <code>idea pom.xml</code> from the command line.</p>
+</div>
+<div class="paragraph">
+<p>I do this <em>so often</em> that I&#8217;ve even got a little Java script you can use.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>// java ~/josh-env/bin/uao.java $HOME/Downloads/demo.zip
+import java.io.*;
+import java.util.function.*;
+import java.util.* ;
+void main(String [] args) throws Exception {
+    var zipFile = new File(args[0]);
+    var zipFileAbsolutePath = zipFile.getAbsolutePath();
+    var folder = new File(zipFileAbsolutePath.substring(0, zipFileAbsolutePath.lastIndexOf(".")));
+    new ProcessBuilder().command("unzip", "-a", zipFileAbsolutePath).inheritIO().start().waitFor();
+    for (var k : Set.of("build.gradle", "build.gradle.kts", "pom.xml")) {
+        var buildFile = new File(folder, k);
+        if (buildFile.exists()) {
+            new ProcessBuilder().command("idea", buildFile.getAbsolutePath()).inheritIO().start().waitFor();
+        }
+    }
+}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>I&#8217;ve created an alias to that script in my shell called <code>uao</code>.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_your_first_cup_of_java">Your First Cup of Java</h2>
+<div class="sectionbody">
 <div class="paragraph">
 <p>Are you using the latest version of Java yet?</p>
 </div>
 <div class="paragraph">
 <p>No?
 That&#8217;s a real pity, because it&#8217;s basically a different language from the one you might&#8217;ve known.
-As of this writing, the latest Long Term Support (LTS) release is Java 25.
+As of this writing, the latest Long-Term Support (LTS) release is Java 25.
 There are new releases of Java coming out every six months.
 By the time you read this, we could easily be on many versions beyond that.
 This book was written with Java 25 in mind, but you should be using whatever the latest-and-greatest version of Java available to you happens to be.</p>
@@ -811,18 +1055,15 @@ Finally, Java 14 introduced the Shenandoah GC, which keeps pause times low and d
 </div>
 <div class="paragraph">
 <p>And it&#8217;s fast.
-I can&#8217;t give you a specific number or anything because it is so highly workload-sensitive, but <a href="https://www.optaplanner.org/blog/2025/09/15/HowMuchFasterIsJava17.html">this post from the folks at OptaPlanner</a> is persuasive.
-They saw an average improvement of 8.66% for their CPU-intensive workloads when using the G1 GC, measured after a discarded 30-second warmup period.
-These numbers reflect the jump from Java 11 (not Java 8) to Java 17. I can only imagine the numbers from Java 8 to Java 17 are even better.
-And the numbers for Java 25, even better still!
-And that number is just an average: some workloads improved by as much as 23%!</p>
+I can&#8217;t give you specific numbers or anything because it is so highly workload-sensitive, but large organizations like Netflix have talked about how more recent iterations in Java have helped them improve their workload performance merely by upgrading.
+Upgrading the JVM is one of the easiest ways to gain performance and reduce memory utilization, and it&#8217;s one of the easiest, comparably, too.</p>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_autocloseable">AutoCloseable</h3>
 <div class="paragraph">
 <p>Java manages most memory for you, but it can&#8217;t be responsible for the state outside the humble confines of the JVM.
-So, for example, you wouldn&#8217;t like it if Java <em>garbage collected</em> your connection to the database, and you wouldn&#8217;t like it if Java garbage-collected your open socket connections without warning.
+So, for example, you wouldn&#8217;t like it if Java <em>garbage-collected</em> your connection to the database, and you wouldn&#8217;t like it if Java garbage-collected your open socket connections without warning.
 Therefore, the interfaces you use to interact with these external resources typically have a <code>close()</code> method that you, the client, need to call when your work with the external resource is finished.</p>
 </div>
 <div class="paragraph">
@@ -1069,7 +1310,7 @@ So, all things being equal, why not use the more concise version?</td>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
 <td>Indeed, in this case, the compiler knows <em>more</em> about the type than it would before, particularly in the case of anonymous subclasses.
-Suppose you need a throwaway object in which to stash some data temporarily?
+Suppose you need a throwaway object in which to stash some data temporarily.
 If you created an anonymous subclass of <code>Object</code> and assigned it to a variable of type <code>Object</code>, there&#8217;d be no way to dereference fields defined on the anonymous subclass.
 Traditionally, there was no way to reify <em>anonymous</em> subclass types because they were <em>anonymous</em>.
 But with <code>var</code>, you don&#8217;t need to account for the type; you can let the compiler infer it.</td>
@@ -1237,33 +1478,33 @@ There&#8217;s nothing wrong, <em>per se</em>, but it&#8217;s tedious, and I tend
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.java.switches</span>;
+<pre>package com.example.java.switches;
 
-<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Assertions</span>;
-<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Test</span>;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-<span class="type">class</span> <span class="class">EnhancedSwitchExpressionTest</span> {
+class EnhancedSwitchExpressionTest {
 
-        <span class="annotation">@Test</span>
-        <span class="type">void</span> switchExpression() {
-                Assertions.assertEquals(<span class="string"><span class="delimiter">&quot;</span><span class="content">that's wonderful.</span><span class="delimiter">&quot;</span></span>, respondToEmotionalState(Emotion.HAPPY));
-                Assertions.assertEquals(<span class="string"><span class="delimiter">&quot;</span><span class="content">I'm so sorry to hear that.</span><span class="delimiter">&quot;</span></span>, respondToEmotionalState(Emotion.SAD));
-        }
+	@Test
+	void switchExpression() {
+		Assertions.assertEquals("that's wonderful.", respondToEmotionalState(Emotion.HAPPY));
+		Assertions.assertEquals("I'm so sorry to hear that.", respondToEmotionalState(Emotion.SAD));
+	}
 
-        <span class="directive">private</span> <span class="predefined-type">String</span> respondToEmotionalState(Emotion emotion) { <i class="conum" data-value="1"></i><b>(1)</b>
-                <span class="keyword">return</span> <span class="keyword">switch</span> (emotion) {
-                        <span class="keyword">case</span> HAPPY -&gt; <span class="string"><span class="delimiter">&quot;</span><span class="content">that's wonderful.</span><span class="delimiter">&quot;</span></span>;
-                        <span class="keyword">case</span> SAD -&gt; <span class="string"><span class="delimiter">&quot;</span><span class="content">I'm so sorry to hear that.</span><span class="delimiter">&quot;</span></span>;
-                };
-        }
+	private String respondToEmotionalState(Emotion emotion) { <i class="conum" data-value="1"></i><b>(1)</b>
+		return switch (emotion) {
+			case HAPPY -&gt; "that's wonderful.";
+			case SAD -&gt; "I'm so sorry to hear that.";
+		};
+	}
 
-        <span class="type">enum</span> Emotion {
+	enum Emotion {
 
-                HAPPY, SAD;
+		HAPPY, SAD;
 
-        }
+	}
 
-}</code></pre>
+}</pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -1279,40 +1520,41 @@ Each branch produces a value, and that value is the result of the <code>switch</
 <div class="sect2">
 <h3 id="_multiline_strings">Multiline Strings</h3>
 <div class="paragraph">
-<p>This one is a super-small feature that punches well above its weight: Java supports multiline `String`s: hooray!
+<p>This one is a super-small feature that punches well above its weight: Java supports multiline `String`s.
+Hooray!
 There are a million opportunities for multiline `String`s: SQL queries, HTML, Markdown, Asciidoctor, Velocity templating (such as for emails), unit testing, etc.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.java</span>;
+<pre>package com.example.java;
 
-<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Assertions</span>;
-<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Test</span>;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-<span class="keyword">import</span> <span class="include">java.time.Instant</span>;
+import java.time.Instant;
 
-<span class="type">class</span> <span class="class">MultilineStringsTest</span> {
+class MultilineStringsTest {
 
-        <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">String</span> instant = Instant.now().toString();
+	private final String instant = Instant.now().toString();
 
-        <i class="conum" data-value="1"></i><b>(1)</b>
-        <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">String</span> multilines = <span class="predefined-type">String</span>.format(<span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="content">
-                        &lt;html&gt;
-                        &lt;body&gt;
-                        &lt;h1&gt; Hello, world, @ %s!&lt;/h1&gt; &lt;/body&gt;
-                        &lt;/html&gt;
-                        </span><span class="delimiter">&quot;</span></span><span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>, instant).trim();
+	<i class="conum" data-value="1"></i><b>(1)</b>
+	private final String multilines = String.format("""
+			&lt;html&gt;
+			&lt;body&gt;
+			&lt;h1&gt; Hello, world, @ %s!&lt;/h1&gt; &lt;/body&gt;
+			&lt;/html&gt;
+			""", instant).trim();
 
-        <i class="conum" data-value="2"></i><b>(2)</b>
-        <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">String</span> concatenated = <span class="string"><span class="delimiter">&quot;</span><span class="content">&lt;html&gt;</span><span class="char">\n</span><span class="content">&lt;body&gt;</span><span class="char">\n</span><span class="delimiter">&quot;</span></span> + <span class="string"><span class="delimiter">&quot;</span><span class="content">&lt;h1&gt; Hello, world, @ </span><span class="delimiter">&quot;</span></span> + instant + <span class="string"><span class="delimiter">&quot;</span><span class="content">!&lt;/h1&gt; &lt;/body&gt;</span><span class="char">\n</span><span class="delimiter">&quot;</span></span>
-                        + <span class="string"><span class="delimiter">&quot;</span><span class="content">&lt;/html&gt;</span><span class="delimiter">&quot;</span></span>;
+	<i class="conum" data-value="2"></i><b>(2)</b>
+	private final String concatenated = "&lt;html&gt;\n&lt;body&gt;\n" + "&lt;h1&gt; Hello, world, @ " + instant + "!&lt;/h1&gt; &lt;/body&gt;\n"
+			+ "&lt;/html&gt;";
 
-        <span class="annotation">@Test</span>
-        <span class="type">void</span> stringTheory() {
-                Assertions.assertEquals(<span class="local-variable">this</span>.multilines, <span class="local-variable">this</span>.concatenated);
-        }
+	@Test
+	void stringTheory() {
+		Assertions.assertEquals(this.multilines, this.concatenated);
+	}
 
-}</code></pre>
+}</pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -1337,7 +1579,7 @@ There are a million opportunities for multiline `String`s: SQL queries, HTML, Ma
 <div class="sect2">
 <h3 id="_records">Records</h3>
 <div class="paragraph">
-<p>Records are perhaps my second favorite new feature in Java.
+<p>Records are perhaps my second-favorite new feature in Java.
 If you&#8217;ve ever used case classes in Scala, or data classes in Kotlin, you&#8217;ll feel <em>almost</em> right at home.</p>
 </div>
 <div class="paragraph">
@@ -1360,39 +1602,39 @@ Records to the rescue!</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.java.records</span>;
+<pre>package com.example.java.records;
 
-<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Assertions</span>;
-<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Test</span>;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-<span class="keyword">import</span> <span class="include">java.util.List</span>;
+import java.util.List;
 
-<span class="type">class</span> <span class="class">SimpleRecordsTest</span> {
+class SimpleRecordsTest {
 
-        <span class="annotation">@Test</span>
-        <span class="type">void</span> records() {
-                <span class="type">var</span> customer = <span class="keyword">new</span> Customer(<span class="integer">253</span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">Tammie</span><span class="delimiter">&quot;</span></span>);
-                <span class="type">var</span> order1 = <span class="keyword">new</span> Order(<span class="integer">2232</span>, <span class="float">74.023</span>);
-                <span class="type">var</span> order2 = <span class="keyword">new</span> Order(<span class="integer">9593</span>, <span class="float">23.44</span>);
-                <span class="type">var</span> cos = <span class="keyword">new</span> CustomerOrders(customer, <span class="predefined-type">List</span>.of(order1, order2));
-                Assertions.assertEquals(<span class="integer">2232</span>, order1.id());
-                Assertions.assertEquals(<span class="float">74.023</span>, order1.total());
-                Assertions.assertEquals(<span class="string"><span class="delimiter">&quot;</span><span class="content">Tammie</span><span class="delimiter">&quot;</span></span>, customer.name());
-                Assertions.assertEquals(<span class="integer">2</span>, cos.orders().size());
-                IO.println(<span class="string"><span class="delimiter">&quot;</span><span class="content">order components  </span><span class="delimiter">&quot;</span></span> + order1.id() + <span class="string"><span class="delimiter">'</span><span class="content">:</span><span class="delimiter">'</span></span> + order1.total()); <i class="conum" data-value="2"></i><b>(2)</b>
-        }
+	@Test
+	void records() {
+		var customer = new Customer(253, "Tammie");
+		var order1 = new Order(2232, 74.023);
+		var order2 = new Order(9593, 23.44);
+		var cos = new CustomerOrders(customer, List.of(order1, order2));
+		Assertions.assertEquals(2232, order1.id());
+		Assertions.assertEquals(74.023, order1.total());
+		Assertions.assertEquals("Tammie", customer.name());
+		Assertions.assertEquals(2, cos.orders().size());
+		IO.println("order components  " + order1.id() + ':' + order1.total()); <i class="conum" data-value="2"></i><b>(2)</b>
+	}
 
-        <i class="conum" data-value="1"></i><b>(1)</b>
-        record Customer(<span class="predefined-type">Integer</span> id, <span class="predefined-type">String</span> name) {
-        }
+	<i class="conum" data-value="1"></i><b>(1)</b>
+	record Customer(Integer id, String name) {
+	}
 
-        record Order(<span class="predefined-type">Integer</span> id, <span class="type">double</span> total) {
-        }
+	record Order(Integer id, double total) {
+	}
 
-        record CustomerOrders(Customer customer, <span class="predefined-type">List</span>&lt;Order&gt; orders) {
-        }
+	record CustomerOrders(Customer customer, List&lt;Order&gt; orders) {
+	}
 
-}</code></pre>
+}</pre>
 </div>
 </div>
 <div class="colist arabic">
@@ -1678,7 +1920,7 @@ If ever we change the type definition, we have to replace it both in the cast an
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>the more excellent, newer alternative uses a smart-cast, sparing us the extra variable and cast.</td>
+<td>the newer, more elegant alternative uses a smart-cast, sparing us the extra variable and cast.</td>
 </tr>
 </table>
 </div>
@@ -1858,7 +2100,7 @@ Imagine that when an HTTP request comes in, we adapt the request into one of eit
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
 <td>we&#8217;ll do some analysis of the incoming user type and display a message as appropriate.
-Since we&#8217;re going to prepare these same messages two different ways, I&#8217;ve extracted them out into separate environment variables.</td>
+Since we&#8217;re going to prepare these same messages two different ways, I&#8217;ve extracted them out into separate variables.</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="3"></i><b>3</b></td>
@@ -1870,7 +2112,7 @@ In the second test, we don&#8217;t need a pointer to the <code>UnknownUser</code
 </tr>
 <tr>
 <td><i class="conum" data-value="4"></i><b>4</b></td>
-<td>the if / else structure worked fine, but it meant that we had to stash a variable and then make sure that only one branch of the test was ever evaluated.
+<td>the <code>if</code>/<code>else</code> structure worked fine, but it meant that we had to stash a variable and then make sure that only one branch of the test was ever evaluated.
 The structure as written also gives us nothing in the way of comfort.
 What happens when we add a new type to the hierarchy?
 We need to handle that branch, but the compiler will let us ignore it.
@@ -2063,7 +2305,7 @@ You&#8217;ll get to have your cake and eat it too: scalable, but simpler, code.<
 <h3 id="_improving_startup_with_project_leyden">Improving Startup with Project Leyden</h3>
 <div class="paragraph">
 <p>Project Leyden is a set of initiatives from the OpenJDK team to improve Java&#8217;s performance by evaluating more and more about a program&#8217;s structure earlier, at compilation or as early as possible.
-This effort is ongoing, but has already born fruit.
+This effort is ongoing, but has already borne fruit.
 You can use Project Leyden with a Spring application to great effect.
 It provides a dramatic improvement on startup time for <em>all</em> Java application workloads.</p>
 </div>
@@ -2153,7 +2395,7 @@ Let&#8217;s learn what Spring can help you with by way of an example that we&#82
 <p>We will need to incept a new project.
 It&#8217;s just Java and some libraries, so in theory you could create your own with no issues.
 But I like to use the <a href="https://start.spring.io">Spring Initializr (https://start.spring.io)</a>.
-Visit the Spring Initializr and make the following dependency selections: <code>Spring Boot Actuator</code>, <code>Spring Data JDBC</code>, <code>PostgreSQL Driver</code>, <code>Spring Web</code>, <code>GraalVM Native Support</code>, <code>OpenTelemetry</code>, and <code>Spring Boot DevTools</code>.
+Visit the Spring Initializr and make the following dependency selections: <code>Spring Boot Actuator</code>, <code>Thymeleaf</code>, <code>Spring Data JDBC</code>, <code>PostgreSQL Driver</code>, <code>Spring Web</code>, <code>GraalVM Native Support</code>, <code>OpenTelemetry</code>, and <code>Spring Boot DevTools</code>.
 Select Java 25 (or later), and Apache Maven as the build tool. You could use Gradle if you prefer, though I&#8217;ll be showing Apache Maven.</p>
 </div>
 <div class="paragraph">
@@ -2218,7 +2460,7 @@ We&#8217;ll use the following Docker Compose file to stand up the instance of ou
     ports:
       - '3000:3000'
       - '4317:4317'
-      - '4318:4317'</pre>
+      - '4318:4318'</pre>
 </div>
 </div>
 <div class="olist arabic">
@@ -4287,7 +4529,11 @@ spring.datasource.username=myuser
 spring.threads.virtual.enabled=true
 #
 <i class="conum" data-value="3"></i><b>(3)</b>
-spring.sql.init.mode=always</pre>
+spring.sql.init.mode=always
+<i class="conum" data-value="4"></i><b>(4)</b>
+management.endpoint.health.show-details=always
+management.endpoints.web.exposure.include=*
+management.tracing.sampling.probability=1.0</pre>
 </div>
 </div>
 <div class="olist arabic">
@@ -4406,7 +4652,7 @@ We can register as many as we want, for whatever purpose, and know that this log
 <h3 id="_spring_data_jdbc">Spring Data JDBC</h3>
 <div class="paragraph">
 <p>We&#8217;re using Spring Boot now.
-We&#8217;ve got a full object-relational mapper (ORM) framework on the CLASSPATH.
+We&#8217;ve got an object mapper (not quite a <em>full</em> ORM, but close enough) framework on the CLASSPATH.
 Spring Data JDBC is capable, and it&#8217;s already been configured.
 Let&#8217;s rework our repository to leverage it, rather than hand-rolling SQL ourselves.</p>
 </div>
@@ -4442,7 +4688,7 @@ You can, of course, annotate the method in the interface with <code>@Query</code
 <div class="paragraph">
 <p>Spring Boot has a ton of convenient conventions.
 For example, it&#8217;ll create a <em>real</em> <code>DataSource</code> backed by the HikariCP connection pool, with properties loaded by convention from the Spring <code>Environment</code>.
-Spring Boot will, by convention, load any <code>application.properties</code> or <code>application.yml</code> it finds in <code>src/main/resources</code>.</p>
+Spring Boot will, by convention, load any <code>application.properties</code> or <code>application.yml</code> it finds in <code>src/main/resources</code>. So we no longer need our <code>@PropertySource</code> annotation.</p>
 </div>
 </div>
 <div class="sect2">
@@ -4489,7 +4735,7 @@ Spring Boot provides those beans for us, thanks to its marvelous <em>autoconfigu
 So all that remains are our beans.</p>
 </div>
 <div class="paragraph">
-<p>When Spring Boot starts up, it scans the CLASSPATH for any <code>.jar</code> containing a file called  <code>META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports</code>.
+<p>When Spring Boot starts up, it scans the CLASSPATH for any <code>.jar</code> containing a file called <code>META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports</code>.
 That file, in turn, contains a newline-delimited list of Java configuration classes' fully qualified names.
 Functionally, these classes are the same as the other Java configuration classes we&#8217;ve seen so far, with some small refinements.
 First, keep in mind that Spring Boot will <em>try</em> to load every single one of these configuration classes on startup.
@@ -4597,7 +4843,7 @@ class RandomnessCondition implements Condition {
 <ol class="arabic">
 <li>
 <p>this annotation is a meta-annotation which we&#8217;ve annotated with Spring Framework&#8217;s <code>@Conditional</code> annotation.
-We pointed it to an implementation of <code>Condition</code> that we&#8217;ve written called..</p>
+We pointed it to an implementation of <code>Condition</code> that we&#8217;ve written called&#8230;&#8203;</p>
 </li>
 <li>
 <p><code>RandomnessCondition</code>, which evaluates to true whenever the result of <code>Math.random()</code> is greater than <code>0.5</code>.</p>
@@ -4617,8 +4863,8 @@ We pointed it to an implementation of <code>Condition</code> that we&#8217;ve wr
 This is a bit of a toy, but if you restart the program a few times, you&#8217;ll see your <code>ApplicationRunner</code> run (or not run) in seemingly random alternation.</p>
 </div>
 <div class="paragraph">
-<p>We could have put this autoconfiguration class and the text file in a separate <code>.jar</code>, add that to the classpath of any Spring Boot application, and Spring Boot will give your code a chance to run <em>without</em> requiring input from the user at all.
-This is how you describe seamless, out-of-the-box, sensible defaults and configurations for your users.</p>
+<p>We could have put this autoconfiguration class and the text file in a separate <code>.jar</code>, added that to the CLASSPATH of any Spring Boot application, and Spring Boot would give your code a chance to run <em>without</em> requiring input from the user at all.
+This is how you provide seamless, out-of-the-box, sensible defaults and configurations for your users.</p>
 </div>
 <div class="paragraph">
 <p>But how do you distribute them?
@@ -4626,13 +4872,13 @@ In a <code>.jar</code>, of course.
 But here again, Spring Boot&#8217;s design philosophies pay dividends.
 Spring Boot uses something called <em>starter</em> dependencies.
 These are dependencies that serve only to aggregate other Maven dependencies and to manage their versions.
-When you work with a Spring Boot project, as generated from the Spring Initializr, you should only ever have to change one at most four versions.
+When you work with a Spring Boot project, as generated from the Spring Initializr, you should only ever have to change one version - at most, four.
 All the other Spring dependencies for the rest of the codebase come from the Spring Boot parent artifact, which ensures that versions line up.
 If one dependency uses one version of Log4J, for example, and another uses a different one, Spring Boot will pick one and ensure it works for all the dependencies it supports.</p>
 </div>
 <div class="paragraph">
 <p>Recall that Spring Boot has conditional annotations, one of which is <code>@ConditionalOnClass</code>.
-A bean so annotated will only be registered <em>if</em> the class is on the classpath.
+A bean so annotated will only be registered <em>if</em> the class is on the CLASSPATH.
 Spring Boot <em>starters</em> <em>activate</em> different conditionals because they bring in different cohorts of dependencies.</p>
 </div>
 </div>
@@ -4715,7 +4961,11 @@ spring.datasource.username=myuser
 spring.threads.virtual.enabled=true
 #
 <i class="conum" data-value="3"></i><b>(3)</b>
-spring.sql.init.mode=always</pre>
+spring.sql.init.mode=always
+<i class="conum" data-value="4"></i><b>(4)</b>
+management.endpoint.health.show-details=always
+management.endpoints.web.exposure.include=*
+management.tracing.sampling.probability=1.0</pre>
 </div>
 </div>
 <div class="olist arabic">
@@ -4758,7 +5008,12 @@ Visit just <code>/actuator</code> to see all the sub-endpoints.</p>
 <div class="paragraph">
 <p>We&#8217;ve also got Grafana running in the background.
 As you work through the code in Spring Boot, you might notice that, first of all, you&#8217;re seeing a good deal more application events.
-Second, if you visit <a href="http://localhost:3000" class="bare">http://localhost:3000</a> and then navigate to <code>Drilldown</code> &#8594; <code>Metrics</code>, you can see the same metrics you saw under <code>/actuator/metrics</code>.</p>
+Second, if you visit <a href="http://localhost:3000" class="bare">http://localhost:3000</a> and then navigate to <code>Drilldown</code> &#8594; <code>Metrics</code>, you can see the same metrics you saw under <code>/actuator/metrics</code>, but now graphed over time. Neat!</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/images/boot-and-beyond/grafana.png" alt="grafana">
+</div>
 </div>
 </div>
 <div class="sect2">
@@ -4767,14 +5022,7 @@ Second, if you visit <a href="http://localhost:3000" class="bare">http://localho
 <p>This application runs really quickly and scalably, but could it be faster and use less RAM?
 Sure!
 One way you might help with that is to embrace GraalVM native images. <a href="https://graalvm.org">GraalVM</a> is an OpenJDK distribution that carries with it some amazing extras.
-You&#8217;ll need to have it installed on your machine.
-I&#8217;m using SDKMAN.io, so all I needed to do was:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre>sdk install java 25.0.2-graalce
-sdk default java 25.0.2-graalce</pre>
-</div>
+You&#8217;ll need to have it installed on your machine.</p>
 </div>
 <div class="paragraph">
 <p>I&#8217;m interested in the <code>native-image</code> compiler tool that comes with GraalVM.
@@ -4844,7 +5092,7 @@ Go to the <code>target</code> folder and run <code>target/beans-to-boot</code> o
 </div>
 <div class="paragraph">
 <p>GraalVM can have <em>amazing</em> results, but it does require some compromises about which you need to be aware.
-The way GraalVM works is by starting from your <code>main</code> method entry point into the application, scanning every class that you use, and every class that those classes use, and every class that those classes use, and so forth, and onward until its built up a giant graph of which classes your program will use.
+The way GraalVM works is by starting from your <code>main</code> method entry point into the application, scanning every class that you use, and every class that those classes use, and every class that those classes use, and so forth, and onward until it&#8217;s built up a giant graph of which classes your program will use.
 It retains those and throws every other class away before it compiles your program.
 It also throws away reflective metadata (you know, the types and instances that you get back when you try to do something like <code>Customer.class.getMethods()</code>).
 It also throws away the metadata for JNI references.
@@ -4857,7 +5105,7 @@ The result is a <em>lightning</em> fast native image which uses a tiny fraction 
 <div class="paragraph">
 <p>But it&#8217;s not perfect.
 The analysis that results in this much smaller set of classes happens during compilation.
-Java&#8217;s a turing complete language.
+Java&#8217;s a Turing-complete language.
 It&#8217;s impossible to completely understand at compile time what will happen at runtime.
 So the GraalVM compiler might throw things out that you might actually end up needing during runtime.
 So you&#8217;ll need to tell it what to keep.
@@ -4871,9 +5119,9 @@ So, you&#8217;ll need to update it yourself.
 It gets tedious.</p>
 </div>
 <div class="paragraph">
-<p>Spring Framework 6 and Spring Boot 3 introduced an Ahead of Time (AOT) component model that gets evaluated <em>during compilation</em>.
-Remember where we talked about the Spring <code>BeanFactory</code>, and said that the <code>BeanFactory</code> handles <em>ingest</em> (the loading of bean configuration from various sources like component scanning, Java configuration, etc), then turned everything into metamodel objects of the class  <code>BeanDefinition</code>?
-Those <code>BeanDefinition</code> objects give any would be examiner enough information about the objects in the application, including their classes.</p>
+<p>Spring Framework 6 and Spring Boot 3 introduced an Ahead-of-Time (AOT) component model that gets evaluated <em>during compilation</em>.
+Remember when we talked about the Spring <code>BeanFactory</code> and said that it handles <em>ingest</em> (the loading of bean configuration from various sources like component scanning, Java configuration, etc.), then turns everything into metamodel objects of the class <code>BeanDefinition</code>?
+Those <code>BeanDefinition</code> objects give any would-be examiner enough information about the objects in the application, including their classes.</p>
 </div>
 <div class="paragraph">
 <p>Spring&#8217;s AOT component model builds your application, to that point, giving you access to the <code>BeanDefinition</code> objects, and allowing you to programmatically register <em>hints</em>, which get translated into the aforementioned <code>.json</code> files.</p>
@@ -4979,7 +5227,7 @@ But at least you now know how.</p>
 <h3 id="_project_leyden">Project Leyden</h3>
 <div class="paragraph">
 <p>GraalVM native images are my favorite approach for optimization, but they do come with their own caveats.
-They don&#8217;t always work without finessing, and I won&#8217;t get into all that here, but there is a whole Spring Ahead-of-Time (AOT) component model that allows you to add supplementary configuration to your Spring Boot applications so that they behave well in a GraalVM native-image context.</p>
+They don&#8217;t always work without sometimes considerable finessing, and I won&#8217;t get into all that here, but there is a whole Spring Ahead-of-Time (AOT) component model that allows you to add supplementary configuration to your Spring Boot applications so that they behave well in a GraalVM native-image context.</p>
 </div>
 <div class="paragraph">
 <p>If you want a standard way to improve the startup time (and not much else) of your application, you can also use Project Leyden, part of the core Java SDK.
@@ -5049,7 +5297,7 @@ java -XX:AOTCache=app.aot   -Dspring.aot.enabled=true -jar application.jar</pre>
 This doesn&#8217;t mean that you&#8217;ll need a <code>Dockerfile</code>, however.
 Quite the contrary.
 You&#8217;re better off automatically building the container rather than manually defining it.
-In the world of mystery meat cloud containers, <em>less is more</em>.</p>
+In the world of mystery-meat cloud containers, <em>less is more</em>.</p>
 </div>
 <div class="paragraph">
 <p>Spring Boot&#8217;s Maven and Gradle plugins can do the work for you by deferring to the <a href="https://buildpacks.io">Buildpacks project</a>.
@@ -5083,7 +5331,7 @@ From there, you&#8217;re off to production!</p>
 <div class="sect2">
 <h3 id="_next_steps_3">Next Steps</h3>
 <div class="paragraph">
-<p>In this section we explored the awesome force-multiplying potential of Spring Boot and saw how it frees you to focus on that which matters, building the best and most valuable application for your customers as possible.</p>
+<p>In this section we explored the awesome force-multiplying potential of Spring Boot and saw how it frees you to focus on that which matters: building the best, most valuable application possible for your customers.</p>
 </div>
 <div class="paragraph">
 <p>At this point, you&#8217;re grounded enough in the concepts that you at least know where to start looking when working with new features in a Spring Boot world.
@@ -5097,9 +5345,1349 @@ This will serve you well as we move up the abstraction stack in subsequent chapt
 <h2 id="_spring_security_fundamentals">Spring Security Fundamentals</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>In this section we&#8217;ll look at Spring Security fundamentals.
-= Introducing OAuth</p>
+<p>In this section we&#8217;ll look at the fundamentals of Spring Security.
+After all, we won&#8217;t get far without those core concepts in place.</p>
 </div>
+<div class="sect2">
+<h3 id="_spring_security_the_project">Spring Security, the Project</h3>
+<div class="paragraph">
+<p>Spring Security began in late 2003 when Ben Alex created what was originally called Acegi Security (or the Acegi Security System for Spring) after discussions on the early Spring developer mailing lists about the need for a comprehensive security framework.
+At the time, the Spring Framework lacked a robust security architecture, leaving developers to build custom, application-specific authentication and authorization solutions.
+Acegi was designed from the ground up to leverage Spring’s core principles of dependency injection and aspect-oriented programming, providing a configurable, pluggable security architecture built around a flexible servlet <code>FilterChain</code> that allowed developers to bypass rigid container-managed security entirely.
+It quickly gained traction by handling both robust authentication and complex authorization directly within the Spring application context.</p>
+</div>
+<div class="paragraph">
+<p>Ben released Acegi as an open source project under the Apache License in March 2004. The project rapidly attracted a small but enthusiastic community and gained traction within the Java ecosystem.
+By 2006, Acegi had matured into a production-ready framework, and in 2007 it was officially adopted into the Spring portfolio as an official Spring subproject.</p>
+</div>
+<div class="paragraph">
+<p>This era, for me, was where I started to really get excited about Spring.
+It&#8217;s where I decided I wanted to be a part of the story.
+I&#8217;d used Spring Framework and all of its wonderful little <code>Template</code> classes and its web framework and dependency injection framework and all that in my various applications, but 2006 is where I started to appreciate the big-picture potential: in knowing the Spring component model, I had purchase in all the other domains that Spring would take me.
+Spring Security meant that I was already halfway towards having secure applications and services.
+Spring Batch, also released around this time, let me learn the domain of batch processing in terms of the familiar idioms in Spring.
+I was already halfway there!
+Spring Integration, also released around this time, let me learn the domain of enterprise application integration, messaging, and event-driven architecture in terms of the familiar idioms of Spring.
+I was already halfway there.
+To be clear, there were alternatives for these particular use cases, but none of them integrated so deeply with Spring and its guiding philosophies.
+I&#8217;d have to learn a whole different paradigm, ecosystem, and maybe even language and runtime to get any footing in those alternatives.
+Spring opened doors and let me cut to the heart of the matter.</p>
+</div>
+<div class="paragraph">
+<p>Later that year, Acegi was rebranded as <em>Spring Security</em>, with Ben Alex handing the leadership reins over to Luke Taylor to guide the framework into its next major chapter: the release of Spring Security 2.0 in April 2008.</p>
+</div>
+<div class="paragraph">
+<p>The transition into the Spring portfolio brought even tighter integration with the Spring ecosystem and continued refinement of the framework’s architecture.
+Under this new era of stewardship, Spring Security 2.0 introduced namespace-based XML configuration, <em>dramatically</em> reducing the boilerplate that had made earlier Acegi configurations notoriously verbose.
+I can&#8217;t stress this enough.
+Spring Framework&#8217;s main configuration mechanism <em>used</em> to be XML, and in 1.0, the only way to wire up objects was to define instances of every bean required for a given application, no matter how many were required.
+There was no mechanism for composition.
+No way to say, <em>I want all <strong>these</strong> beans in <strong>that</strong> namespace, now</em>.
+We&#8217;d have to type them out, one by one, and configure them all, one by one.
+As you can imagine, in the domain of security, there are <em>many</em> moving parts, and every wayward developer had to understand all of them to get even the simplest application up and running.
+You won&#8217;t have to deal with that in this book, of course.
+We&#8217;ve had nearly two decades of Java configuration, and more than two decades since XML namespaces and schemas were introduced.
+I just wanted to register that it used to be unwieldy.
+I don&#8217;t know if writing a book is cheaper than therapy, but it&#8217;s definitely more validating.</p>
+</div>
+<div class="paragraph">
+<p>The framework evolved well beyond basic authentication and authorization, cementing a flexible architecture centered around servlet filters, authentication providers, method security, and deep integration with the Spring Framework.</p>
+</div>
+<div class="paragraph">
+<p>As stewardship expanded to a group of maintainers - including Luke Taylor, Rob Winch, and a growing community of contributors - Spring Security continued to modernize alongside both the Java ecosystem and the changing web.
+At this point, no single engineer has done more to improve Spring Security than its current lead Rob Winch, about whom you&#8217;ll no doubt hear more from me in the course of this book.</p>
+</div>
+<div class="paragraph">
+<p>The 3.x generation introduced features such as <em>Spring Expression Language</em> (SpEL)-based access control, improved LDAP integration, OpenID support, and built-in protection against common web vulnerabilities like Cross-Site Request Forgery (CSRF).
+Spring Security 3.2 and 4.x shifted the preferred programming model away from verbose XML toward Java-based, type-safe configuration and fluent APIs.</p>
+</div>
+<div class="paragraph">
+<p>The framework’s evolution accelerated as application architectures shifted toward cloud-native systems and distributed services.
+Spring Security 5 introduced first-class support for OAuth 2.0, OpenID Connect, reactive applications built with Spring WebFlux, and a modernized password encoding strategy.
+Spring Security 6, aligned with Spring Framework 6 and Java 17+, further refined its Lambda-based DSL, strengthened secure-by-default behavior, retired legacy APIs, introduced native support for modern WebAuthn passkeys, and fully embraced modern Java and Spring practices.
+Spring Security 7 introduced multi-factor authentication, pulled in the Spring Authorization Server and Spring Security Kerberos projects, unifying them with the rest of the Spring Security efforts.</p>
+</div>
+<div class="paragraph">
+<p>Today, Spring Security is a highly modular, extensible framework that secures everything from traditional servlet-based applications to reactive services and OAuth 2.0 Authorization Servers.
+It provides first-class support for JWTs, decentralized identity, modern authorization models, and deep integration with Spring Boot and the broader Spring ecosystem.
+Despite more than two decades of evolution, it remains faithful to Ben Alex’s original vision: providing a powerful, reusable, and extensible security framework that integrates naturally with Spring applications.</p>
+</div>
+<div class="paragraph">
+<p>With that high-level overview out of the way, let&#8217;s talk specifics.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_spring_security_for_all_contexts">Spring Security for all Contexts</h3>
+<div class="paragraph">
+<p>Spring Security has a good story for securing all manner of different workloads.
+Most of this book assumes that you&#8217;re building HTTP-based clients and services, but part of the reason I wanted to write this book is precisely because it can do <em>so much more</em>!
+You can use it to secure HTTP clients and services, MCP clients and services, command line interface (CLI) clients, back-office messaging code, and so much more.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_authentication">Authentication</h3>
+<div class="paragraph">
+<p>Authentication answers the question: <em>who is this request from</em>?
+What&#8217;s their name?
+Do we know about them?
+And with that information, you can answer other more interesting questions like <em>do they work for our organization?</em> or <em>are they a customer with a paid subscription in good standing</em>?
+Identity is everything.
+There&#8217;s no continuity of service if there are no users for whom to ensure continuity.
+There are no users if there is no identity.</p>
+</div>
+<div class="paragraph">
+<p>Authentication works by <em>challenging</em> the user for proof of some sort of <em>factor</em>, the demonstration of which confirms the identity of the user.
+A password is a widespread example of this.
+Anybody can claim to be Rob Winch, lead of Spring Security, but if they don&#8217;t have his supersecret, well-guarded password, they&#8217;re not logging into his email or gaining access to his systems.
+A password demonstrates that the user has knowledge that presumably only they should have.</p>
+</div>
+<div class="paragraph">
+<p>There are many other factors.
+One-time tokens, passkeys, and certificates are all examples of authentication factors.</p>
+</div>
+<div class="paragraph">
+<p>A well-secured system will use multiple factors for authentication, sometimes called multi-factor auth or <em>MFA</em>.
+When should you choose which factor?
+Authentication factors usually fall into three buckets:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>knowledge</strong> - something you know.
+Examples are passwords, PINs, passphrases, security questions, etc.
+Some weaknesses of this factor are that it can be guessed, phished, reused, leaked, or written down.</p>
+</li>
+<li>
+<p><strong>possession</strong> - something you have.
+Examples of this are a phone, a hardware security key, a smart card, an authenticator app, a passkey stored on your device, etc.
+Some weaknesses of this factor are that the device or token can be lost, stolen, cloned in a weak system, or intercepted if it relies on text messages (SMS).</p>
+</li>
+<li>
+<p><strong>inherence</strong> - something you are.
+Examples of this are fingerprints, face scans, iris scans, voiceprints, etc.
+Some weaknesses of this factor are that biometrics can be spoofed, mishandled, or impossible to <em>rotate</em> if compromised.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Sometimes the demonstrated ability of the user to authenticate in more than one way is, itself, a factor.
+A user might have access to most of a given system if they present <em>just</em> a single factor, like a password, but might have access to more sensitive facets of the system if they present multiple factors.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_authentication_in_spring_security">Authentication in Spring Security</h3>
+<div class="paragraph">
+<p>In Spring Security, the core concept of authentication is represented by an object named, unsurprisingly, <code>Authentication</code>.
+Spring Security features an <code>AuthenticationManager</code> which in turn delegates to a chain of <code>AuthenticationProvider</code> types.
+There are <em>dozens</em> of these included in Spring Security, many of them having specific knowledge on how to authenticate a given user in terms of a given specification or protocol or scenario.</p>
+</div>
+<div class="paragraph">
+<p>Here&#8217;s the definition of <code>AuthenticationManager</code> in Spring Security.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>package org.springframework.security.authentication;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+
+@FunctionalInterface
+public interface AuthenticationManager {
+
+	Authentication authenticate(Authentication authentication) throws AuthenticationException;
+
+}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The most common implementation of <code>AuthenticationManager</code> is <code>ProviderManager</code>, which as I say manages a chain of <code>AuthenticationProvider</code> instances.</p>
+</div>
+<div class="paragraph">
+<p>Here&#8217;s the definition of <code>AuthenticationProvider</code> in Spring Security.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>package org.springframework.security.authentication;
+
+import org.jspecify.annotations.Nullable;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+
+public interface AuthenticationProvider {
+
+	@Nullable Authentication authenticate(Authentication authentication) throws AuthenticationException;
+
+	boolean supports(Class&lt;?&gt; authentication);
+}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>One of the most commonly used <code>AuthenticationProvider</code> types is the <code>DaoAuthenticationProvider</code>, which ties authentication to users stored in some implementation of <code>UserDetailsService</code>. <code>UserDetailsService</code> in turn assumes you can load the entire user, including its (encoded and hopefully not plaintext) password from some backing store, like a SQL database, or in-memory.</p>
+</div>
+<div class="paragraph">
+<p>It sounds like a lot, but keep in mind that you don&#8217;t have to interact with most of this stuff almost ever.
+Here&#8217;s a high-level diagram to make clear the relationship between these types.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/images/security/authentication.png" alt="authentication">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>here&#8217;s a high-level overview of the flow of authentication requests</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>And now let&#8217;s actually pull these pieces together in a simple test.
+We&#8217;ll construct these objects ourselves, using Spring Security directly.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>package com.example.security;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+
+import java.util.List;
+
+@SpringBootTest
+class SecurityApplicationTests {
+
+	@Test
+	void authentication() throws Exception {
+
+		<i class="conum" data-value="1"></i><b>(1)</b>
+		var pw = PasswordEncoderFactories.createDelegatingPasswordEncoder();
+
+		<i class="conum" data-value="2"></i><b>(2)</b>
+		var josh = User.withUsername("josh").password(pw.encode("pw")).roles("USER").build();
+		var rob = User.withUsername("rob").password(pw.encode("pw")).roles("USER", "ADMIN").build();
+		var users = List.of(josh, rob);
+		var userDetailsService = new InMemoryUserDetailsManager(users);
+
+		<i class="conum" data-value="3"></i><b>(3)</b>
+		var daoAuthenticationProvider = new DaoAuthenticationProvider(userDetailsService);
+		daoAuthenticationProvider.afterPropertiesSet();
+
+		<i class="conum" data-value="4"></i><b>(4)</b>
+		var authenticationProviders = List.of((AuthenticationProvider) daoAuthenticationProvider);
+		var authenticationManager = new ProviderManager(authenticationProviders);
+		authenticationManager.afterPropertiesSet();
+
+		<i class="conum" data-value="5"></i><b>(5)</b>
+		var authentication = new UsernamePasswordAuthenticationToken("josh", "pw");
+		Assertions.assertFalse(authentication.isAuthenticated(), "the user is not authenticated");
+		var authenticated = authenticationManager.authenticate(authentication);
+		Assertions.assertTrue(authenticated.isAuthenticated(), "the user is authenticated");
+	}
+
+}</pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>you don&#8217;t store passwords in plaintext, do you?
+Of course not!
+You need to encode it.
+And Spring Security has a nifty composite implementation of the <code>PasswordEncoder</code> hierarchy that I try to use for basically everything.</p>
+</li>
+<li>
+<p>we&#8217;re going to store users <em>in-memory</em>.
+Obviously, you could source these users from a SQL database.
+Any implementation of <code>UserDetailsService</code> will work.
+We&#8217;re just going to hardcode our users for this example.
+(Which does make the act of encoding the passwords seem a bit silly, doesn&#8217;t it?)</p>
+</li>
+<li>
+<p>We&#8217;ll wire up a lonesome <code>AuthenticationProvider</code> of type <code>DaoAuthenticationProvider</code> which expects a reference to the aforementioned <code>UserDetailsService</code>.</p>
+</li>
+<li>
+<p>We&#8217;ll wire up an implementation of <code>AuthenticationManager</code> called <code>ProviderManager</code> to handle any and all <code>AuthenticationProvider</code> instances. <code>ProviderManager</code> will give incoming <code>Authentication</code> requests to all configured instances of <code>AuthenticationProvider</code>.
+If any of them can handle it, then processing stops.
+If not, they either throw an exception or return an <code>Authentication</code> with <code>authenticated == false</code>.</p>
+</li>
+<li>
+<p>finally, the rubber meets the road.
+Imagine we&#8217;re an HTTP client using an HTTP form or an HTTP basic request.
+Spring Security&#8217;s filter would intercept those requests, wrap them into a <code>UsernamePasswordAuthenticationToken</code> instance, and then ask the <code>AuthenticationManager</code> to try to authenticate it.
+Here, we see that it does so successfully.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_filters">Filters</h3>
+<div class="paragraph">
+<p>Now that you know, conceptually, about how to <em>do authentication</em>, you&#8217;ll hopefully appreciate that the hardest part about security is getting your code in the right place to do authentication in the first place.
+In a web application, Spring Security installs a filter that intercepts requests bound for your application, and it is there that code of a kind with the code in that test actually runs.</p>
+</div>
+<div class="paragraph">
+<p>Filters are a natural way to implement this sort of gatekeeper logic on your application.
+Spring Security uses filters all over the place to ensure that it is able to put up certain pages for certain use cases (like login pages).
+You can leverage this mechanism too.
+Spring has two modalities: reactive and non-reactive.
+In this book I&#8217;m assuming we&#8217;re using the non-reactive stack.
+When you bring in Spring Boot&#8217;s <code>spring-boot-starter-webmvc</code> starter, it configures Apache Tomcat by default.
+You could optionally also use Jetty.
+Spring Boot provides a natural way to contribute filters, side-stepping the tedious configuration required when interacting with the lower-level Servlet engine.</p>
+</div>
+<div class="paragraph">
+<p>Here&#8217;s an example.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>package com.example.security;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpFilter;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+
+import java.io.IOException;
+
+@Configuration
+class CustomFilterConfiguration {
+
+	<i class="conum" data-value="1"></i><b>(1)</b>
+	@Bean
+	@Order(Ordered.LOWEST_PRECEDENCE)
+	FilterRegistrationBean&lt;MyFilter&gt; myFilterFilterRegistrationBean() {
+		var myFilter = new MyFilter();
+		var frb = new FilterRegistrationBean&lt;&gt;(myFilter);
+		frb.addUrlPatterns("/test", "/test/*");
+		frb.setAsyncSupported(true);
+		return frb;
+	}
+
+	<i class="conum" data-value="2"></i><b>(2)</b>
+	static class MyFilter extends HttpFilter {
+
+		@Override
+		protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+				throws IOException, ServletException {
+
+			IO.println("before " + request.getRequestURL());
+			<i class="conum" data-value="3"></i><b>(3)</b>
+			if (request.getUserPrincipal() == null) {
+				<i class="conum" data-value="4"></i><b>(4)</b>
+				chain.doFilter(request, response);
+			} //
+			else {
+				response.setContentType(MediaType.TEXT_HTML_VALUE);
+				response.setStatus(HttpStatus.OK.value());
+				var userPrincipal = request.getUserPrincipal();
+				response.getWriter().write("""
+						&lt;html&gt;
+						 &lt;body&gt;
+						    &lt;h1&gt;
+						     Hello, %s!
+						    &lt;/h1&gt;
+						 &lt;/body&gt;
+						&lt;/html&gt;
+						""".formatted(userPrincipal.getName()));
+			}
+			IO.println("after " + request.getRequestURL());
+		}
+
+	}
+
+}</pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>You can register beans of type <code>FilterRegistrationBean</code> and they&#8217;ll let you wire up all the same things you might&#8217;ve configured when using <code>web.xml</code> or programmatic <code>Servlet</code> registration.
+We can specify in which order the filter is to be processed.
+I want this to be processed dead-last, <em>after</em> all the other filters have run.
+Here, we&#8217;re specifying the URL patterns to which to map our <code>Filter</code> and whether the <code>Filter</code> supports the <em>async</em> processing introduced in Servlet 3.0, in 2009.</p>
+</li>
+<li>
+<p>I use the word <em>filter</em> to refer to a conceptual thing, but in the Servlet API there are at least two interesting classes to be aware of: <code>Filter</code> and <code>HttpFilter</code>.
+We&#8217;re interested in <code>HttpFilter</code> here because we want to intercept HTTP requests, not just generic unspecified requests bound for the server.</p>
+</li>
+<li>
+<p>Spring Security installs a filter <em>before</em> our filter, and one of the things it does is <em>wrap</em> the raw native <code>HttpServletRequest</code> that comes from the native Servlet container in a new class that provides answers to <code>getUserPrincipal()</code> by sourcing the information from the Spring Security authenticated principal.</p>
+</li>
+<li>
+<p>We <em>should</em> be last, and the request <em>should</em> be secured, but if for some reason there&#8217;s no authenticated principal in the request, then let&#8217;s just continue the filter chain, letting somebody else have a chance at resolving this.
+There&#8217;s nothing we can do.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Where does that user come from?
+Who put it there?
+Behind the scenes, when Spring Security authenticates a request, it creates an object of type <code>Authentication</code> and stores it in a place that the current ongoing request can get to it.
+Often, but not always, this is backed by a <code>ThreadLocal&lt;?&gt;</code>.
+You can access the current authenticated user with <code>SecurityContextHolder</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>var authentication = SecurityContextHolder
+                        .getContextHolderStrategy()
+                        .getContext()
+                        .getAuthentication();
+var authenticationName = authentication.getName();</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The name returned here and the name returned from <code>getUserPrincipal</code> in the example above should be the same, pointing to the same reference.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_authentication_in_a_web_application">Authentication in a Web Application</h3>
+<div class="paragraph">
+<p>We&#8217;ll see how to do so in various other contexts at other places in this book.
+But for now, let&#8217;s start with a web application.
+Let&#8217;s take these simple concepts and look at them in practice, in a more fleshed-out example implemented using Spring Boot and Spring Security.</p>
+</div>
+<div class="paragraph">
+<p>Visit the Spring Initializr, add <code>PostgreSQL Driver</code>, <code>JDBC API</code>, <code>GraalVM Native Support</code>, <code>Spring Web</code>, <code>Spring Security</code>, and <code>WebAuthn for Spring Security</code> to the build.
+I always choose Apache Maven and, of course, the latest version of Java or the latest long-term support (LTS) version of Java.
+Click <code>Generate</code> and open the resulting zip file in your IDE.</p>
+</div>
+<div class="paragraph">
+<p>We&#8217;re going to connect this application to a SQL database.
+As always, we&#8217;ll use Docker Compose to make short work of this.
+I&#8217;ve created a <code>compose.yml</code> file here.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>services:
+  postgres:
+    image: 'postgres:latest'
+    environment:
+      - 'POSTGRES_DB=mydatabase'
+      - 'POSTGRES_PASSWORD=secret'
+      - 'POSTGRES_USER=myuser'
+    ports:
+      - '5432:5432'</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Run that in the usual way:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>docker compose up -d</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here&#8217;s our initial <code>application.properties</code> configuration.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>spring.application.name=security
+<i class="conum" data-value="1"></i><b>(1)</b>
+spring.datasource.username=myuser
+spring.datasource.password=secret
+spring.datasource.url=jdbc:postgresql://localhost/mydatabase
+<i class="conum" data-value="2"></i><b>(2)</b>
+spring.sql.init.mode=always</pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>define SQL database connection information</p>
+</li>
+<li>
+<p>tell Spring Boot to evaluate <code>src/main/resources/{schema,data}.sql</code></p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s set up our Spring Security application.
+Let&#8217;s install a single controller that we will protect and that will require an authenticated user to access.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>package com.example.security;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.security.Principal;
+import java.util.Map;
+
+@Controller
+@ResponseBody
+class MeController {
+
+	@GetMapping("/")
+	Map&lt;String, String&gt; me(Principal principal) {
+		return Map.of("name", principal.getName());
+	}
+
+}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This endpoint is protected.
+You&#8217;ll need to authenticate to visit this endpoint: <code><a href="http://localhost:8080/" class="bare">http://localhost:8080/</a></code>.</p>
+</div>
+<div class="paragraph">
+<p>By default, a Spring Boot application with <code>org.springframework.boot</code> : <code>spring-boot-starter-security</code> is completely locked down, and all endpoints will require authentication.</p>
+</div>
+<div class="paragraph">
+<p>Spring Boot registers a <em>lot</em> of common-sense and useful defaults, locking down the application, applying useful authentication methods like HTTP BASIC and form-based login, applying cross-site request forgery (CSRF) protection, and more.</p>
+</div>
+<div class="paragraph">
+<p>To access any endpoint, a user would need to authenticate.
+But how?
+We could specify a single username and password, for demonstration, using properties, but it&#8217;s almost too contrived.
+Even for me.
+So let&#8217;s instead register a bean of type <code>UserDetailsService</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_in_memory_users">In-Memory Users</h3>
+<div class="paragraph">
+<p>We&#8217;ll start by registering an <code>InMemoryUserDetailsManager</code> to see everything work.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>package com.example.security;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+
+@Configuration
+@Profile("memory")
+class InMemoryConfiguration {
+
+	@Bean
+	InMemoryUserDetailsManager memoryUserDetailsManager(PasswordEncoder pw) {
+		var user1 = User.withUsername("user@anotherone.site") <i class="conum" data-value="1"></i><b>(1)</b>
+			.roles("ADMIN") //
+			.password(pw.encode("p@ssw0rd")) //
+			.build();
+		var user2 = User.withUsername("josh@joshlong.com") //
+			.roles("USER", "ADMIN") <i class="conum" data-value="2"></i><b>(2)</b>
+			.password(pw.encode("pw")) //
+			.build();
+		return new InMemoryUserDetailsManager(user1, user2);
+	}
+
+}</pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>we can specify whatever we want for the <code>username</code>.
+In this case I&#8217;m using something that looks like an email, but there&#8217;s no schema or requirements here.</p>
+</li>
+<li>
+<p>users have <em>authorities</em>, which help us determine what privileges a given user has.
+We&#8217;ll look at these in more depth when we look at authorization.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Start the application and visit the endpoint, and you&#8217;ll be prompted to authenticate.
+Use <code>josh@joshlong.com</code> and <code>pw</code> as the username and password, respectively.</p>
+</div>
+<div class="paragraph">
+<p>You should see the username returned to you in a JSON response.
+It worked!</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_dao_backed_authentication">DAO-Backed Authentication</h3>
+<div class="paragraph">
+<p>Let&#8217;s change the <code>UserDetailsService</code> implementation to read from our SQL database instead of from in-memory.
+We&#8217;ll need some schema to define the tables in which our users and the enumeration of their <em>authorities</em> will reside.</p>
+</div>
+<div class="paragraph">
+<p>I&#8217;ve placed the following file in <code>src/main/resources/schema.sql</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>create table if not exists users
+(
+    username varchar(200) not null primary key,
+    password varchar(500) not null,
+    enabled  boolean      not null
+);
+
+create table if not exists authorities
+(
+    username  varchar(200) not null,
+    authority varchar(50)  not null,
+    constraint fk_authorities_users foreign key (username) references users (username),
+    constraint username_authority UNIQUE (username, authority)
+);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>I&#8217;ve placed the following file in <code>src/main/resources/data.sql</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>delete from authorities;
+delete from users;
+
+insert into users (username, password, enabled)
+values ('josh@joshlong.com', '{bcrypt}$2a$10$i4a5jw4y9LnKS//8DNDVYe2VfC6Jr2m0Ds1j5un5JNhnkJxg6jAT.', true);
+
+insert into users (username, password, enabled)
+values ('user@anotherdomain.site',
+        '{sha256}0a598ce65440a7c4ad18b48fdc2cf28c4e58aec803780f59548535696a23b16624e47ff4f59e6f39', true);
+
+--
+insert into authorities (username, authority)
+values ('josh@joshlong.com', 'ROLE_USER');
+
+insert into authorities (username, authority)
+values ('josh@joshlong.com', 'ROLE_ADMIN');
+
+insert into authorities (username, authority)
+values ('user@anotherdomain.site', 'ROLE_USER');</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>I&#8217;ve taken this schema directly from the Spring Security documentation and the source code for Spring Security.
+We&#8217;re using PostgreSQL, but there are equivalent schemas that you could use for various other databases, too.</p>
+</div>
+<div class="paragraph">
+<p>Delete the conflicting <code>InMemoryUserDetailsManager</code> bean from earlier.
+Let&#8217;s replace it with one that delegates to these newly minted SQL tables and their data.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>package com.example.security;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.JdbcUserDetailsManager;
+
+import javax.sql.DataSource;
+
+@Configuration
+class SecurityConfiguration {
+
+	@Bean
+	JdbcUserDetailsManager jdbcUserDetailsManager(DataSource dataSource) {
+		<i class="conum" data-value="1"></i><b>(1)</b>
+		var userDetailsManager = new JdbcUserDetailsManager(dataSource);
+		<i class="conum" data-value="2"></i><b>(2)</b>
+		userDetailsManager.setEnableUpdatePassword(true);
+		return userDetailsManager;
+	}
+
+}</pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>this implementation of <code>UserDetailsService</code> reads user data from the aforementioned SQL tables</p>
+</li>
+<li>
+<p>this property is a relatively new feature.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>It allows Spring Security to update the password in the SQL database if the encoding used isn&#8217;t the default configured encoding in the system.</p>
+</div>
+<div class="paragraph">
+<p>Restart the program.
+You should see data in your PostgreSQL <code>users</code> and <code>authorities</code> tables.</p>
+</div>
+<div class="paragraph">
+<p>Open up the browser and hit the same endpoint and authenticate with username <code>josh@joshlong.com</code> and password <code>pw</code>.
+You should authenticate just fine.
+But <em>how</em>?
+We&#8217;ll need to dive into password encoding before we have a good answer.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_password_encoding">Password Encoding</h3>
+<div class="paragraph">
+<p>Looking at the output, you&#8217;ll notice that the passwords written to the database were basically garbled (<em>encoded</em>) text preceded by a prefix in curly brackets: <code>{</code>, the algorithm name, and <code>}</code>.</p>
+</div>
+<div class="paragraph">
+<p>This was intentional: I wanted these passwords to work with the <code>PasswordEncoder</code> configured here:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>package com.example.security;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+@Configuration
+class PasswordConfiguration {
+
+	@Bean
+	PasswordEncoder passwordEncoder() {
+		return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+	}
+
+}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A <code>PasswordEncoder</code> is an object that takes plaintext Strings and <em>encodes</em> them with an algorithm.
+Spring Security ships with dozens of implementations for algorithms like SHA (<em>do not</em> use this one!), SHA 256 (maybe don&#8217;t use this one either), PBKDF2, SCrypt, BCrypt, Argon2, etc.
+Many of the implementations are duplicated, in fact, because there is dual support in Spring Security for various algorithms from the third-party BouncyCastle library <em>and</em> from the third-party Password4J library.
+Indeed, most of the good implementations come from either the BouncyCastle or Password4J libraries and require their presence on the CLASSPATH.</p>
+</div>
+<div class="paragraph">
+<p>You could use these algorithms directly by constructing the relevant instances of the <code>PasswordEncoder</code>, like so:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>var bcrypt = new BCryptPasswordEncoder();</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>I always prefer instead to use the composite that comes from <code>PasswordEncoderFactories</code>, which is itself a composite <code>PasswordEncoder</code>.
+It maintains a dictionary of different algorithm names mapped to an instance of their implementation.
+Security is a fast-moving space.
+Algorithms that are deemed secure and uncrackable today might be deemed cracked and insecure tomorrow.
+Spring Security reserves the right to bump the default algorithm as it evolves, should the need arise.
+Right now, the best algorithm provided out-of-the-box with no need for any other dependency is <code>BCryptPasswordEncoder</code>.</p>
+</div>
+<div class="paragraph">
+<p>When you use the <code>DelegatingPasswordEncoder</code> from <code>PasswordEncoderFactories</code> today, at the time of this writing in mid-2026, the default algorithm used is <code>bcrypt</code> (which maps to an instance of <code>BCryptPasswordEncoder</code>, as shown above).
+That might change tomorrow as the algorithms are discovered to be less secure.
+If you have BouncyCastle or Password4J on the CLASSPATH, I&#8217;d prefer Argon2.
+Use Argon2 when available because it is memory-hard and tunable for memory, CPU time, and parallelism, making large-scale GPU/ASIC cracking harder.
+OWASP currently recommends Argon2 as the first choice.</p>
+</div>
+<div class="paragraph">
+<p>The <code>DelegatingPasswordEncoder</code> prefixes all passwords with the name of the algorithm used to encode it.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s walk through the (rough) authentication flow, with the <code>PasswordEncoder</code> in mind.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>a user enters a username and a password in a form on your website and then submits the request</p>
+</li>
+<li>
+<p>Spring Security intercepts the request and constructs a <code>UsernamePasswordAuthenticationToken</code> with the username and password as parameters.</p>
+</li>
+<li>
+<p>the configured <code>AuthenticationManager</code> is asked to authenticate the request.</p>
+</li>
+<li>
+<p>the <code>AuthenticationManager</code>, in this case, is probably an instance of <code>ProviderManager</code>, so it in turn delegates to a chain of <code>AuthenticationProvider</code> instances, which get a chance to authenticate the <code>Authentication</code> request.</p>
+</li>
+<li>
+<p>finally, the <code>DaoAuthenticationProvider</code> instance loads the user from the <code>UserDetailsService</code> using the presented username.</p>
+</li>
+<li>
+<p>It needs to check that the passwords match, so it obtains an instance of the <code>DelegatingPasswordEncoder</code> and checks that the presented password (in plaintext) matches the one stored in the database (encoded, and prefixed with an algorithm name) by calling <code>PasswordEncoder#matches(CharSequence plain, String encoded)</code>.
+Internally, this uses the prefix to identify the ultimate implementation of <code>PasswordEncoder</code> to use, then encodes the presented password with that implementation.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>You can of course configure your own <code>DelegatingPasswordEncoder</code> if you like to use Argon2 (or anything else).
+Add Password4J to the CLASSPATH: <code>com.password4j</code> : <code>password4j</code> : <code>1.8.4</code>.
+I&#8217;m using that version in the middle of 2026. (You should use whichever version is the latest-and-greatest as you&#8217;re reading this.)</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>package com.example.security;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.password.StandardPasswordEncoder;
+import org.springframework.security.crypto.password4j.Argon2Password4jPasswordEncoder;
+
+import java.util.Map;
+
+<i class="conum" data-value="1"></i><b>(1)</b>
+@Configuration
+@Profile("password4j")
+class CustomPasswordEncoderConfiguration {
+
+	@Bean
+	DelegatingPasswordEncoder delegatingPasswordEncoder() {
+		var argon = new Argon2Password4jPasswordEncoder();
+		var defaultPasswordEncoder = "argon@Password4j";
+		var mapOfEncoders = Map.&lt;String, PasswordEncoder&gt;of(defaultPasswordEncoder, argon, //
+				"bcrypt", new BCryptPasswordEncoder(), //
+				"sha256", new StandardPasswordEncoder()<i class="conum" data-value="2"></i><b>(2)</b>
+		);
+		return new DelegatingPasswordEncoder(defaultPasswordEncoder, mapOfEncoders);
+	}
+
+}</pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>this implementation configures the Password4J-powered Argon2 implementation as the <em>default</em> encoder, with optional support for BCrypt.</p>
+</li>
+<li>
+<p>we&#8217;re registering an encoder for <code>sha256</code>, but keep in mind that this implementation is deprecated!
+In a happier world, we wouldn&#8217;t use it.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Make sure you replace the other <code>PasswordEncoder</code> implementation from the <code>PasswordConfiguration</code> class with this one if you&#8217;d like to use it.</p>
+</div>
+<div class="paragraph">
+<p>We&#8217;ve configured custom password encoding so that we can handle the data in the SQL database that uses <code>sha256</code> encoding.
+It&#8217;s a deprecated algorithm, and we&#8217;d certainly prefer it if people weren&#8217;t using it at this point.
+The trouble is, there&#8217;s always <em>legacy</em>.
+Maybe people used that algorithm before, and now they need to migrate the passwords to the new algorithm.
+Encoded passwords are, by definition, <em>challenging</em> to unencode, and so we can&#8217;t convert them to a new password unless we somehow have the plaintext.
+The only time the system has the plaintext version of the password is when the user logs in and presents a password that, when encoded with the same algorithm, matches the one in the database.
+Earlier, when we configured the <code>JdbcUserDetailsManager</code>, we set <code>setEnableUpdatePassword</code> to <code>true</code>.
+This allows Spring Security to re-encode a password in the database that&#8217;s encoded using something besides the current <em>default</em> password encoder when the user authenticates successfully.</p>
+</div>
+<div class="paragraph">
+<p>Consult the <code>data.sql</code>, or your database, and you&#8217;ll see that the user <code>user@anotherdomain.site</code> has a password encoded with <code>sha256</code>.
+So, restart the application and visit <a href="http://localhost:8080/" class="bare">http://localhost:8080/</a> and then authenticate as <code>user@anotherdomain.site</code> and <code>pw</code>.
+Check the database again, and you&#8217;ll see it&#8217;s been migrated to use the <em>default</em> password encoder.
+If you&#8217;re using the <code>PasswordEncoder</code> from <code>PasswordEncoderFactories</code>, you&#8217;ll see it&#8217;s been encoded using <code>bcrypt</code>.
+If you&#8217;re using the custom <code>PasswordEncoder</code> we set up above, you&#8217;ll see it&#8217;s been encoded using <code>argon@Password4j</code>.
+Either way, <em>much</em> better than <code>sha256</code>!
+Take a victory lap, you&#8217;ve earned it.
+You can say that you&#8217;re storing passwords as safely as possible.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_but_passwords_are_bad">But Passwords Are Bad!</h3>
+<div class="paragraph">
+<p>Yah, I said it!
+Passwords are a terrible <em>factor</em> for authentication.
+Which is a shame because, for the vast majority of systems in production today, they&#8217;re all we&#8217;ve got.
+But they&#8217;re also harder to maintain, most people don&#8217;t have the tools to deploy them correctly, and - to make matters worse - so much of the received wisdom around them has worked against us.</p>
+</div>
+<div class="paragraph">
+<p>Humans aren&#8217;t built to remember dozens of high-quality, unique, and complex passwords.
+It would be great if everybody used a good password manager like Bitwarden, 1Password, LastPass, etc.
+But they don&#8217;t.
+Or, worse, they might&#8217;ve accidentally started using password managers in one context (e.g., Google Chrome) but gotten locked out because they switched away from whatever that context was (e.g., Windows to macOS, Android to iPhone, Google Chrome to Safari, etc.).
+The result?
+People don&#8217;t develop good password hygiene.
+They reuse passwords.
+They scrawl them on stickies affixed above their monitor.
+Or, worse, in a text file on the public cloud.</p>
+</div>
+<div class="paragraph">
+<p>Insufficient engineering practices are often to blame.
+In the example above, we showed how to store passwords in an encoded fashion <em>and</em> how to migrate them to better encodings whenever possible.
+Sometimes folks don&#8217;t do the right thing. <a href="https://krebsonsecurity.com/2019/03/facebook-stored-hundreds-of-millions-of-user-passwords-in-plain-text-for-years/?utm_source=chatgpt.com">Meta (formerly known as Facebook) was caught storing hundreds of millions of user passwords in plain text</a> for years in 2019. In 2019, it also came out <a href="https://www.wired.com/story/google-stored-gsuite-passwords-plaintext/?utm_source=chatgpt.com">that Google had stored some passwords in plaintext</a> since 2005. The <a href="https://en.wikipedia.org/wiki/2012_Yahoo_Voices_hack?utm_source=chatgpt.com">2012 Yahoo! Voices attack</a> revealed that Yahoo! had stored around 450,000 passwords in plaintext.
+If it can happen to these organizations, it can happen to anyone.
+(Why can&#8217;t everyone just use Spring Security?)</p>
+</div>
+<div class="paragraph">
+<p>Now you might say that those issues are a sign of poor password management, and I&#8217;d say you can&#8217;t have poor password management if you don&#8217;t have passwords.
+We can both be right.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_bad_received_wisdom">Bad "Received Wisdom"</h3>
+<div class="paragraph">
+<p>Sometimes, it boils down to bad "best practices." Should you rotate your passwords every month?
+No.
+Password rotation used to be recommended because the assumption was that passwords could be stolen without anyone noticing.
+Changing them periodically would reduce the window during which an attacker could use them.
+This made sense before the widespread adoption of multifactor authentication, breach detection, password managers, and monitoring for compromised credentials.
+But periodic rotation makes security <em>worse</em>.
+Research shows that people tend to increment the number (<code>Passw0rd1</code> &#8594; <code>Passw0rd2</code>) or make tiny, predictable modifications, or write passwords down, or choose weaker passwords because they&#8217;re tired of changing them.
+All of which makes passwords <em>easier</em> to guess or derive.
+It&#8217;s much better to securely store a long, secure password in a password manager rather than changing it without proper handling every month (or whenever).</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_authentication_around_the_world">Authentication Around the World</h3>
+<div class="paragraph">
+<p>Indeed, for government work in many government contexts, passwords are discouraged or disallowed.</p>
+</div>
+<div class="paragraph">
+<p>In the <strong>United States</strong>, the Office of Management and Budget issued the federal Zero Trust strategy requiring agencies to adopt phishing-resistant multifactor authentication (MFA) for users whenever possible.</p>
+</div>
+<div class="paragraph">
+<p>The <strong>European Union</strong> is one of the strongest proponents of MFA: the NIS2 directive explicitly includes the use of multifactor authentication or continuous authentication solutions, where appropriate, as one of the required cybersecurity risk-management measures for covered entities (energy, healthcare, banking, transportation, cloud providers, public administration, digital infrastructure, etc.).
+The European Union&#8217;s Digital Operational Resilience Act (DORA) for financial institutions requires strong identity and access management.
+While it does not literally say "passwords are banned," password-only authentication generally won&#8217;t satisfy modern expectations for privileged or high-risk access.
+And the Revised Payment Services Directive introduced <em>Strong Customer Authentication</em> (SCA), which requires authentication using at least two independent factors from categories such as knowledge, possession, and inherence.
+A password alone is not enough for many electronic payment transactions.</p>
+</div>
+<div class="paragraph">
+<p>The <strong>United Kingdom</strong>'s <em>National Cyber Security Centre</em> strongly recommends MFA for important accounts and increasingly recommends phishing-resistant authentication for government systems.</p>
+</div>
+<div class="paragraph">
+<p>The Monetary Authority of <strong>Singapore</strong> requires strong authentication for many banking and financial services.
+Banks generally must use multi-factor authentication for customer access and sensitive transactions.</p>
+</div>
+<div class="paragraph">
+<p><strong>Japan</strong> does not broadly prohibit passwords.
+However, government cybersecurity guidance strongly encourages MFA, and major financial institutions require additional authentication.
+Passkeys are increasingly being adopted across both government and private sectors.</p>
+</div>
+<div class="paragraph">
+<p><strong>South Korea</strong> has historically had some of the world’s strongest online authentication requirements.
+Although earlier systems relied heavily on certificates, modern regulations increasingly permit FIDO authentication, biometrics, and MFA instead of password-only systems.</p>
+</div>
+<div class="paragraph">
+<p>We won&#8217;t be completely escaping passwords for a while, but every journey of a thousand miles starts with but a single step.
+It starts with us.
+Let&#8217;s explore some alternatives to passwords.
+But before we can do that, we need to think about how to customize a Spring Security application.
+So far we&#8217;ve just registered beans of the right type in the right place, and things have sort of worked out.</p>
+</div>
+<div class="paragraph">
+<p>Remember when I told you that there&#8217;s a giant filter sitting in between your requests and the back-end application logic?
+Well, we can configure how that works by defining the <code>SecurityFilterChain</code> ourselves, like this.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>package com.example.security;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+@Profile("sfc")
+class SecurityFilterChainConfiguration {
+
+	@Bean
+	SecurityFilterChain securityFilterChain(HttpSecurity security) throws Exception {
+		return security //
+			.formLogin(Customizer.withDefaults())
+			.httpBasic(Customizer.withDefaults())
+			.csrf(Customizer.withDefaults()) //
+			.cors(AbstractHttpConfigurer::disable) //
+			.authorizeHttpRequests(a -&gt; a //
+				.requestMatchers("/admin")
+				.hasRole("ADMIN")//
+				.requestMatchers("/**")
+				.authenticated() //
+			)//
+			.build();
+	}
+
+}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We won&#8217;t get into what&#8217;s happening here just yet.
+Suffice it to say that in defining this bean, we are overriding the defaults that Spring Boot provides for Spring Security and that you get for free when you add <code>spring-boot-starter-security</code> to the CLASSPATH.
+By default, Spring Boot declares a bean of type <code>SecurityFilterChain</code> that:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>enables HTTP Basic authentication</p>
+</li>
+<li>
+<p>enables form login</p>
+</li>
+<li>
+<p>requires that all access to any endpoint be authenticated</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Historically, if you wanted to change this, you&#8217;d have to define a <code>SecurityFilterChain</code> bean of your own and you&#8217;d instantly lose the default protection Spring Boot gave you.
+So, your first order of business was to immediately redefine the same bean, which looks more or less like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>package com.example.security;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Profile("defaultsfc")
+@Configuration
+class BootsDefaultSecurityFilterChainConfiguration {
+
+	@Bean
+	SecurityFilterChain securityFilterChain(HttpSecurity security) throws Exception {
+		return security //
+			.formLogin(Customizer.withDefaults())
+			.httpBasic(Customizer.withDefaults())
+			.authorizeHttpRequests(a -&gt; a.anyRequest().authenticated())
+			.build();
+	}
+
+}</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Only then could you start customizing the security for the application.
+But for the brief moment between overriding the old bean and fleshing out the new one, your application was <em>less</em> secure than if you&#8217;d done nothing at all!</p>
+</div>
+<div class="paragraph">
+<p>Not a good result.
+In Spring Security 7, we introduced a way to iteratively <em>add</em> to the default security, instead of replacing it wholesale; we only need to define a bean of type <code>Customizer&lt;HttpSecurity&gt;</code>.
+For most of this book, I will do exactly that <em>almost</em> everywhere.
+I show you the <code>SecurityFilterChain</code> approach because on the occasions when you want to make authorization more granular, or when reading older code and older text, you&#8217;ll need to appreciate what&#8217;s happening.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_one_time_tokens_or_magic_links">One-Time Tokens, or "Magic Links"</h3>
+<div class="paragraph">
+<p>You ever use Slack?</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+If so, then I am so very sorry.
+I am not a huge fan of the huge fans required to cool the computer running Slack.
+Or indeed almost any Chromium or Electron-based software.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>When you authenticate, it prompts you to enter your email.
+You oblige it, and it sends you an email.
+You click on the link in your email, and now you&#8217;re authenticated.
+You have access to your email, so therefore you are who you say you are.
+Here, it&#8217;s an email.
+But it could be any out-of-band messaging medium.
+Email, WhatsApp/SMS (though these two, and anything tied to a spoofable phone number, are increasingly discouraged these days), Discord, etc.</p>
+</div>
+<div class="paragraph">
+<p>Do these services require a password?
+Almost certainly.
+And probably another factor.
+And you can trust that Google (behind Gmail), Apple (and iCloud), Microsoft (and Active Directory and Outlook), etc. have all done a ton to ensure the integrity of passwords for their services.
+They have whole teams working on the security of passwords for their products.
+So in a way this just kicks the can down the road, but it does remove a significant burden from your organization, and it simplifies the user experience while also making their lives (hopefully) more secure.</p>
+</div>
+<div class="paragraph">
+<p>I don&#8217;t want to set up Twilio, JavaMail, or SendGrid here, so let&#8217;s simplify things and just imagine that the out-of-band messaging medium by which people are communicating is our application&#8217;s logs.
+Is this <em>real</em>?
+No, of course not.
+But it&#8217;ll help to see things work end-to-end.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s try it out.
+First, we&#8217;ll need to enable one-time tokens.
+Do so within a <code>Customizer&lt;HttpSecurity&gt;</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>package com.example.security.ott;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+
+@Configuration
+class OttConfiguration {
+
+	static final String SENT_URL = "/login/ott/sent";
+
+	@Bean
+	Customizer&lt;HttpSecurity&gt; ottCustomizer(ConsoleOneTimeTokenGenerationSuccessHandler handler) {
+		return security -&gt; security <i class="conum" data-value="1"></i><b>(1)</b>
+			.oneTimeTokenLogin(config -&gt; config //
+				.tokenGenerationSuccessHandler(handler))//
+			.authorizeHttpRequests(a -&gt; a
+				<i class="conum" data-value="2"></i><b>(2)</b>
+				.requestMatchers(SENT_URL)
+				.permitAll()); //
+	}
+
+}</pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>first, tell Spring Security to allow one-time tokens as an authentication mechanism, pointing it to an implementation of <code>OneTimeTokenGenerationSuccessHandler</code>, which we&#8217;ll look at momentarily.</p>
+</li>
+<li>
+<p>then we need to make publicly accessible an HTML page (visible under the path <code>/login/ott/sent</code>) that we intend for the users to see when authenticating.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>In the configuration class, I&#8217;ve extracted out the HTML page&#8217;s path into a <code>static final</code> constant so that I can reference it in a few other places for consistency.
+To be 100% honest with you, I&#8217;d normally write basically all of the code to do with wiring this up in the same outer <code>OttConfiguration</code> class, using a lambda and private static inner classes to do the work.
+There just isn&#8217;t that much complexity here.
+But this is a book, and I want the examples to be clear and to introduce the concepts one at a time, so I&#8217;ve extracted them into separate classes.
+And since I had more than one class about the same <em>thing</em>, I&#8217;ve put them all in the same nested package, <code>ott</code>.</p>
+</div>
+<div class="paragraph">
+<p>What is this <code>OneTimeTokenGenerationSuccessHandler</code>, I hear you say?
+It&#8217;s a callback interface that gets involved once the user has entered their username on the login page.
+You can use this as a chance to set up any state and then look the user up and email them, call or text their phone number or WhatsApp, etc.</p>
+</div>
+<div class="paragraph">
+<p>But again, I want to keep things simple, so I&#8217;ll simply print on the console the URL to which the authenticating user should go.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>package com.example.security.ott;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.authentication.ott.OneTimeToken;
+import org.springframework.security.web.authentication.ott.OneTimeTokenGenerationSuccessHandler;
+import org.springframework.security.web.authentication.ott.RedirectOneTimeTokenGenerationSuccessHandler;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+import java.io.IOException;
+
+import static com.example.security.ott.OttConfiguration.SENT_URL;
+
+@Component
+class ConsoleOneTimeTokenGenerationSuccessHandler implements OneTimeTokenGenerationSuccessHandler {
+
+	<i class="conum" data-value="1"></i><b>(1)</b>
+	private final OneTimeTokenGenerationSuccessHandler successHandler = new RedirectOneTimeTokenGenerationSuccessHandler(
+			SENT_URL);
+
+	@Override
+	public void handle(HttpServletRequest request, HttpServletResponse response, OneTimeToken oneTimeToken)
+			throws IOException, ServletException {
+
+		<i class="conum" data-value="2"></i><b>(2)</b>
+		var url = ServletUriComponentsBuilder.fromContextPath(request) //
+			.path("/login/ott") //
+			.queryParam("token", oneTimeToken.getTokenValue()) //
+			.build();
+
+		<i class="conum" data-value="3"></i><b>(3)</b>
+		IO.println("sending email " + oneTimeToken.getUsername() + " who should go to " + url);
+
+		<i class="conum" data-value="4"></i><b>(4)</b>
+		this.successHandler.handle(request, response, oneTimeToken);
+	}
+
+}</pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>this is a built-in <code>OneTimeTokenGenerationSuccessHandler</code> that simply redirects to a particular view.
+We will want to do that, eventually.</p>
+</li>
+<li>
+<p>but first, we need to know where to send the user.
+Spring MVC provides this handy convenience class called <code>ServletUriComponentsBuilder</code> that makes building up a relative URL pretty darned easy.</p>
+</li>
+<li>
+<p>finally, we print out where we expect the user to go to access the system.
+Here, we&#8217;re conveying this link on the system console, but in a real application we&#8217;d send an email or SMS or something.</p>
+</li>
+<li>
+<p>finally, with all the setup done, we need to respond to the HTTP request.
+We do so by redirecting to a URL on the server that&#8217;ll render an HTML page.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s quickly touch on that <code>ServletUriComponentsBuilder</code> use.
+Spring uses the current <code>HttpServletRequest</code> to build up a fully qualified URL.
+But what happens if your service is behind a gateway or a router?
+You don&#8217;t want your users trying to click on a URL bound for <code><a href="http://192.168.2.5:20482" class="bare">http://192.168.2.5:20482</a></code>, you want them going to <code><a href="http://example.com/" class="bare">http://example.com/</a></code>.
+If your gateway forwards proxy headers like <code>Forwarded</code> or the <code>X-Forwarded-*</code> headers, then Spring can be made to honor those with the <code>ForwardedHeaderFilter</code>.
+You can customize how this is set up with <code>server.forward-headers-strategy</code> in a Spring Boot application.
+I usually use <code>server.forward-headers-strategy=framework</code>.
+If you use this, then be sure to <em>strip</em> those headers at the trust boundary (your gateway), and then add them again before sending it to your downstream service.
+Spring Boot has no way of knowing whether these headers are trustworthy!</p>
+</div>
+<div class="paragraph">
+<p>When we set up the application, we configured Thymeleaf so that we could produce HTML views like the one we&#8217;re presenting to the user after sending the authentication link.
+Let&#8217;s do that here.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>package com.example.security.ott;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+
+import static com.example.security.ott.OttConfiguration.SENT_URL;
+
+@Controller
+class OttController {
+
+	@GetMapping(SENT_URL)
+	String sent() {
+		<i class="conum" data-value="1"></i><b>(1)</b>
+		return "ott-sent";
+	}
+
+}</pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>this is a regular <code>@Controller</code> with no <code>@ResponseBody</code> to be found.
+Spring interprets the return value as a template to be resolved via the autoconfigured <code>ViewResolver</code>.
+In this case, it&#8217;ll resolve to <code>src/main/resources/templates/ott-sent.html</code>.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Here&#8217;s the Thymeleaf page:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;title&gt;Sent&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;h1&gt;
+    You've got console mail!
+&lt;/h1&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Nothing fancy.</p>
+</div>
+<div class="paragraph">
+<p>With all this in place, start the application and hit <a href="http://localhost:8080" class="bare">http://localhost:8080</a>. Enter the username (<code>josh@joshlong.com</code>).
+It&#8217;ll tell you that you&#8217;ve got console mail.
+Consult the console, and you&#8217;ll see a link.
+Copy and paste it into the browser, and you should see your username.</p>
+</div>
+<div class="paragraph">
+<p>Easy!</p>
+</div>
+<div class="paragraph">
+<p>My friend <a href="https://linkedin.com/in/jamesward">James Ward</a> did something interesting with this mechanism for another book we&#8217;re jointly writing (and perhaps he&#8217;ll do it for this book?), where users who bought the book on a website would have had to enter their emails.
+Those emails are turned into users in a database.
+Somebody comes along, signs in, and that grants an OAuth token which is then used to provision and provide access to an MCP service that in turn has access to the chapters of the book.
+Users can point their Claude Codes and Gooses and JetBrains Airs to the MCP service and consume the content and ask questions about it as MCP resources.
+Super innovative!</p>
+</div>
+<div class="paragraph">
+<p>One-time tokens are great for passwordless authentication.
+It&#8217;s important to remember their limitations, too.
+They are <em>not</em> signup links to confirm emails.
+Nor are they password-reset links.
+And of course, if somebody loses access to the account where the out-of-band communication is sent (email, SMS, whatever), then they&#8217;re now effectively locked out of <em>two</em> systems!</p>
+</div>
+<div class="paragraph">
+<p>One-time tokens are an easy way to build upon the considerable technical <em>and</em> legal infrastructure that companies like Google, Microsoft, Apple, etc., have built up to manage passwords and fight breaches and the like.
+They allow you to secure a system while avoiding passwords.
+That said, there is a password in the mix.
+It&#8217;s just not <em>your</em> password to manage.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_the_powerful_passkeys">The Powerful Passkeys</h3>
+<div class="paragraph">
+<p>Passwords are the weakest link.
+By the early 2000s, companies like PayPal began exploring alternative authentication methods, recognizing that the password model was fundamentally broken.
+The industry-wide acknowledgment that passwords needed to be eliminated entirely came in 2013 with the founding of the FIDO Alliance (Fast Identity Online).
+Major technology companies like Microsoft, Google, Apple, Meta, and others created the FIDO Alliance with a mission to eliminate password-based authentication through open standards.
+You can see the <a href="https://fidoalliance.org/members/">full roster of contributing members</a> here.</p>
+</div>
+<div class="paragraph">
+<p>The FIDO Alliance’s work produced two major specifications.
+FIDO U2F (Universal Second Factor) enabled secure two-factor authentication using hardware security keys, while FIDO2—developed in close collaboration with the World Wide Web Consortium (W3C)—introduced a more comprehensive approach.
+FIDO2 consists of two complementary standards: the Client to Authenticator Protocol (CTAP), which defines how external authenticators communicate with client devices, and Web Authentication (WebAuthn), which provides the standardized browser API that allows websites to register and authenticate users using cryptographic credentials.
+WebAuthn was officially released as a W3C Recommendation in 2019 and is now widely supported across modern browsers.
+This is the bit that makes this interesting for me: what we&#8217;re about to look at isn&#8217;t some hypothetical, would-be-nice thing that might ship in the not-too-distant future; it&#8217;s already here!</p>
+</div>
+<div class="paragraph">
+<p>Rather than creating a shared secret like a password, a user’s device generates a unique public/private key pair for each website or application.
+The private key never leaves the user’s device.
+It&#8217;s kept secure in hardware such as a phone’s Secure Enclave, while only the corresponding public key is registered with the service.
+When signing in, the device proves possession of the private key by cryptographically signing a challenge from the server, typically after the user authenticates locally using biometrics, a PIN, or another device-unlock mechanism.
+Because there is no reusable password to steal, passkeys dramatically reduce the risk of phishing (a public key stored by the server is useless to attackers), credential stuffing, and password database breaches (because servers do not store reusable secrets).</p>
+</div>
+<div class="paragraph">
+<p>However, early FIDO2 deployments had significant limitations.
+They often required dedicated hardware security keys such as YubiKeys or were tied to a single device, meaning users could lose access if that device was lost.
+The major breakthrough came in 2022–2023 when Apple, Google, and Microsoft committed to expanding the FIDO standard to support what became known as “passkeys”—FIDO credentials that could be securely synchronized across a user’s trusted devices through cloud-based credential managers such as LastPass, BitWarden, 1Passwod, iCloud Keychain, Google Password Manager, and Windows Hello.
+Now a passkey could be created once and used seamlessly across phones, tablets, and computers while remaining protected by each device’s secure hardware and local authentication.
+This eliminated much of the backup-and-recovery problem while maintaining strong security.</p>
+</div>
+<div class="paragraph">
+<p>The term “passkey” itself represents an evolution in how these technologies are presented to end users.
+By synchronizing FIDO credentials across devices and making the underlying cryptography largely invisible, the industry adopted “passkey” to describe these user-friendly, discoverable credentials.
+When you use a passkey today, you’re benefiting from over a decade of standards work and billions of dollars in platform investment.
+FIDO Alliance standards provided the vision and interoperability framework; the W3C standardized the browser-facing WebAuthn API; browser vendors and operating system providers implemented the technology; and online services integrated support into their applications.</p>
+</div>
+<div class="paragraph">
+<p>So, all together now: Passkeys rely on public-key cryptography.
+Each passkey consists of a unique public/private key pair, with the private key securely stored on one of your trusted devices.
+When you authenticate, the private key is unlocked using something that’s easier for you to remember or present—such as your face, your fingerprint, or your device PIN—and then used to prove your identity cryptographically.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_implementing_passkeys_in_spring_security">Implementing Passkeys in Spring Security</h3>
+<div class="paragraph">
+<p>Now for the easy part. Whereas the explanation took a fair bit of time, the implementation is trivial.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_introducing_oauth">Introducing OAuth</h2>
+<div class="sectionbody">
 <div class="paragraph">
 <p>I have been using <a href="https://www.yelp.com">Yelp</a> for a <em>very</em> long time.</p>
 </div>
@@ -8100,7 +9688,7 @@ Now, all the other machinery in Spring Security that consults this thread local 
 </tr>
 <tr>
 <td><i class="conum" data-value="4"></i><b>4</b></td>
-<td>use the <code>AuthenticationProvider</code> to talk to the Spring Authorizatoin Server.</td>
+<td>use the <code>AuthenticationProvider</code> to talk to the Spring Authorization Server.</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="5"></i><b>5</b></td>
@@ -8129,7 +9717,7 @@ Now, all the other machinery in Spring Security that consults this thread local 
 <div id="footer">
 <div id="footer-text">
 Version 1.0<br>
-Last updated 2026-07-02 18:41:04 UTC
+Last updated 2026-07-06 04:56:51 UTC
 </div>
 </div>
 </body>
