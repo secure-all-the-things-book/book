@@ -53,7 +53,7 @@ Spring Security 3.2 and 4.x shifted the preferred programming model away from ve
 The framework’s evolution accelerated as application architectures shifted toward cloud-native systems and distributed services.
 Spring Security 5 introduced first-class support for OAuth 2.0, OpenID Connect, reactive applications built with Spring WebFlux, and a modernized password encoding strategy.
 Spring Security 6, aligned with Spring Framework 6 and Java 17+, further refined its Lambda-based DSL, strengthened secure-by-default behavior, retired legacy APIs, introduced native support for modern WebAuthn passkeys, and fully embraced modern Java and Spring practices.
-Spring Security 7 introduced multi-factor authentication, pulled in the Spring Authorization Server and Spring Security Kerberos projects, unifying them with the rest of the Spring Security efforts.
+Spring Security 7 introduced multifactor authentication, pulled in the Spring Authorization Server and Spring Security Kerberos projects, unifying them with the rest of the Spring Security efforts.
 
 Today, Spring Security is a highly modular, extensible framework that secures everything from traditional servlet-based applications to reactive services and OAuth 2.0 Authorization Servers.
 It provides first-class support for JWTs, decentralized identity, modern authorization models, and deep integration with Spring Boot and the broader Spring ecosystem.
@@ -85,7 +85,7 @@ A password demonstrates that the user has knowledge that presumably only they sh
 There are many other factors.
 One-time tokens, passkeys, and certificates are all examples of authentication factors.
 
-A well-secured system will use multiple factors for authentication, sometimes called multi-factor auth or _MFA_.
+A well-secured system will use multiple factors for authentication, sometimes called multifactor auth or _MFA_.
 When should you choose which factor?
 Authentication factors usually fall into three buckets:
 
@@ -490,7 +490,7 @@ A password alone is not enough for many electronic payment transactions.
 The *United Kingdom*'s _National Cyber Security Centre_ strongly recommends MFA for important accounts and increasingly recommends phishing-resistant authentication for government systems.
 
 The Monetary Authority of *Singapore* requires strong authentication for many banking and financial services.
-Banks generally must use multi-factor authentication for customer access and sensitive transactions.
+Banks generally must use multifactor authentication for customer access and sensitive transactions.
 
 *Japan* does not broadly prohibit passwords.
 However, government cybersecurity guidance strongly encourages MFA, and major financial institutions require additional authentication.
@@ -835,22 +835,47 @@ Redo the whole process:
 You should see data in the newly minted database tables.
 You can restart the Spring Security application and attempt to log in again with a Passkey and this time, it'll work just fine.
 
+== Other Interesting Kinds of Authentication
+
 We've looked at usernames and passwords, one-time tokens, Passkeys, and we've only just begun to scratch the surface!
-There are many others.
-One interesting approach is to use mutual X.509 authentication.
-In this scheme, clients present a certificate that's issued by an authority that our server knows about and trusts.
-Another is to use HTTP BASIC, where you send username and password (hashed) in an `Authorization` header.
-Another option is to look a user up in an LDAP or Active Directory instance, instead of a username and password database.
+There are so many other ways to authenticate a user, and Spring Security supports these and many more.
+I'll mention a few of them.
+If you know you have these particular use cases, feel free to consult the relevant documentation for the details.
+
+One interesting approach to authentication is  *HTTP BASIC*, where you send username and password (hashed) in an `Authorization` header.
+
+Another option is to look a user up in an *LDAP* or *Active Directory* instance, instead of a username and password database.
+
+=== Pre-Authentication
+
+Another interesting approach to authentication is **pre-authentication**.
+In this scenario, Spring Security still needs to set up some sort of authentication and assign it to the current request, but the actual work of authenticating the user is done elsewhere.
+Spring Security is instead given something it can use to understand that authentication and present it to application code as a valid `Authentication`.
+
+If you're using an authentication and authorization platform like SiteMinder, it'll communicate a header conveying information about the authenticated user.
+Spring Security can work with that through the `RequestHeaderAuthenticationFilter`.
+
+Another approach is to use mutual *X.509* authentication.
+In this scheme, clients present a certificate issued by an authority that our server knows about and trusts.
+
+Spring Security supports *Java EE Security Services*.
+In the distant, distant past, it was common to run something called an _Application Server_.
+These application servers had their very primitive facilities for authentication such that the user might've already authenticated before a request ever reached the Spring Security filter or Spring Framework code.
+In such a scenario, the `J2eePreAuthenticatedProcessingFilter` class extracts the username from the `userPrincipal` property of the `HttpServletRequest`.
+Use of this filter would usually be combined with the use of Java EE roles.
+But... don't use any of it, if you can avoid it.
+It adds nothing but complexity.
+Moving on...
+
+== Multifactor Authentication
 
 There are tons of options here, but which is best?
 Sometimes, things are so sensitive that, to be extra certain that you're talking to the right user, you want more than one factor.
 
-== Multi-Factor Authentication
-
-Multi-factor authentication is the idea that, while any single factor has weaknesses that could conceivably be exploited, it's much less likely that a hacker could exploit multiple factors, especially if they're off different categories.
+Multifactor authentication is the idea that, while any single factor has weaknesses that could conceivably be exploited, it's much less likely that a hacker could exploit multiple factors, especially if they're off different categories.
 We spoke earlier about the categories of authentication factors, including _knowledge_, _possession_, and _inherence_.
 
-Spring Security 7 introduces multi-factor authentication, where the system can store information about which authentication factors have been provided for a given authentication (a user) and then reconcile that against a list of outstanding factors required for that same authentication.
+Spring Security 7 introduces multifactor authentication, where the system can store information about which authentication factors have been provided for a given authentication (a user) and then reconcile that against a list of outstanding factors required for that same authentication.
 
 The simplest possible configuration is global, and annotation-powered.
 
@@ -858,8 +883,8 @@ The simplest possible configuration is global, and annotation-powered.
 include::{code}/security/security/src/main/java/com/example/security/mfa/GlobalConditionalMfaConfiguration.java[]
 ----
 
-. this configuration requires multi-factor authentication for every endpoint in the system, but it's _conditional_ on the user having registered WebAuthn.
-After all, they can't login and register the Passkey if they don't already have the ability to login in the first place.
+. this configuration requires multifactor authentication for every endpoint in the system, but it's _conditional_ on the user having registered WebAuthn.
+After all, they can't log in and register the Passkey if they can't log in in the first place.
 If they haven't, then there's no sense in asking for it.
 
 In the above example, the factors are combined together.
@@ -869,10 +894,10 @@ If the user can present a passkey, then they don't really need to present a pass
 Passkeys are much safer.
 So, let's customize the conditions so that the user has to present one of the following:
 
-* BOTH a password and a one time token
+* BOTH a password and a one-time token
 * a Passkey
 
-The specifics of multi-factor auth that we've seen so far were specified as parts of the annotation, but behind the scenes those stipulations are translated onto the configuration of a global bean of type `AuthorizationManagerFactory`.
+The specifics of multifactor auth that we've seen so far were specified as parts of the annotation, but behind the scenes those stipulations are translated onto the configuration of a global bean of type `AuthorizationManagerFactory`.
 You can provide your own, if you like.
 You still need to define the annotation, but you can override the specifics in the bean itself.
 
@@ -885,10 +910,13 @@ include::{code}/security/security/src/main/java/com/example/security/mfa/GlobalE
 One required authorization specifies that the user must authenticate with _both_ one-time tokens and passwords.
 The other just says the user must authenticate with Passkeys.
 
-Restart the application and enter the Passkey and you'll be staring at an authenticated page.
-Logout and then enter a username or a one-time token and you'll be asked to do another authentication.
+Restart the application and enter the Passkey, and you'll be staring at an authenticated page.
+Logout and then enter a username or a one-time token, and you'll be asked to do another authentication.
 
-Our configuration is simple, and _global_. That bean applies to every request made and to every endpoint. Let's our attention to how we make more granular decisions about what is required of an authenticated user for particular aspects of the application. This is called _authorization_.
+Our configuration is simple and _global_.
+That bean applies to every request made and to every endpoint.
+Let's turn our attention to how we make more granular decisions about what is required of an authenticated user for particular aspects of the application.
+This is called _authorization_.
 
 == Authorization
 

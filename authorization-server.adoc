@@ -63,7 +63,7 @@ That isn't the job of an OAuth server.
 To actually pass an audit, you need operational things like:
 
 * backups
-* multi-factor authentication
+* multifactor authentication
 * HSMs (or a KMS) for signing keys
 * comprehensive monitoring and alerting
 * a patching cadence, and the discipline to keep to it
