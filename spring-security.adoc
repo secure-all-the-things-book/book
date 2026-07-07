@@ -847,10 +847,58 @@ Sometimes, things are so sensitive that, to be extra certain that you're talking
 
 == Multi-Factor Authentication
 
+Multi-factor authentication is the idea that, while any single factor has weaknesses that could conceivably be exploited, it's much less likely that a hacker could exploit multiple factors, especially if they're off different categories.
+We spoke earlier about the categories of authentication factors, including _knowledge_, _possession_, and _inherence_.
+
+Spring Security 7 introduces multi-factor authentication, where the system can store information about which authentication factors have been provided for a given authentication (a user) and then reconcile that against a list of outstanding factors required for that same authentication.
+
+The simplest possible configuration is global, and annotation-powered.
+
+----
+include::{code}/security/security/src/main/java/com/example/security/mfa/GlobalConditionalMfaConfiguration.java[]
+----
+
+. this configuration requires multi-factor authentication for every endpoint in the system, but it's _conditional_ on the user having registered WebAuthn.
+After all, they can't login and register the Passkey if they don't already have the ability to login in the first place.
+If they haven't, then there's no sense in asking for it.
+
+In the above example, the factors are combined together.
+It's as though you're asking for WebAuthn _AND_ Passwords.
+But that's silly.
+If the user can present a passkey, then they don't really need to present a password.
+Passkeys are much safer.
+So, let's customize the conditions so that the user has to present one of the following:
+
+* BOTH a password and a one time token
+* a Passkey
+
+The specifics of multi-factor auth that we've seen so far were specified as parts of the annotation, but behind the scenes those stipulations are translated onto the configuration of a global bean of type `AuthorizationManagerFactory`.
+You can provide your own, if you like.
+You still need to define the annotation, but you can override the specifics in the bean itself.
+
+[source,java]
+----
+include::{code}/security/security/src/main/java/com/example/security/mfa/GlobalEitherOrMfaConfiguration.java[]
+----
+
+. We're going to register two required additional authorizations.
+One required authorization specifies that the user must authenticate with _both_ one-time tokens and passwords.
+The other just says the user must authenticate with Passkeys.
+
+Restart the application and enter the Passkey and you'll be staring at an authenticated page.
+Logout and then enter a username or a one-time token and you'll be asked to do another authentication.
+
+Our configuration is simple, but requires
+
+== Authorization
+
+
+
+
 
 // MFA
-// exchanging passwords for short term creds w/ oauth (see next chapters!)
 // time to concern ourselves with authorization
 // first order of business: limiting MFA requirements to just sensitive endpoints
 // access control is an important part
 // authentication events in spring security
+// exchanging passwords for short term creds w/ oauth (see next chapters!)
