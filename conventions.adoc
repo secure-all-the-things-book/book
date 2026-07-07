@@ -157,3 +157,25 @@ include::snippets/uao.java[]
 ----
 
 I've created an alias to that script in my shell called `uao`.
+
+== Database Migrations
+
+I am trying to keep things simple, as I introduce them.
+Sometimes, I will use Spring's ability to run `data.sql` and a `schema.sql` script at program launch to initialize the database.
+In Spring Boot, you configure this with the following property.
+
+[source,properties]
+----
+spring.sql.init.mode=always
+----
+
+There are other options, `never` and `embedded`.
+Obviously, if I weren't going to use it, I'd simply not put it on the classpath.
+So I _never_ use `never`.
+And `embedded` is the default _if_ you have an embedded database like H2 or HSQL or the CLASSPATH.
+Wherever possible, I will use Docker (and Docker Compose, specifically) to standup instances of PostgreSQL.
+From Spring's perspective, this is a _remote_ database (even if Spring Boot can be made to run `docker compose up -d` or to launch the Docker container using Testcontainers), so we must specify `always`.
+
+Another option I may employ as I iteratively evolve the schema, introducing new concepts as we work, is Flyway, which can be used for versioned database migrations.
+It requires a SQL database table, which it will install for itself, and it'll keep track of which schema files have been applied.
+It looks by default in `src/main/resources/db/migrations` and runs all the SQL files it finds there in the order in which they're number, `V1_foo.sql`, V2__bar.sql`, `V3__baz.sql`, etc.

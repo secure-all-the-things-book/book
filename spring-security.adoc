@@ -63,7 +63,7 @@ With that high-level overview out of the way, let's talk specifics.
 
 == Spring Security for all Contexts
 
-Spring Security has a good story for securing all manner of different workloads.
+Spring Security has a good story for securing all manners of different workloads.
 Most of this book assumes that you're building HTTP-based clients and services, but part of the reason I wanted to write this book is precisely because it can do _so much more_!
 You can use it to secure HTTP clients and services, MCP clients and services, command line interface (CLI) clients, back-office messaging code, and so much more.
 
@@ -242,7 +242,7 @@ We'll see how to do so in various other contexts at other places in this book.
 But for now, let's start with a web application.
 Let's take these simple concepts and look at them in practice, in a more fleshed-out example implemented using Spring Boot and Spring Security.
 
-Visit the Spring Initializr, add `PostgreSQL Driver`, `JDBC API`, `GraalVM Native Support`, `Spring Web`, `Spring Security`, and `WebAuthn for Spring Security` to the build.
+Visit the Spring Initializr, add `PostgreSQL Driver`, `Flyway`, `JDBC API`, `GraalVM Native Support`, `Spring Web`, `Spring Security`, `DevTools`, and `WebAuthn for Spring Security` to the build.
 I always choose Apache Maven and, of course, the latest version of Java or the latest long-term support (LTS) version of Java.
 Click `Generate` and open the resulting zip file in your IDE.
 
@@ -317,19 +317,19 @@ It worked!
 
 Let's change the `UserDetailsService` implementation to read from our SQL database instead of from in-memory.
 We'll need some schema to define the tables in which our users and the enumeration of their _authorities_ will reside.
-
-I've placed the following file in `src/main/resources/schema.sql`.
-
-[source,sql]
-----
-include::{code}/security/security/src/main/resources/schema.sql[]
-----
-
-I've placed the following file in `src/main/resources/data.sql`.
+Since we're using Flyway, we'll put the SQL schema migration files in `src/main/resources/db/migration`.
+I've placed the schema for the `users` and `authorities` table in the following file in `src/main/resources/db/migration/V1__users_schema.sql`.
 
 [source,sql]
 ----
-include::{code}/security/security/src/main/resources/data.sql[]
+include::{code}/security/security/src/main/resources/db/migration/V1__users_schema.sql[]
+----
+
+I've placed the following file in `src/main/resources/db/migration/V1__users_data.sql`.
+
+[source,sql]
+----
+include::{code}/security/security/src/main/resources/db/migration/V2__users_data.sql[]
 ----
 
 I've taken this schema directly from the Spring Security documentation and the source code for Spring Security.
@@ -791,6 +791,10 @@ If you restart the Spring Boot application, you'll have to re-register your Pass
 Mercifully, Spring Security ships with JDBC-backed implementations of the persistence for the parts that need it.
 Let's look at that.
 
+[source,java]
+----
+include::{code}/security/security/src/main/java/com/example/security/webauthn/WebAuthnPersistenceConfiguration.java[]
+----
 
 // MFA
 // exchanging passwords for short term creds w/ oauth (see next chapters!)
