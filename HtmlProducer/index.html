@@ -626,7 +626,8 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_concepts_well_need_to_understand_for_webauthn">Concepts We&#8217;ll Need To Understand for WebAuthn</a></li>
 <li><a href="#_implementing_passkeys_in_spring_security">Implementing Passkeys in Spring Security</a></li>
 <li><a href="#_persistence">Persistence</a></li>
-<li><a href="#_multi_factor_authentication">Multi-Factor Authentication</a></li>
+<li><a href="#_other_interesting_kinds_of_authentication">Other Interesting Kinds of Authentication</a></li>
+<li><a href="#_multifactor_authentication">Multifactor Authentication</a></li>
 <li><a href="#_authorization">Authorization</a></li>
 </ul>
 </li>
@@ -5483,7 +5484,7 @@ Spring Security 3.2 and 4.x shifted the preferred programming model away from ve
 <p>The framework’s evolution accelerated as application architectures shifted toward cloud-native systems and distributed services.
 Spring Security 5 introduced first-class support for OAuth 2.0, OpenID Connect, reactive applications built with Spring WebFlux, and a modernized password encoding strategy.
 Spring Security 6, aligned with Spring Framework 6 and Java 17+, further refined its Lambda-based DSL, strengthened secure-by-default behavior, retired legacy APIs, introduced native support for modern WebAuthn passkeys, and fully embraced modern Java and Spring practices.
-Spring Security 7 introduced multi-factor authentication, pulled in the Spring Authorization Server and Spring Security Kerberos projects, unifying them with the rest of the Spring Security efforts.</p>
+Spring Security 7 introduced multifactor authentication, pulled in the Spring Authorization Server and Spring Security Kerberos projects, unifying them with the rest of the Spring Security efforts.</p>
 </div>
 <div class="paragraph">
 <p>Today, Spring Security is a highly modular, extensible framework that secures everything from traditional servlet-based applications to reactive services and OAuth 2.0 Authorization Servers.
@@ -5524,7 +5525,7 @@ A password demonstrates that the user has knowledge that presumably only they sh
 One-time tokens, passkeys, and certificates are all examples of authentication factors.</p>
 </div>
 <div class="paragraph">
-<p>A well-secured system will use multiple factors for authentication, sometimes called multi-factor auth or <em>MFA</em>.
+<p>A well-secured system will use multiple factors for authentication, sometimes called multifactor auth or <em>MFA</em>.
 When should you choose which factor?
 Authentication factors usually fall into three buckets:</p>
 </div>
@@ -6338,7 +6339,7 @@ A password alone is not enough for many electronic payment transactions.</p>
 </div>
 <div class="paragraph">
 <p>The Monetary Authority of <strong>Singapore</strong> requires strong authentication for many banking and financial services.
-Banks generally must use multi-factor authentication for customer access and sensitive transactions.</p>
+Banks generally must use multifactor authentication for customer access and sensitive transactions.</p>
 </div>
 <div class="paragraph">
 <p><strong>Japan</strong> does not broadly prohibit passwords.
@@ -7077,27 +7078,60 @@ Redo the whole process:</p>
 <p>You should see data in the newly minted database tables.
 You can restart the Spring Security application and attempt to log in again with a Passkey and this time, it&#8217;ll work just fine.</p>
 </div>
+</div>
+<div class="sect2">
+<h3 id="_other_interesting_kinds_of_authentication">Other Interesting Kinds of Authentication</h3>
 <div class="paragraph">
 <p>We&#8217;ve looked at usernames and passwords, one-time tokens, Passkeys, and we&#8217;ve only just begun to scratch the surface!
-There are many others.
-One interesting approach is to use mutual X.509 authentication.
-In this scheme, clients present a certificate that&#8217;s issued by an authority that our server knows about and trusts.
-Another is to use HTTP BASIC, where you send username and password (hashed) in an <code>Authorization</code> header.
-Another option is to look a user up in an LDAP or Active Directory instance, instead of a username and password database.</p>
+There are so many other ways to authenticate a user, and Spring Security supports these and many more.
+I&#8217;ll mention a few of them.
+If you know you have these particular use cases, feel free to consult the relevant documentation for the details.</p>
 </div>
+<div class="paragraph">
+<p>One interesting approach to authentication is  <strong>HTTP BASIC</strong>, where you send username and password (hashed) in an <code>Authorization</code> header.</p>
+</div>
+<div class="paragraph">
+<p>Another option is to look a user up in an <strong>LDAP</strong> or <strong>Active Directory</strong> instance, instead of a username and password database.</p>
+</div>
+<div class="sect3">
+<h4 id="_pre_authentication">Pre-Authentication</h4>
+<div class="paragraph">
+<p>Another interesting approach to authentication is <strong>pre-authentication</strong>.
+In this scenario, Spring Security still needs to set up some sort of authentication and assign it to the current request, but the actual work of authenticating the user is done elsewhere.
+Spring Security is instead given something it can use to understand that authentication and present it to application code as a valid <code>Authentication</code>.</p>
+</div>
+<div class="paragraph">
+<p>If you&#8217;re using an authentication and authorization platform like SiteMinder, it&#8217;ll communicate a header conveying information about the authenticated user.
+Spring Security can work with that through the <code>RequestHeaderAuthenticationFilter</code>.</p>
+</div>
+<div class="paragraph">
+<p>Another approach is to use mutual <strong>X.509</strong> authentication.
+In this scheme, clients present a certificate issued by an authority that our server knows about and trusts.</p>
+</div>
+<div class="paragraph">
+<p>Spring Security supports <strong>Java EE Security Services</strong>.
+In the distant, distant past, it was common to run something called an <em>Application Server</em>.
+These application servers had their very primitive facilities for authentication such that the user might&#8217;ve already authenticated before a request ever reached the Spring Security filter or Spring Framework code.
+In such a scenario, the <code>J2eePreAuthenticatedProcessingFilter</code> class extracts the username from the <code>userPrincipal</code> property of the <code>HttpServletRequest</code>.
+Use of this filter would usually be combined with the use of Java EE roles.
+But&#8230;&#8203; don&#8217;t use any of it, if you can avoid it.
+It adds nothing but complexity.
+Moving on&#8230;&#8203;</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_multifactor_authentication">Multifactor Authentication</h3>
 <div class="paragraph">
 <p>There are tons of options here, but which is best?
 Sometimes, things are so sensitive that, to be extra certain that you&#8217;re talking to the right user, you want more than one factor.</p>
 </div>
-</div>
-<div class="sect2">
-<h3 id="_multi_factor_authentication">Multi-Factor Authentication</h3>
 <div class="paragraph">
-<p>Multi-factor authentication is the idea that, while any single factor has weaknesses that could conceivably be exploited, it&#8217;s much less likely that a hacker could exploit multiple factors, especially if they&#8217;re off different categories.
+<p>Multifactor authentication is the idea that, while any single factor has weaknesses that could conceivably be exploited, it&#8217;s much less likely that a hacker could exploit multiple factors, especially if they&#8217;re off different categories.
 We spoke earlier about the categories of authentication factors, including <em>knowledge</em>, <em>possession</em>, and <em>inherence</em>.</p>
 </div>
 <div class="paragraph">
-<p>Spring Security 7 introduces multi-factor authentication, where the system can store information about which authentication factors have been provided for a given authentication (a user) and then reconcile that against a list of outstanding factors required for that same authentication.</p>
+<p>Spring Security 7 introduces multifactor authentication, where the system can store information about which authentication factors have been provided for a given authentication (a user) and then reconcile that against a list of outstanding factors required for that same authentication.</p>
 </div>
 <div class="paragraph">
 <p>The simplest possible configuration is global, and annotation-powered.</p>
@@ -7110,8 +7144,8 @@ We spoke earlier about the categories of authentication factors, including <em>k
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>this configuration requires multi-factor authentication for every endpoint in the system, but it&#8217;s <em>conditional</em> on the user having registered WebAuthn.
-After all, they can&#8217;t login and register the Passkey if they don&#8217;t already have the ability to login in the first place.
+<p>this configuration requires multifactor authentication for every endpoint in the system, but it&#8217;s <em>conditional</em> on the user having registered WebAuthn.
+After all, they can&#8217;t log in and register the Passkey if they can&#8217;t log in in the first place.
 If they haven&#8217;t, then there&#8217;s no sense in asking for it.</p>
 </li>
 </ol>
@@ -7127,7 +7161,7 @@ So, let&#8217;s customize the conditions so that the user has to present one of 
 <div class="ulist">
 <ul>
 <li>
-<p>BOTH a password and a one time token</p>
+<p>BOTH a password and a one-time token</p>
 </li>
 <li>
 <p>a Passkey</p>
@@ -7135,7 +7169,7 @@ So, let&#8217;s customize the conditions so that the user has to present one of 
 </ul>
 </div>
 <div class="paragraph">
-<p>The specifics of multi-factor auth that we&#8217;ve seen so far were specified as parts of the annotation, but behind the scenes those stipulations are translated onto the configuration of a global bean of type <code>AuthorizationManagerFactory</code>.
+<p>The specifics of multifactor auth that we&#8217;ve seen so far were specified as parts of the annotation, but behind the scenes those stipulations are translated onto the configuration of a global bean of type <code>AuthorizationManagerFactory</code>.
 You can provide your own, if you like.
 You still need to define the annotation, but you can override the specifics in the bean itself.</p>
 </div>
@@ -7154,11 +7188,14 @@ The other just says the user must authenticate with Passkeys.</p>
 </ol>
 </div>
 <div class="paragraph">
-<p>Restart the application and enter the Passkey and you&#8217;ll be staring at an authenticated page.
-Logout and then enter a username or a one-time token and you&#8217;ll be asked to do another authentication.</p>
+<p>Restart the application and enter the Passkey, and you&#8217;ll be staring at an authenticated page.
+Logout and then enter a username or a one-time token, and you&#8217;ll be asked to do another authentication.</p>
 </div>
 <div class="paragraph">
-<p>Our configuration is simple, and <em>global</em>. That bean applies to every request made and to every endpoint. Let&#8217;s our attention to how we make more granular decisions about what is required of an authenticated user for particular aspects of the application. This is called <em>authorization</em>.</p>
+<p>Our configuration is simple and <em>global</em>.
+That bean applies to every request made and to every endpoint.
+Let&#8217;s turn our attention to how we make more granular decisions about what is required of an authenticated user for particular aspects of the application.
+This is called <em>authorization</em>.</p>
 </div>
 </div>
 <div class="sect2">
@@ -7535,7 +7572,7 @@ That isn&#8217;t the job of an OAuth server.</p>
 <p>backups</p>
 </li>
 <li>
-<p>multi-factor authentication</p>
+<p>multifactor authentication</p>
 </li>
 <li>
 <p>HSMs (or a KMS) for signing keys</p>
@@ -10194,7 +10231,7 @@ Now, all the other machinery in Spring Security that consults this thread local 
 <div id="footer">
 <div id="footer-text">
 Version 1.0<br>
-Last updated 2026-07-07 17:13:38 UTC
+Last updated 2026-07-07 18:52:58 UTC
 </div>
 </div>
 </body>
