@@ -2469,7 +2469,7 @@ We&#8217;ll use the following Docker Compose file to stand up the instance of ou
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">services</span>:
   <i class="conum" data-value="1"></i><b>(1)</b>
   <span class="key">postgres</span>:
-    <span class="key">image</span>: <span class="string"><span class="content">'postgres:latest'</span></span>
+    <span class="key">image</span>: <span class="string"><span class="content">'pgvector/pgvector:pg16'</span></span>
     <span class="key">environment</span>:
       - <span class="string"><span class="content">'POSTGRES_DB=mydatabase'</span></span>
       - <span class="string"><span class="content">'POSTGRES_PASSWORD=secret'</span></span>
@@ -5803,7 +5803,7 @@ I&#8217;ve created a <code>compose.yml</code> file here.</p>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">services</span>:
   <span class="key">postgres</span>:
-    <span class="key">image</span>: <span class="string"><span class="content">'postgres:latest'</span></span>
+    <span class="key">image</span>: <span class="string"><span class="content">'pgvector/pgvector:pg16'</span></span>
     <span class="key">environment</span>:
       - <span class="string"><span class="content">'POSTGRES_DB=mydatabase'</span></span>
       - <span class="string"><span class="content">'POSTGRES_PASSWORD=secret'</span></span>
@@ -5831,7 +5831,7 @@ spring.datasource.username=myuser
 spring.datasource.password=secret
 spring.datasource.url=jdbc:postgresql://localhost/mydatabase
 <i class="conum" data-value="2"></i><b>(2)</b>
-spring.sql.init.mode=always</code></pre>
+spring.flyway.baseline-on-migrate=true</code></pre>
 </div>
 </div>
 <div class="olist arabic">
@@ -6172,7 +6172,8 @@ I&#8217;m using that version in the middle of 2026. (You should use whichever ve
         DelegatingPasswordEncoder delegatingPasswordEncoder() {
                 <span class="type">var</span> argon = <span class="keyword">new</span> Argon2Password4jPasswordEncoder();
                 <span class="type">var</span> defaultPasswordEncoder = <span class="string"><span class="delimiter">&quot;</span><span class="content">argon@Password4j</span><span class="delimiter">&quot;</span></span>;
-                <span class="type">var</span> mapOfEncoders = <span class="predefined-type">Map</span>.&lt;<span class="predefined-type">String</span>, PasswordEncoder&gt;of(defaultPasswordEncoder, argon, <span class="comment">//</span>
+                <span class="type">var</span> mapOfEncoders = <span class="predefined-type">Map</span>.&lt;<span class="predefined-type">String</span>, PasswordEncoder&gt;of( <span class="comment">//</span>
+                                defaultPasswordEncoder, argon, <span class="comment">//</span>
                                 <span class="string"><span class="delimiter">&quot;</span><span class="content">bcrypt</span><span class="delimiter">&quot;</span></span>, <span class="keyword">new</span> BCryptPasswordEncoder(), <span class="comment">//</span>
                                 <span class="string"><span class="delimiter">&quot;</span><span class="content">sha256</span><span class="delimiter">&quot;</span></span>, <span class="keyword">new</span> StandardPasswordEncoder()<i class="conum" data-value="2"></i><b>(2)</b>
                 );
@@ -6939,6 +6940,87 @@ Let&#8217;s look at that.</p>
 
 }</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>Do I know exactly what these things do?
+No.
+Don&#8217;t need to.
+I just know that they make important parts of the WebAuthn support durable, and that&#8217;s good enough for me.</p>
+</div>
+<div class="paragraph">
+<p>I also know that they need us to define some database tables for them to work.
+So, I&#8217;ve added two more Flyway migrations.</p>
+</div>
+<div class="paragraph">
+<p>The first (<code>src/main/resources/db/migration/V3__user_entities.sql</code>) creates the <code>user_entities</code> table.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>create table user_entities
+(
+    id           varchar(1000) not null,
+    name         varchar(100)  not null,
+    display_name varchar(200),
+    primary key (id)
+);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The second (<code>src/main/resources/db/migration/V4__user_credentials.sql</code>) creates the <code>user_credentials</code> table:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>create table user_credentials
+(
+    credential_id                varchar(1000) not null,
+    user_entity_user_id          varchar(1000) not null,
+    public_key                   bytea          not null,
+    signature_count              bigint,
+    uv_initialized               boolean,
+    backup_eligible              boolean       not null,
+    authenticator_transports     varchar(1000),
+    public_key_credential_type   varchar(100),
+    backup_state                 boolean       not null,
+    attestation_object           bytea,
+    attestation_client_data_json bytea,
+    created                      timestamp,
+    last_used                    timestamp,
+    label                        varchar(1000) not null,
+    primary key (credential_id)
+);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>These <code>.sql</code> files are in the Spring Security <code>.jar</code> files, but I copied and pasted them here for our use.
+Note that I&#8217;ve had to replace the uses of the SQL <code>blob</code> type in the <code>user_credentials</code> table with <code>bytea</code>, which works well in PostgreSQL.</p>
+</div>
+<div class="paragraph">
+<p>If you&#8217;re using macOS, make sure to open up Passwords.app, then go to the Passkeys section, and then delete any passkeys you might&#8217;ve created when using this Spring Security application, on <code>localhost</code>.</p>
+</div>
+<div class="paragraph">
+<p>Restart the Spring Security application.
+You&#8217;ll see the tables created in your database.
+Redo the whole process:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>authenticate</p>
+</li>
+<li>
+<p>register a Passkey with your Spring Security application</p>
+</li>
+<li>
+<p>logout</p>
+</li>
+<li>
+<p>log back in, this time using Passkeys</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Return to the database tables and you should see data in those SQL tables.
+You can restart the Spring Security application and attempt to login again with a Passkey and this time, it&#8217;ll work just fine.</p>
 </div>
 </div>
 </div>
@@ -9970,7 +10052,7 @@ Now, all the other machinery in Spring Security that consults this thread local 
 <div id="footer">
 <div id="footer-text">
 Version 1.0<br>
-Last updated 2026-07-07 05:51:09 UTC
+Last updated 2026-07-07 08:46:38 UTC
 </div>
 </div>
 </body>
