@@ -546,12 +546,13 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_conventions">Conventions</a>
 <ul class="sectlevel2">
 <li><a href="#_code">Code</a></li>
-<li><a href="#_docker">Docker</a></li>
 <li><a href="#_formatting">Formatting</a></li>
 <li><a href="#_noisy_configuration_classes">Noisy Configuration Classes</a></li>
 <li><a href="#_spring_profiles">Spring Profiles</a></li>
 <li><a href="#_nullability">Nullability</a></li>
 <li><a href="#_spring_initializr_project_configuration">Spring Initializr Project Configuration</a></li>
+<li><a href="#_docker">Docker</a></li>
+<li><a href="#_databases">Databases</a></li>
 <li><a href="#_database_migrations">Database Migrations</a></li>
 <li><a href="#_operations_improvements">Operations Improvements</a></li>
 <li><a href="#_performance">Performance</a></li>
@@ -625,6 +626,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_concepts_well_need_to_understand_for_webauthn">Concepts We&#8217;ll Need To Understand for WebAuthn</a></li>
 <li><a href="#_implementing_passkeys_in_spring_security">Implementing Passkeys in Spring Security</a></li>
 <li><a href="#_persistence">Persistence</a></li>
+<li><a href="#_multi_factor_authentication">Multi-Factor Authentication</a></li>
 </ul>
 </li>
 <li><a href="#_introducing_oauth">Introducing OAuth</a>
@@ -765,30 +767,6 @@ It&#8217;s <em>not</em> code I copied and pasted into some Microsoft Word docume
 <p>As I work through these examples, I&#8217;ll be showing lots of code.
 You can follow along at home, either by typing things out or simply referencing the <a href="https://github.com/secure-all-the-things-book">code here</a>.
 It&#8217;s Apache 2 licensed and yours for the taking.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_docker">Docker</h3>
-<div class="paragraph">
-<p>I assume the availability of Docker or some sort of container orchestrator on your machines.
-Where appropriate, I&#8217;ve provided Docker Compose <code>compose.yml</code> files in each of the chapters' code.</p>
-</div>
-<div class="paragraph">
-<p>If you&#8217;re using the Docker tooling, you can spin up the container images thusly:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="shell">docker compose up</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>That will run the Docker images and block, keeping the shell on that process in the foreground.
-If you want to run things and the background them, do:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="CodeRay highlight"><code data-lang="shell">docker compose up -d</code></pre>
-</div>
 </div>
 </div>
 <div class="sect2">
@@ -954,6 +932,82 @@ I usually then run IntelliJ IDEA: <code>idea pom.xml</code> from the command lin
 </div>
 <div class="paragraph">
 <p>I&#8217;ve created an alias to that script in my shell called <code>uao</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_docker">Docker</h3>
+<div class="paragraph">
+<p>I assume the availability of Docker or some sort of container orchestrator on your machines.
+Where appropriate, I&#8217;ve provided Docker Compose <code>compose.yml</code> files in each of the chapters' code.</p>
+</div>
+<div class="paragraph">
+<p>If you&#8217;re using the Docker tooling, you can spin up the container images thusly:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="shell">docker compose up</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>That will run the Docker images and block, keeping the shell on that process in the foreground.
+If you want to run things and the background them, do:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="shell">docker compose up -d</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_databases">Databases</h3>
+<div class="paragraph">
+<p>I&#8217;m going to pretty consistently use PostgreSQL in this book.
+Is it the best choice?
+No.
+I mean.. define "best." But it works, and it&#8217;s widely adopted.
+I&#8217;m a big fan.
+That said, it&#8217;s got some peculiarities that make otherwise standard SQL files fail to run on it out of the box, which is a bit of a shame.
+I&#8217;ll note those as I go.</p>
+</div>
+<div class="paragraph">
+<p>I usually use a tool like JetBrains' DataGrip to read data from my various databases, including PostgreSQL.</p>
+</div>
+<div class="paragraph">
+<p>Here&#8217;s what I&#8217;m (usually) looking at when I talk about consulting the data in a given database table.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/images/security/datagrip.png" alt="datagrip">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>DataGrip, in all of its glory.
+It&#8217;s a very nice database client.
+That said, I <em>really</em> miss Microsoft Access' visual query builder from the distant, distant past, and wish they&#8217;d build something like that for this.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>I appreciate however that most folks won&#8217;t do that.
+They&#8217;ll probably just the (excellent) PostgreSQL command line interface.
+If you&#8217;re on Homebrew, you can simply run the following to install just the command line client.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="shell">brew install libpq</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>With that, it&#8217;s trivial to connect to the database.
+I&#8217;m using the default database name, username, and password that you get in the generated Docker Compose files (<code>compose.yml</code>) from projects created on the <a href="https://start.spring.io">Spring Initializr</a>.
+So, here&#8217;s how you&#8217;d connect to such a database using the PostgreSQL CLI:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="shell">PGPASSWORD=secret psql -U myuser -h localhost mydatabase</code></pre>
+</div>
 </div>
 </div>
 <div class="sect2">
@@ -6956,13 +7010,13 @@ So, I&#8217;ve added two more Flyway migrations.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre>create table user_entities
+<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">create</span> <span class="type">table</span> user_entities
 (
-    id           varchar(1000) not null,
-    name         varchar(100)  not null,
-    display_name varchar(200),
-    primary key (id)
-);</pre>
+    id           <span class="predefined-type">varchar</span>(<span class="integer">1000</span>) <span class="keyword">not</span> <span class="predefined-constant">null</span>,
+    name         <span class="predefined-type">varchar</span>(<span class="integer">100</span>)  <span class="keyword">not</span> <span class="predefined-constant">null</span>,
+    display_name <span class="predefined-type">varchar</span>(<span class="integer">200</span>),
+    <span class="directive">primary</span> <span class="type">key</span> (id)
+);</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -6970,24 +7024,24 @@ So, I&#8217;ve added two more Flyway migrations.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre>create table user_credentials
+<pre class="CodeRay highlight"><code data-lang="sql"><span class="class">create</span> <span class="type">table</span> user_credentials
 (
-    credential_id                varchar(1000) not null,
-    user_entity_user_id          varchar(1000) not null,
-    public_key                   bytea          not null,
-    signature_count              bigint,
-    uv_initialized               boolean,
-    backup_eligible              boolean       not null,
-    authenticator_transports     varchar(1000),
-    public_key_credential_type   varchar(100),
-    backup_state                 boolean       not null,
+    credential_id                <span class="predefined-type">varchar</span>(<span class="integer">1000</span>) <span class="keyword">not</span> <span class="predefined-constant">null</span>,
+    user_entity_user_id          <span class="predefined-type">varchar</span>(<span class="integer">1000</span>) <span class="keyword">not</span> <span class="predefined-constant">null</span>,
+    public_key                   bytea          <span class="keyword">not</span> <span class="predefined-constant">null</span>,
+    signature_count              <span class="predefined-type">bigint</span>,
+    uv_initialized               <span class="predefined-type">boolean</span>,
+    backup_eligible              <span class="predefined-type">boolean</span>       <span class="keyword">not</span> <span class="predefined-constant">null</span>,
+    authenticator_transports     <span class="predefined-type">varchar</span>(<span class="integer">1000</span>),
+    public_key_credential_type   <span class="predefined-type">varchar</span>(<span class="integer">100</span>),
+    backup_state                 <span class="predefined-type">boolean</span>       <span class="keyword">not</span> <span class="predefined-constant">null</span>,
     attestation_object           bytea,
     attestation_client_data_json bytea,
-    created                      timestamp,
-    last_used                    timestamp,
-    label                        varchar(1000) not null,
-    primary key (credential_id)
-);</pre>
+    created                      <span class="predefined-type">timestamp</span>,
+    last_used                    <span class="predefined-type">timestamp</span>,
+    label                        <span class="predefined-type">varchar</span>(<span class="integer">1000</span>) <span class="keyword">not</span> <span class="predefined-constant">null</span>,
+    <span class="directive">primary</span> <span class="type">key</span> (credential_id)
+);</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -7022,6 +7076,22 @@ Redo the whole process:</p>
 <p>You should see data in the newly minted database tables.
 You can restart the Spring Security application and attempt to log in again with a Passkey and this time, it&#8217;ll work just fine.</p>
 </div>
+<div class="paragraph">
+<p>We&#8217;ve looked at usernames and passwords, one-time tokens, Passkeys, and we&#8217;ve only just begun to scratch the surface!
+There are many others.
+One interesting approach is to use mutual X.509 authentication.
+In this scheme, clients present a certificate that&#8217;s issued by an authority that our server knows about and trusts.
+Another is to use HTTP BASIC, where you send username and password (hashed) in an <code>Authorization</code> header.
+Another option is to look a user up in an LDAP or Active Directory instance, instead of a username and password database.</p>
+</div>
+<div class="paragraph">
+<p>There are tons of options here, but which is best?
+Sometimes, things are so sensitive that, to be extra certain that you&#8217;re talking to the right user, you want more than one factor.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_multi_factor_authentication">Multi-Factor Authentication</h3>
+
 </div>
 </div>
 </div>
@@ -10052,7 +10122,7 @@ Now, all the other machinery in Spring Security that consults this thread local 
 <div id="footer">
 <div id="footer-text">
 Version 1.0<br>
-Last updated 2026-07-07 08:56:36 UTC
+Last updated 2026-07-07 09:56:26 UTC
 </div>
 </div>
 </body>
