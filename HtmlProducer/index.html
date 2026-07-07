@@ -627,6 +627,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_implementing_passkeys_in_spring_security">Implementing Passkeys in Spring Security</a></li>
 <li><a href="#_persistence">Persistence</a></li>
 <li><a href="#_multi_factor_authentication">Multi-Factor Authentication</a></li>
+<li><a href="#_authorization">Authorization</a></li>
 </ul>
 </li>
 <li><a href="#_introducing_oauth">Introducing OAuth</a>
@@ -7091,6 +7092,77 @@ Sometimes, things are so sensitive that, to be extra certain that you&#8217;re t
 </div>
 <div class="sect2">
 <h3 id="_multi_factor_authentication">Multi-Factor Authentication</h3>
+<div class="paragraph">
+<p>Multi-factor authentication is the idea that, while any single factor has weaknesses that could conceivably be exploited, it&#8217;s much less likely that a hacker could exploit multiple factors, especially if they&#8217;re off different categories.
+We spoke earlier about the categories of authentication factors, including <em>knowledge</em>, <em>possession</em>, and <em>inherence</em>.</p>
+</div>
+<div class="paragraph">
+<p>Spring Security 7 introduces multi-factor authentication, where the system can store information about which authentication factors have been provided for a given authentication (a user) and then reconcile that against a list of outstanding factors required for that same authentication.</p>
+</div>
+<div class="paragraph">
+<p>The simplest possible configuration is global, and annotation-powered.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Unresolved directive in spring-security.adoc - include::/home/runner/Desktop/root/code/security/security/src/main/java/com/example/security/mfa/GlobalConditionalMfaConfiguration.java[]</pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>this configuration requires multi-factor authentication for every endpoint in the system, but it&#8217;s <em>conditional</em> on the user having registered WebAuthn.
+After all, they can&#8217;t login and register the Passkey if they don&#8217;t already have the ability to login in the first place.
+If they haven&#8217;t, then there&#8217;s no sense in asking for it.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>In the above example, the factors are combined together.
+It&#8217;s as though you&#8217;re asking for WebAuthn <em>AND</em> Passwords.
+But that&#8217;s silly.
+If the user can present a passkey, then they don&#8217;t really need to present a password.
+Passkeys are much safer.
+So, let&#8217;s customize the conditions so that the user has to present one of the following:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>BOTH a password and a one time token</p>
+</li>
+<li>
+<p>a Passkey</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The specifics of multi-factor auth that we&#8217;ve seen so far were specified as parts of the annotation, but behind the scenes those stipulations are translated onto the configuration of a global bean of type <code>AuthorizationManagerFactory</code>.
+You can provide your own, if you like.
+You still need to define the annotation, but you can override the specifics in the bean itself.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">Unresolved directive in spring-security.adoc - include::/home/runner/Desktop/root/code/security/security/src/main/java/com/example/security/mfa/GlobalEitherOrMfaConfiguration.java<span class="type">[]</span></code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>We&#8217;re going to register two required additional authorizations.
+One required authorization specifies that the user must authenticate with <em>both</em> one-time tokens and passwords.
+The other just says the user must authenticate with Passkeys.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Restart the application and enter the Passkey and you&#8217;ll be staring at an authenticated page.
+Logout and then enter a username or a one-time token and you&#8217;ll be asked to do another authentication.</p>
+</div>
+<div class="paragraph">
+<p>Our configuration is simple, and <em>global</em>. That bean applies to every request made and to every endpoint. Let&#8217;s our attention to how we make more granular decisions about what is required of an authenticated user for particular aspects of the application. This is called <em>authorization</em>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_authorization">Authorization</h3>
 
 </div>
 </div>
@@ -10122,7 +10194,7 @@ Now, all the other machinery in Spring Security that consults this thread local 
 <div id="footer">
 <div id="footer-text">
 Version 1.0<br>
-Last updated 2026-07-07 09:56:26 UTC
+Last updated 2026-07-07 17:13:38 UTC
 </div>
 </div>
 </body>
