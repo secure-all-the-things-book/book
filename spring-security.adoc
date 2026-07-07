@@ -796,6 +796,43 @@ Let's look at that.
 include::{code}/security/security/src/main/java/com/example/security/webauthn/WebAuthnPersistenceConfiguration.java[]
 ----
 
+Do I know exactly what these things do?
+No.
+Don't need to.
+I just know that they make important parts of the WebAuthn support durable, and that's good enough for me.
+
+I also know that they need us to define some database tables for them to work.
+So, I've added two more Flyway migrations.
+
+The first (`src/main/resources/db/migration/V3__user_entities.sql`) creates the `user_entities` table.
+
+----
+include::{code}/security/security/src/main/resources/db/migration/V3__user_entities.sql[]
+----
+
+The second (`src/main/resources/db/migration/V4__user_credentials.sql`) creates the `user_credentials` table:
+
+----
+include::{code}/security/security/src/main/resources/db/migration/V4__user_credentials.sql[]
+----
+
+These `.sql` files are in the Spring Security `.jar` files, but I copied and pasted them here for our use.
+Note that I've had to replace the uses of the SQL `blob` type in the `user_credentials` table with `bytea`, which works well in PostgreSQL.
+
+If you're using macOS, make sure to open up Passwords.app, then go to the Passkeys section, and then delete any passkeys you might've created when using this Spring Security application, on `localhost`.
+
+Restart the Spring Security application.
+You'll see the tables created in your database.
+Redo the whole process:
+
+* authenticate
+* register a Passkey with your Spring Security application
+* logout
+* log back in, this time using Passkeys
+
+Return to the database tables and you should see data in those SQL tables.
+You can restart the Spring Security application and attempt to login again with a Passkey and this time, it'll work just fine.
+
 // MFA
 // exchanging passwords for short term creds w/ oauth (see next chapters!)
 // time to concern ourselves with authorization
