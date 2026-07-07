@@ -830,8 +830,8 @@ Redo the whole process:
 * logout
 * log back in, this time using Passkeys
 
-Return to the database tables and you should see data in those SQL tables.
-You can restart the Spring Security application and attempt to login again with a Passkey and this time, it'll work just fine.
+You should see data in the newly minted database tables.
+You can restart the Spring Security application and attempt to log in again with a Passkey and this time, it'll work just fine.
 
 // MFA
 // exchanging passwords for short term creds w/ oauth (see next chapters!)
