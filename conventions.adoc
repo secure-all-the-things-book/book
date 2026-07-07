@@ -15,26 +15,6 @@ As I work through these examples, I'll be showing lots of code.
 You can follow along at home, either by typing things out or simply referencing the https://github.com/secure-all-the-things-book[code here].
 It's Apache 2 licensed and yours for the taking.
 
-== Docker
-
-I assume the availability of Docker or some sort of container orchestrator on your machines.
-Where appropriate, I've provided Docker Compose `compose.yml` files in each of the chapters' code.
-
-If you're using the Docker tooling, you can spin up the container images thusly:
-
-[source,shell]
-----
-docker compose up
-----
-
-That will run the Docker images and block, keeping the shell on that process in the foreground.
-If you want to run things and the background them, do:
-
-[source,shell]
-----
-docker compose up -d
-----
-
 == Formatting
 
 I wrote some tooling to ensure that every example in the book is using the same version of Spring Boot, assumes the same version of Java (or Kotlin), and is using the same version of any projects that aren't managed by Spring Boot's parent `pom.xml`.
@@ -157,6 +137,63 @@ include::snippets/uao.java[]
 ----
 
 I've created an alias to that script in my shell called `uao`.
+
+== Docker
+
+I assume the availability of Docker or some sort of container orchestrator on your machines.
+Where appropriate, I've provided Docker Compose `compose.yml` files in each of the chapters' code.
+
+If you're using the Docker tooling, you can spin up the container images thusly:
+
+[source,shell]
+----
+docker compose up
+----
+
+That will run the Docker images and block, keeping the shell on that process in the foreground.
+If you want to run things and the background them, do:
+
+[source,shell]
+----
+docker compose up -d
+----
+
+== Databases
+
+I'm going to pretty consistently use PostgreSQL in this book.
+Is it the best choice?
+No.
+I mean.. define "best." But it works, and it's widely adopted.
+I'm a big fan.
+That said, it's got some peculiarities that make otherwise standard SQL files fail to run on it out of the box, which is a bit of a shame.
+I'll note those as I go.
+
+I usually use a tool like JetBrains' DataGrip to read data from my various databases, including PostgreSQL.
+
+Here's what I'm (usually) looking at when I talk about consulting the data in a given database table.
+
+image::images/security/datagrip.png[]
+. DataGrip, in all of its glory.
+It's a very nice database client.
+That said, I _really_ miss Microsoft Access' visual query builder from the distant, distant past, and wish they'd build something like that for this.
+
+I appreciate however that most folks won't do that.
+They'll probably just the (excellent) PostgreSQL command line interface.
+If you're on Homebrew, you can simply run the following to install just the command line client.
+
+[source,shell]
+----
+brew install libpq
+----
+
+With that, it's trivial to connect to the database.
+I'm using the default database name, username, and password that you get in the generated Docker Compose files (`compose.yml`) from projects created on the https://start.spring.io[Spring Initializr].
+So, here's how you'd connect to such a database using the PostgreSQL CLI:
+
+[source,shell]
+----
+PGPASSWORD=secret psql -U myuser -h localhost mydatabase
+----
 
 == Database Migrations
 

@@ -806,12 +806,14 @@ So, I've added two more Flyway migrations.
 
 The first (`src/main/resources/db/migration/V3__user_entities.sql`) creates the `user_entities` table.
 
+[source,sql,indent=0]
 ----
 include::{code}/security/security/src/main/resources/db/migration/V3__user_entities.sql[]
 ----
 
 The second (`src/main/resources/db/migration/V4__user_credentials.sql`) creates the `user_credentials` table:
 
+[source,sql,indent=0]
 ----
 include::{code}/security/security/src/main/resources/db/migration/V4__user_credentials.sql[]
 ----
@@ -832,6 +834,19 @@ Redo the whole process:
 
 You should see data in the newly minted database tables.
 You can restart the Spring Security application and attempt to log in again with a Passkey and this time, it'll work just fine.
+
+We've looked at usernames and passwords, one-time tokens, Passkeys, and we've only just begun to scratch the surface!
+There are many others.
+One interesting approach is to use mutual X.509 authentication.
+In this scheme, clients present a certificate that's issued by an authority that our server knows about and trusts.
+Another is to use HTTP BASIC, where you send username and password (hashed) in an `Authorization` header.
+Another option is to look a user up in an LDAP or Active Directory instance, instead of a username and password database.
+
+There are tons of options here, but which is best?
+Sometimes, things are so sensitive that, to be extra certain that you're talking to the right user, you want more than one factor.
+
+== Multi-Factor Authentication
+
 
 // MFA
 // exchanging passwords for short term creds w/ oauth (see next chapters!)
