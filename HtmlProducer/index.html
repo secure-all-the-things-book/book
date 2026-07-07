@@ -2469,7 +2469,7 @@ We&#8217;ll use the following Docker Compose file to stand up the instance of ou
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">services</span>:
   <i class="conum" data-value="1"></i><b>(1)</b>
   <span class="key">postgres</span>:
-    <span class="key">image</span>: <span class="string"><span class="content">'pgvector/pgvector:pg16'</span></span>
+    <span class="key">image</span>: <span class="string"><span class="content">'postgres:latest'</span></span>
     <span class="key">environment</span>:
       - <span class="string"><span class="content">'POSTGRES_DB=mydatabase'</span></span>
       - <span class="string"><span class="content">'POSTGRES_PASSWORD=secret'</span></span>
@@ -5803,7 +5803,7 @@ I&#8217;ve created a <code>compose.yml</code> file here.</p>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">services</span>:
   <span class="key">postgres</span>:
-    <span class="key">image</span>: <span class="string"><span class="content">'pgvector/pgvector:pg16'</span></span>
+    <span class="key">image</span>: <span class="string"><span class="content">'postgres:latest'</span></span>
     <span class="key">environment</span>:
       - <span class="string"><span class="content">'POSTGRES_DB=mydatabase'</span></span>
       - <span class="string"><span class="content">'POSTGRES_PASSWORD=secret'</span></span>
@@ -7019,8 +7019,8 @@ Redo the whole process:</p>
 </ul>
 </div>
 <div class="paragraph">
-<p>Return to the database tables and you should see data in those SQL tables.
-You can restart the Spring Security application and attempt to login again with a Passkey and this time, it&#8217;ll work just fine.</p>
+<p>You should see data in the newly minted database tables.
+You can restart the Spring Security application and attempt to log in again with a Passkey and this time, it&#8217;ll work just fine.</p>
 </div>
 </div>
 </div>
@@ -10052,7 +10052,7 @@ Now, all the other machinery in Spring Security that consults this thread local 
 <div id="footer">
 <div id="footer-text">
 Version 1.0<br>
-Last updated 2026-07-07 08:46:38 UTC
+Last updated 2026-07-07 08:56:36 UTC
 </div>
 </div>
 </body>
