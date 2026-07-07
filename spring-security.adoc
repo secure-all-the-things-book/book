@@ -888,7 +888,7 @@ The other just says the user must authenticate with Passkeys.
 Restart the application and enter the Passkey and you'll be staring at an authenticated page.
 Logout and then enter a username or a one-time token and you'll be asked to do another authentication.
 
-Our configuration is simple, but requires
+Our configuration is simple, and _global_. That bean applies to every request made and to every endpoint. Let's our attention to how we make more granular decisions about what is required of an authenticated user for particular aspects of the application. This is called _authorization_.
 
 == Authorization
 
