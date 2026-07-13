@@ -879,6 +879,7 @@ Spring Security 7 introduces multifactor authentication, where the system can st
 
 The simplest possible configuration is global, and annotation-powered.
 
+[source,java,indent=0]
 ----
 include::{code}/security/security/src/main/java/com/example/security/mfa/GlobalConditionalMfaConfiguration.java[]
 ----
