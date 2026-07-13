@@ -591,6 +591,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_component_scanning">Component Scanning</a></li>
 <li><a href="#_spring_framework_7s_beanregistrar_the_best_of_both_worlds">Spring Framework 7&#8217;s <code>BeanRegistrar</code>: The Best of Both Worlds</a></li>
 <li><a href="#_the_environment">The <code>Environment</code></a></li>
+<li><a href="#_the_spring_expression_language">The Spring Expression Language</a></li>
 <li><a href="#_next_steps_2">Next Steps</a></li>
 </ul>
 </li>
@@ -2475,7 +2476,8 @@ Let&#8217;s learn what Spring can help you with by way of an example that we&#82
 It&#8217;s just Java and some libraries, so in theory you could create your own with no issues.
 But I like to use the <a href="https://start.spring.io">Spring Initializr (https://start.spring.io)</a>.
 Visit the Spring Initializr and make the following dependency selections: <code>Spring Boot Actuator</code>, <code>Thymeleaf</code>, <code>Spring Data JDBC</code>, <code>PostgreSQL Driver</code>, <code>Spring Web</code>, <code>GraalVM Native Support</code>, <code>OpenTelemetry</code>, and <code>Spring Boot DevTools</code>.
-Select Java 25 (or later), and Apache Maven as the build tool. You could use Gradle if you prefer, though I&#8217;ll be showing Apache Maven.</p>
+Select Java 25 (or later), and Apache Maven as the build tool.
+You could use Gradle if you prefer, though I&#8217;ll be showing Apache Maven.</p>
 </div>
 <div class="paragraph">
 <p>Give the application whatever group name and artifact name you like.
@@ -2484,7 +2486,8 @@ You&#8217;ll download an application archive (<code>.zip</code>).
 Unzip it and then point your IDE—IntelliJ IDEA, Visual Studio Code, Eclipse, etc.—at the <code>pom.xml</code> in the root of the project.</p>
 </div>
 <div class="paragraph">
-<p>You should have a project with the usual folder structure: <code>pom.xml</code> and <code>src/{test,main}/{java,resources}</code>. You&#8217;ll also have a new class in the <code>src/main/java</code> folder with a <code>public static void main</code> method.</p>
+<p>You should have a project with the usual folder structure: <code>pom.xml</code> and <code>src/{test,main}/{java,resources}</code>.
+You&#8217;ll also have a new class in the <code>src/main/java</code> folder with a <code>public static void main</code> method.</p>
 </div>
 <div class="paragraph">
 <p>Rename the file <code>Main.java</code>, and gut the code inside.
@@ -2525,7 +2528,7 @@ We&#8217;ll use the following Docker Compose file to stand up the instance of ou
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">services</span>:
   <i class="conum" data-value="1"></i><b>(1)</b>
   <span class="key">postgres</span>:
-    <span class="key">image</span>: <span class="string"><span class="content">'postgres:latest'</span></span>
+    <span class="key">image</span>: <span class="string"><span class="content">'postgres:18.4'</span></span>
     <span class="key">environment</span>:
       - <span class="string"><span class="content">'POSTGRES_DB=mydatabase'</span></span>
       - <span class="string"><span class="content">'POSTGRES_PASSWORD=secret'</span></span>
@@ -3645,7 +3648,8 @@ In this case it&#8217;s a Java configuration class called <code>DogConfiguration
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>The wiring should look familiar. Each method constructs and returns one fully formed object.
+<p>The wiring should look familiar.
+Each method constructs and returns one fully formed object.
 If the object requires any dependencies, it declares them as parameters in the method.
 Spring will attempt to resolve those dependencies for you.</p>
 </li>
@@ -4482,7 +4486,9 @@ We&#8217;ll retain one bean with component scanning (the <code>DogRepository</co
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>You do your wiring in a method. You can do iteration, load things, do <code>if</code>/<code>else</code>, etc., all from within a method. What a time to be alive!</p>
+<p>You do your wiring in a method.
+You can do iteration, load things, do <code>if</code>/<code>else</code>, etc., all from within a method.
+What a time to be alive!</p>
 </li>
 <li>
 <p>If you want Spring to apply the same heuristics and automatically configure a bean, as it would when doing component scanning, then you can simply call <code>registerBean(Class)</code> and Spring will take it from there.</p>
@@ -4494,12 +4500,16 @@ We&#8217;ll retain one bean with component scanning (the <code>DogRepository</co
 </div>
 <div class="paragraph">
 <p>All in all, this is a huge improvement in total lines of code.
-I don&#8217;t know how I feel about readability, though. I think it&#8217;d be pretty natural to factor those lambda suppliers out to separate methods.
+I don&#8217;t know how I feel about readability, though.
+I think it&#8217;d be pretty natural to factor those lambda suppliers out to separate methods.
 But then, I might as well just use Java bean configuration.
 That said, in Kotlin, this DSL is even more succinct and elegant and inarguably readable while taking less code.</p>
 </div>
 <div class="paragraph">
-<p>This style grows on me more and more. You can use it. Or don&#8217;t. You&#8217;ve got options depending on your style and use case.</p>
+<p>This style grows on me more and more.
+You can use it.
+Or don&#8217;t.
+You&#8217;ve got options depending on your style and use case.</p>
 </div>
 </div>
 <div class="sect2">
@@ -4641,6 +4651,265 @@ So, if you specify an environment variable, it&#8217;ll override the values prov
 There&#8217;s even some goodness in there to normalize environment variables.
 So, <code>SPRING_DATASOURCE_URL</code> will be normalized to <code>spring.datasource.url</code>.
 In this way, developers can keep the hardcoded development-only environment variable, but at runtime in production the real connection credentials can be specified with environment variables.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_the_spring_expression_language">The Spring Expression Language</h3>
+<div class="paragraph">
+<p>We used the <code>Environment</code> to look up provisioned keys and values from the external environment.
+Sometimes, the values we need are more dynamic than that.
+Sometimes we need to do a little massaging of the data before using it.
+For this, we have the oh-so-handy Spring Expression Language (SpEL).</p>
+</div>
+<div class="paragraph">
+<p>There are many amazing uses where, once you&#8217;ve tried it, you won&#8217;t be able to live without something as convenient as the SpEL.
+Suppose you want to define a simple predicate with which to evaluate headers in a Spring Integration messaging flow.
+You could use SpEL.
+What if you wanted to define authorization rules for Spring Security?
+You could use SpEL.
+And suppose you simply wanted to know the meaning of life, the universe, and everything?
+<em>You could use SpEL</em>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.beans_to_boot.spel</span>;
+
+<span class="keyword">import</span> <span class="include">org.springframework.beans.factory.annotation.Value</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.stereotype.Component</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.util.Assert</span>;
+
+<span class="annotation">@Component</span>
+<span class="type">class</span> <span class="class">Inquisitor</span> {
+
+        Inquisitor(<span class="annotation">@Value</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">#{ theAnswerToLifeTheUniverseAndEverything.answer() } </span><span class="delimiter">&quot;</span></span>) <span class="type">int</span> answer) {
+                <i class="conum" data-value="1"></i><b>(1)</b>
+                Assert.state(answer == <span class="integer">42</span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">the values should match</span><span class="delimiter">&quot;</span></span>);
+        }
+
+}
+
+<span class="annotation">@Component</span>
+<span class="type">class</span> <span class="class">TheAnswerToLifeTheUniverseAndEverything</span> {
+
+        <span class="directive">public</span> <span class="type">int</span> answer() {
+                <span class="keyword">return</span> <span class="integer">42</span>;
+        }
+
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In this example, we&#8217;re using the familiar <code>@Value</code> annotation, but this time instead of using it to inject a property placeholder (e.g.: <code>${foo.bar}</code>), we&#8217;re using it to evaluate an expression and coerce the returned value from that expression into the value being injected.
+In this case, an <code>int</code>.
+We arrive at that <code>int</code> by calling another method on a bean in the Spring context: <code>TheAnswerToLifeTheUniverseAndEverything</code>.
+This is a bit of a contrived example.
+However, the <code>@Value</code> annotation is also the simplest and most accessible interaction most folks will have with the SpEL.
+You can use the <code>@Value</code> annotation in Java configuration classes and <code>@Bean</code> methods, or in regular old components anywhere you could otherwise use <code>@Value</code>.</p>
+</div>
+<div class="paragraph">
+<p>The Spring Expression Language is a full-blown expression language that offers most of (if not more than) what the competitors - like OGNL, the Java Server Faces Expression Language, the Java Server Pages Expression Language, etc. - offer.
+One of my favorite features?
+You can turn the expressions into <em>compiled</em> code!</p>
+</div>
+<div class="paragraph">
+<p>I&#8217;ll never forget the SpEL&#8217;s introduction into the Spring Framework.
+I was trawling the updates to Spring Framework 3.0 back in 2008 or 2009, watching as Andy Clement added this amazing new mechanism to the codebase.
+The first incarnation of the Spring Expression Language was written using Antlr, which is the Java analog to Yak and Bison.
+These are tools with which you can write grammar, then a generator will turn the grammar into a recursive descent parser.
+Basically, its a way to build interpreters or the foundations of a compiler.
+It makes perfect sense for even a gifted craftsman like Andy Clement to use these venerable tools to handle such a dedicated task.
+After all, Antlr&#8217;s a basically a standard!
+There is no better toolchain for building lexers and parsers on the JVM, full stop.
+Plenty of other projects do: Hibernate, Apache Spark, Apache Camel, Apache KIE Drools, GraphQL Java, Apache Groovy, Neo4j, Elasticsearch, PrestoDB, Apache Hive, Apache Cassandra, etc.
+But not Andy!
+He got the code working but wasn&#8217;t satisfied.
+So a few weeks later, I did <code>svn up</code> and saw that Andy had thrown the Antlr version out.
+He&#8217;d just rolled up his sleeves and written a recursive descent parser - with a compiler, mind you! - by hand! <em>Legendary</em>.</p>
+</div>
+<div class="paragraph">
+<p>Most of the time, you&#8217;ll use it via expressions specified in annotations, since it lets you embed dynamic programming in otherwise static contexts.
+But you can also use it directly in your own application.
+Here&#8217;s a simple example where we do some basic math.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.beans_to_boot.spel</span>;
+
+<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Configuration</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.expression.ExpressionParser</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.expression.spel.standard.SpelExpressionParser</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.util.Assert</span>;
+
+<span class="annotation">@Configuration</span>
+<span class="type">class</span> <span class="class">SimpleSpel</span> {
+
+        SimpleSpel() {
+                <i class="conum" data-value="1"></i><b>(1)</b>
+                <span class="type">var</span> spelExpressionParser = <span class="keyword">new</span> SpelExpressionParser();
+
+                <i class="conum" data-value="2"></i><b>(2)</b>
+                simple(spelExpressionParser);
+        }
+
+        <span class="directive">private</span> <span class="type">void</span> simple(ExpressionParser expressionParser) {
+                <span class="type">var</span> expression = expressionParser.parseExpression(<span class="string"><span class="delimiter">&quot;</span><span class="content">1 + 2</span><span class="delimiter">&quot;</span></span>);
+                <span class="type">var</span> evaluatedValue = expression.getValue(<span class="predefined-type">Integer</span>.class).intValue();
+                Assert.state(<span class="integer">3</span> == evaluatedValue, <span class="string"><span class="delimiter">&quot;</span><span class="content">the values should match</span><span class="delimiter">&quot;</span></span>);
+        }
+
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We can also evaluate expressions against variables assigned to a <em>context</em>.</p>
+</div>
+<div class="paragraph">
+<p>For this demo, we&#8217;ve got an <code>Order</code> class.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.beans_to_boot.spel</span>;
+
+record Order(<span class="predefined-type">String</span> sku) {
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In the next few iterations of our examples, we&#8217;ll refere to a <code>List&lt;Order&gt;</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.beans_to_boot.spel</span>;
+
+<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Configuration</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.expression.ExpressionParser</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.expression.spel.standard.SpelExpressionParser</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.util.Assert</span>;
+
+<span class="keyword">import</span> <span class="include">java.util.List</span>;
+
+<span class="annotation">@Configuration</span>
+<span class="type">class</span> <span class="class">ValueSpel</span> {
+
+        <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">List</span>&lt;Order&gt; orders = <span class="predefined-type">List</span>.of(<span class="keyword">new</span> Order(<span class="string"><span class="delimiter">&quot;</span><span class="content">sku1</span><span class="delimiter">&quot;</span></span>), <span class="keyword">new</span> Order(<span class="string"><span class="delimiter">&quot;</span><span class="content">sku2</span><span class="delimiter">&quot;</span></span>));
+
+        ValueSpel() {
+                <span class="type">var</span> spelExpressionParser = <span class="keyword">new</span> SpelExpressionParser();
+                value(spelExpressionParser);
+        }
+
+        <span class="directive">private</span> <span class="type">void</span> value(ExpressionParser expressionParser) {
+                <i class="conum" data-value="1"></i><b>(1)</b>
+                Assert.state(expressionParser.parseExpression(<span class="string"><span class="delimiter">&quot;</span><span class="content">size()</span><span class="delimiter">&quot;</span></span>).getValue(orders, <span class="predefined-type">Integer</span>.class).intValue() == <span class="integer">2</span>,
+                                <span class="string"><span class="delimiter">&quot;</span><span class="content">the values should match</span><span class="delimiter">&quot;</span></span>);
+        }
+
+}</code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>we can evaluate methods against the object given as the context.
+In this case the <code>size()</code> method on <code>List&lt;Order&gt;</code>.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Indeed, there&#8217;s even a <code>EvaluationContext</code>, which can act as a, well, a <em>context</em> for all sorts of references that can be made available to the expression during evaluation.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.beans_to_boot.spel</span>;
+
+<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Configuration</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.expression.ExpressionParser</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.expression.spel.standard.SpelExpressionParser</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.expression.spel.support.StandardEvaluationContext</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.util.Assert</span>;
+
+<span class="keyword">import</span> <span class="include">java.util.List</span>;
+
+<span class="annotation">@Configuration</span>
+<span class="type">class</span> <span class="class">ContextSpel</span> {
+
+        <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">List</span>&lt;Order&gt; orders = <span class="predefined-type">List</span>.of(<span class="keyword">new</span> Order(<span class="string"><span class="delimiter">&quot;</span><span class="content">sku1</span><span class="delimiter">&quot;</span></span>), <span class="keyword">new</span> Order(<span class="string"><span class="delimiter">&quot;</span><span class="content">sku2</span><span class="delimiter">&quot;</span></span>));
+
+        ContextSpel() {
+                <span class="type">var</span> spelExpressionParser = <span class="keyword">new</span> SpelExpressionParser();
+                context(spelExpressionParser);
+        }
+
+        <span class="directive">private</span> <span class="type">void</span> context(ExpressionParser expressionParser) {
+                <span class="type">var</span> context = <span class="keyword">new</span> StandardEvaluationContext();
+                <i class="conum" data-value="1"></i><b>(1)</b>
+                context.setVariable(<span class="string"><span class="delimiter">&quot;</span><span class="content">orders</span><span class="delimiter">&quot;</span></span>, orders);
+                <i class="conum" data-value="2"></i><b>(2)</b>
+                Assert.state(
+                                expressionParser.parseExpression(<span class="string"><span class="delimiter">&quot;</span><span class="content">#orders.size()</span><span class="delimiter">&quot;</span></span>).getValue(context, <span class="predefined-type">Integer</span>.class).intValue() == <span class="integer">2</span>,
+                                <span class="string"><span class="delimiter">&quot;</span><span class="content">the values should match</span><span class="delimiter">&quot;</span></span>);
+        }
+
+}</code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>we can add as many variables to the <code>StandardEvaluationContext</code> as we like.</p>
+</li>
+<li>
+<p>we can then reference those variables with <code>#variableName</code> from within the expression.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>If you&#8217;re intending to re-evaluate the same expression over-and-over again, then consider <em>compiling</em> the expression.
+That&#8217;s right, you can turn your <code>Expression</code> into byte code that&#8217;s loaded in the <code>ClassLoader</code> and evaluated much more efficiently on later evaluations.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.beans_to_boot.spel</span>;
+
+<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Configuration</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.expression.ExpressionParser</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.expression.spel.SpelCompilerMode</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.expression.spel.SpelParserConfiguration</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.expression.spel.standard.SpelExpressionParser</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.util.Assert</span>;
+
+<span class="keyword">import</span> <span class="include">java.util.List</span>;
+
+<span class="annotation">@Configuration</span>
+<span class="type">class</span> <span class="class">CompiledSpel</span> {
+
+        <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">List</span>&lt;Order&gt; orders = <span class="predefined-type">List</span>.of(<span class="keyword">new</span> Order(<span class="string"><span class="delimiter">&quot;</span><span class="content">sku1</span><span class="delimiter">&quot;</span></span>), <span class="keyword">new</span> Order(<span class="string"><span class="delimiter">&quot;</span><span class="content">sku2</span><span class="delimiter">&quot;</span></span>));
+
+        CompiledSpel() {
+                <i class="conum" data-value="1"></i><b>(1)</b>
+                <span class="type">var</span> configuration = <span class="keyword">new</span> SpelParserConfiguration(SpelCompilerMode.IMMEDIATE,
+                                <span class="predefined-type">Thread</span>.currentThread().getContextClassLoader());
+                <span class="type">var</span> spelExpressionParser = <span class="keyword">new</span> SpelExpressionParser(configuration);
+                compiled(spelExpressionParser);
+        }
+
+        <span class="directive">private</span> <span class="type">void</span> compiled(ExpressionParser expressionParser) {
+                Assert.state(expressionParser.parseExpression(<span class="string"><span class="delimiter">&quot;</span><span class="content">size()</span><span class="delimiter">&quot;</span></span>).getValue(orders, <span class="predefined-type">Integer</span>.class).intValue() == <span class="integer">2</span>,
+                                <span class="string"><span class="delimiter">&quot;</span><span class="content">the values should match</span><span class="delimiter">&quot;</span></span>);
+        }
+
+}</code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Here we only need to change how we construct the <code>SpelExpressionParser</code> to switch its <code>SpelCompilerMode</code> to <code>IMMEDIATE</code>.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>The Spring Expression Language is one of those amazing and pervasive features that&#8217;s found all over the framework.</p>
 </div>
 </div>
 <div class="sect2">
@@ -7265,7 +7534,7 @@ It&#8217;s the idea that method invocations on individual beans can be inhibited
 </div>
 </div>
 <div class="paragraph">
-<p>Basically, Spring Security creates a proxy out of your secured bean, and intercepts method invocations, evaluating the authroization rules specided on methods (either as annotation)</p>
+<p>Basically, Spring Security creates a proxy out of your secured bean, and intercepts method invocations, evaluating the authorization rules specified on methods (either as annotation)</p>
 </div>
 </div>
 </div>
@@ -10297,7 +10566,7 @@ Now, all the other machinery in Spring Security that consults this thread local 
 <div id="footer">
 <div id="footer-text">
 Version 1.0<br>
-Last updated 2026-07-13 03:30:07 UTC
+Last updated 2026-07-13 09:45:46 UTC
 </div>
 </div>
 </body>
