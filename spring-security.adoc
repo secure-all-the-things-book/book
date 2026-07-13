@@ -915,16 +915,24 @@ Logout and then enter a username or a one-time token, and you'll be asked to do 
 
 Our configuration is simple and _global_.
 That bean applies to every request made and to every endpoint.
-Let's turn our attention to how we make more granular decisions about what is required of an authenticated user for particular aspects of the application.
+Let's turn our attention to how we make more granular decisions about what is required of an authenticated user for particular aspects, like routes, of the application.
 This is called _authorization_.
 
 == Authorization
 
+Spring Security supports _defense-in-depth_, allowing you to configure multiple layers - requests and methods - of security so that if for whatever reason a would be attacker breaches one layer, they can't get through the other.
+Request-based authorization is the kind with which we'll mostly be dealing here.
+
+But first, let's look at method-level authorization. It can be quite useful, particularly when securing GraphQL.
+It's the idea that method invocations on individual beans can be inhibited based on authorization rules.
 
 
+Youve probably seen the scary diagram from the Spring Security documentation. It looks like this.
 
+image::images/security/authorization/diagram-from-security-docs.png[]
 
-// MFA
+Basically, Spring Security creates a proxy out of your secured bean, and intercepts method invocations, evaluating the authroization rules specided on methods (either as annotation)
+
 // time to concern ourselves with authorization
 // first order of business: limiting MFA requirements to just sensitive endpoints
 // access control is an important part
