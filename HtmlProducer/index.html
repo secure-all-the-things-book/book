@@ -533,7 +533,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <span id="author" class="author">Josh Long</span><br>
 <span id="email" class="email"><a href="mailto:josh@joshlong.com">josh@joshlong.com</a></span><br>
 <span id="revnumber">version 1.0,</span>
-<span id="revdate">2026-07-07</span>
+<span id="revdate">2026-07-13</span>
 </div>
 </div>
 <div id="content">
@@ -5859,7 +5859,7 @@ I&#8217;ve created a <code>compose.yml</code> file here.</p>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">services</span>:
   <span class="key">postgres</span>:
-    <span class="key">image</span>: <span class="string"><span class="content">'postgres:latest'</span></span>
+    <span class="key">image</span>: <span class="string"><span class="content">'postgres:18.4'</span></span>
     <span class="key">environment</span>:
       - <span class="string"><span class="content">'POSTGRES_DB=mydatabase'</span></span>
       - <span class="string"><span class="content">'POSTGRES_PASSWORD=secret'</span></span>
@@ -7138,7 +7138,23 @@ We spoke earlier about the categories of authentication factors, including <em>k
 </div>
 <div class="listingblock">
 <div class="content">
-<pre>Unresolved directive in spring-security.adoc - include::/home/runner/Desktop/root/code/security/security/src/main/java/com/example/security/mfa/GlobalConditionalMfaConfiguration.java[]</pre>
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.security.mfa</span>;
+
+<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Configuration</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Profile</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.security.config.annotation.authorization.EnableMultiFactorAuthentication</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.security.config.annotation.authorization.MultiFactorCondition</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.security.core.authority.FactorGrantedAuthority</span>;
+
+<span class="annotation">@Profile</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">globalmfa</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Configuration</span>
+<i class="conum" data-value="1"></i><b>(1)</b>
+<span class="annotation">@EnableMultiFactorAuthentication</span>(
+                authorities = { FactorGrantedAuthority.WEBAUTHN_AUTHORITY, FactorGrantedAuthority.PASSWORD_AUTHORITY },
+                when = { MultiFactorCondition.WEBAUTHN_REGISTERED })
+<span class="type">class</span> <span class="class">GlobalConditionalMfaConfiguration</span> {
+
+}</code></pre>
 </div>
 </div>
 <div class="olist arabic">
@@ -7175,7 +7191,39 @@ You still need to define the annotation, but you can override the specifics in t
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java">Unresolved directive in spring-security.adoc - include::/home/runner/Desktop/root/code/security/security/src/main/java/com/example/security/mfa/GlobalEitherOrMfaConfiguration.java<span class="type">[]</span></code></pre>
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.security.mfa</span>;
+
+<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Bean</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Configuration</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.security.authorization.AllRequiredFactorsAuthorizationManager</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.security.authorization.AuthorizationManagerFactory</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.security.authorization.DefaultAuthorizationManagerFactory</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.security.authorization.RequiredFactor</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.security.config.annotation.authorization.EnableMultiFactorAuthentication</span>;
+
+<span class="annotation">@Configuration</span>
+<span class="annotation">@EnableMultiFactorAuthentication</span>(authorities = {})
+<span class="type">class</span> <span class="class">GlobalEitherOrMfaConfiguration</span> {
+
+        <span class="annotation">@Bean</span>
+        AuthorizationManagerFactory&lt;<span class="predefined-type">Object</span>&gt; authorizationManagerFactory() {
+                <i class="conum" data-value="1"></i><b>(1)</b>
+                <span class="type">var</span> webauthn = AllRequiredFactorsAuthorizationManager.builder()
+                        .requireFactor(RequiredFactor.Builder::webauthnAuthority)
+                        .build();
+
+                <i class="conum" data-value="2"></i><b>(2)</b>
+                <span class="type">var</span> passwordAndOtt = AllRequiredFactorsAuthorizationManager.builder()
+                        .requireFactor(RequiredFactor.Builder::passwordAuthority)
+                        .requireFactor(RequiredFactor.Builder::ottAuthority)
+                        .build();
+
+                <span class="type">var</span> mfa = <span class="keyword">new</span> DefaultAuthorizationManagerFactory&lt;&gt;();
+                mfa.setAdditionalAuthorization(AllRequiredFactorsAuthorizationManager.anyOf(webauthn, passwordAndOtt));
+                <span class="keyword">return</span> mfa;
+        }
+
+}</code></pre>
 </div>
 </div>
 <div class="olist arabic">
@@ -7194,13 +7242,31 @@ Logout and then enter a username or a one-time token, and you&#8217;ll be asked 
 <div class="paragraph">
 <p>Our configuration is simple and <em>global</em>.
 That bean applies to every request made and to every endpoint.
-Let&#8217;s turn our attention to how we make more granular decisions about what is required of an authenticated user for particular aspects of the application.
+Let&#8217;s turn our attention to how we make more granular decisions about what is required of an authenticated user for particular aspects, like routes, of the application.
 This is called <em>authorization</em>.</p>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_authorization">Authorization</h3>
-
+<div class="paragraph">
+<p>Spring Security supports <em>defense-in-depth</em>, allowing you to configure multiple layers - requests and methods - of security so that if for whatever reason a would be attacker breaches one layer, they can&#8217;t get through the other.
+Request-based authorization is the kind with which we&#8217;ll mostly be dealing here.</p>
+</div>
+<div class="paragraph">
+<p>But first, let&#8217;s look at method-level authorization. It can be quite useful, particularly when securing GraphQL.
+It&#8217;s the idea that method invocations on individual beans can be inhibited based on authorization rules.</p>
+</div>
+<div class="paragraph">
+<p>Youve probably seen the scary diagram from the Spring Security documentation. It looks like this.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/images/security/authorization/diagram-from-security-docs.png" alt="diagram from security docs">
+</div>
+</div>
+<div class="paragraph">
+<p>Basically, Spring Security creates a proxy out of your secured bean, and intercepts method invocations, evaluating the authroization rules specided on methods (either as annotation)</p>
+</div>
 </div>
 </div>
 </div>
@@ -10231,7 +10297,7 @@ Now, all the other machinery in Spring Security that consults this thread local 
 <div id="footer">
 <div id="footer-text">
 Version 1.0<br>
-Last updated 2026-07-07 18:52:58 UTC
+Last updated 2026-07-13 03:29:35 UTC
 </div>
 </div>
 </body>
