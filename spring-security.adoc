@@ -932,7 +932,13 @@ Youve probably seen the scary diagram from the Spring Security documentation. It
 
 image::images/security/authorization/diagram-from-security-docs.png[]
 
-Basically, Spring Security creates a proxy out of your secured bean, and intercepts method invocations, evaluating the authroization rules specided on methods (either as annotation)
+Basically, Spring Security creates a proxy out of your secured bean, and intercepts method invocations, evaluating the authorization rules specified on methods (either as annotation)
+
+// show the method authorization
+// show common expressions you can put in @PreAuthorized like `isAuthenticated()`, etc.
+// show the testing capabilities in CustomerServiceTest
+// https://docs.spring.io/spring-security/reference/servlet/test/method.html
+// do a table showing the progression from `@WithAnonymousUser1, to `@WithMockUser`, to `@WithUserDetails` to `@WithSecurityContext`. Each allowing me to exert more and more control over the 'fake' authentication that's put in place when we run the test.
 
 // time to concern ourselves with authorization
 // first order of business: limiting MFA requirements to just sensitive endpoints

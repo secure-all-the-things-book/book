@@ -38,14 +38,16 @@ We will need to incept a new project.
 It's just Java and some libraries, so in theory you could create your own with no issues.
 But I like to use the https://start.spring.io[Spring Initializr (https://start.spring.io)].
 Visit the Spring Initializr and make the following dependency selections: `Spring Boot Actuator`, `Thymeleaf`, `Spring Data JDBC`, `PostgreSQL Driver`, `Spring Web`, `GraalVM Native Support`, `OpenTelemetry`, and `Spring Boot DevTools`.
-Select Java 25 (or later), and Apache Maven as the build tool. You could use Gradle if you prefer, though I'll be showing Apache Maven.
+Select Java 25 (or later), and Apache Maven as the build tool.
+You could use Gradle if you prefer, though I'll be showing Apache Maven.
 
 Give the application whatever group name and artifact name you like.
 Click `Generate`.
 You'll download an application archive (`.zip`).
 Unzip it and then point your IDE—IntelliJ IDEA, Visual Studio Code, Eclipse, etc.—at the `pom.xml` in the root of the project.
 
-You should have a project with the usual folder structure: `pom.xml` and `src/{test,main}/{java,resources}`. You'll also have a new class in the `src/main/java` folder with a `public static void main` method.
+You should have a project with the usual folder structure: `pom.xml` and `src/{test,main}/{java,resources}`.
+You'll also have a new class in the `src/main/java` folder with a `public static void main` method.
 
 Rename the file `Main.java`, and gut the code inside.
 It should look something like this when you're done:
@@ -574,7 +576,8 @@ Here's that class.
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/springframework/DogConfiguration.java[]
 ----
 
-. The wiring should look familiar. Each method constructs and returns one fully formed object.
+. The wiring should look familiar.
+Each method constructs and returns one fully formed object.
 If the object requires any dependencies, it declares them as parameters in the method.
 Spring will attempt to resolve those dependencies for you.
 
@@ -878,16 +881,22 @@ We'll retain one bean with component scanning (the `DogRepository`) and we'll re
 include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/beanregistrar/DogBeanRegistrar.java[]
 ----
 
-. You do your wiring in a method. You can do iteration, load things, do `if`/`else`, etc., all from within a method. What a time to be alive!
+. You do your wiring in a method.
+You can do iteration, load things, do `if`/`else`, etc., all from within a method.
+What a time to be alive!
 . If you want Spring to apply the same heuristics and automatically configure a bean, as it would when doing component scanning, then you can simply call `registerBean(Class)` and Spring will take it from there.
 . If you want to exert more control over how things are wired up, or look up other beans for reference, pass in the second parameter and specify a `Supplier<T>` on the `spec` parameter.
 
 All in all, this is a huge improvement in total lines of code.
-I don't know how I feel about readability, though. I think it'd be pretty natural to factor those lambda suppliers out to separate methods.
+I don't know how I feel about readability, though.
+I think it'd be pretty natural to factor those lambda suppliers out to separate methods.
 But then, I might as well just use Java bean configuration.
 That said, in Kotlin, this DSL is even more succinct and elegant and inarguably readable while taking less code.
 
-This style grows on me more and more. You can use it. Or don't. You've got options depending on your style and use case.
+This style grows on me more and more.
+You can use it.
+Or don't.
+You've got options depending on your style and use case.
 
 // stop beanRegistrar
 == The `Environment`
@@ -955,6 +964,101 @@ So, if you specify an environment variable, it'll override the values provided i
 There's even some goodness in there to normalize environment variables.
 So, `SPRING_DATASOURCE_URL` will be normalized to `spring.datasource.url`.
 In this way, developers can keep the hardcoded development-only environment variable, but at runtime in production the real connection credentials can be specified with environment variables.
+
+== The Spring Expression Language
+
+We used the `Environment` to look up provisioned keys and values from the external environment.
+Sometimes, the values we need are more dynamic than that.
+Sometimes we need to do a little massaging of the data before using it.
+For this, we have the oh-so-handy Spring Expression Language (SpEL).
+
+There are many amazing uses where, once you've tried it, you won't be able to live without something as convenient as the SpEL.
+Suppose you want to define a simple predicate with which to evaluate headers in a Spring Integration messaging flow.
+You could use SpEL.
+What if you wanted to define authorization rules for Spring Security?
+You could use SpEL.
+And suppose you simply wanted to know the meaning of life, the universe, and everything?
+_You could use SpEL_.
+
+[source,java]
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/spel/Inquisitor.java[]
+----
+
+In this example, we're using the familiar `@Value` annotation, but this time instead of using it to inject a property placeholder (e.g.: `${foo.bar}`), we're using it to evaluate an expression and coerce the returned value from that expression into the value being injected.
+In this case, an `int`.
+We arrive at that `int` by calling another method on a bean in the Spring context: `TheAnswerToLifeTheUniverseAndEverything`.
+This is a bit of a contrived example.
+However, the `@Value` annotation is also the simplest and most accessible interaction most folks will have with the SpEL.
+You can use the `@Value` annotation in Java configuration classes and `@Bean` methods, or in regular old components anywhere you could otherwise use `@Value`.
+
+The Spring Expression Language is a full-blown expression language that offers most of (if not more than) what the competitors - like OGNL, the Java Server Faces Expression Language, the Java Server Pages Expression Language, etc. - offer.
+One of my favorite features?
+You can turn the expressions into _compiled_ code!
+
+I'll never forget the SpEL's introduction into the Spring Framework.
+I was trawling the updates to Spring Framework 3.0 back in 2008 or 2009, watching as Andy Clement added this amazing new mechanism to the codebase.
+The first incarnation of the Spring Expression Language was written using Antlr, which is the Java analog to Yak and Bison.
+These are tools with which you can write grammar, then a generator will turn the grammar into a recursive descent parser.
+Basically, its a way to build interpreters or the foundations of a compiler.
+It makes perfect sense for even a gifted craftsman like Andy Clement to use these venerable tools to handle such a dedicated task.
+After all, Antlr's a basically a standard!
+There is no better toolchain for building lexers and parsers on the JVM, full stop.
+Plenty of other projects do: Hibernate, Apache Spark, Apache Camel, Apache KIE Drools, GraphQL Java, Apache Groovy, Neo4j, Elasticsearch, PrestoDB, Apache Hive, Apache Cassandra, etc.
+But not Andy!
+He got the code working but wasn't satisfied.
+So a few weeks later, I did `svn up` and saw that Andy had thrown the Antlr version out.
+He'd just rolled up his sleeves and written a recursive descent parser - with a compiler, mind you! - by hand! _Legendary_.
+
+Most of the time, you'll use it via expressions specified in annotations, since it lets you embed dynamic programming in otherwise static contexts.
+But you can also use it directly in your own application.
+Here's a simple example where we do some basic math.
+
+[source,java]
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/spel/SimpleSpel.java[]
+----
+
+We can also evaluate expressions against variables assigned to a _context_.
+
+For this demo, we've got an `Order` class.
+
+[source,java]
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/spel/Order.java[]
+----
+
+In the next few iterations of our examples, we'll refere to a `List<Order>`.
+
+[source,java]
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/spel/ValueSpel.java[]
+----
+
+. we can evaluate methods against the object given as the context.
+In this case the `size()` method on `List<Order>`.
+
+Indeed, there's even a `EvaluationContext`, which can act as a, well, a _context_ for all sorts of references that can be made available to the expression during evaluation.
+
+[source,java]
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/spel/ContextSpel.java[]
+----
+
+. we can add as many variables to the `StandardEvaluationContext` as we like.
+. we can then reference those variables with `#variableName` from within the expression.
+
+If you're intending to re-evaluate the same expression over-and-over again, then consider _compiling_ the expression.
+That's right, you can turn your `Expression` into byte code that's loaded in the `ClassLoader` and evaluated much more efficiently on later evaluations.
+
+[source,java]
+----
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/spel/CompiledSpel.java[]
+----
+
+. Here we only need to change how we construct the `SpelExpressionParser` to switch its `SpelCompilerMode` to `IMMEDIATE`.
+
+The Spring Expression Language is one of those amazing and pervasive features that's found all over the framework.
 
 // stop environment
 == Next Steps
