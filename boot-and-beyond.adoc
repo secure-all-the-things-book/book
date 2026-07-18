@@ -620,7 +620,7 @@ include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_b
 
 Here, we're using a fake client to exercise the network and protocol interface for the service and to make assertsion about the results.
 
-//
+// todo
 // springboottest
 // slices
 
