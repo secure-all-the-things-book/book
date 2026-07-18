@@ -477,19 +477,26 @@ In the example above, injected a _real_ `Environment`.
 
 === Isolated Configuration
 
-There's a tension we face when doing integration tests. we want things to execute in an environment as close to production as possible - otherwise why bother with integration testing at all? - but we also need to avoid complicating test setup with unncessary dependencies.
+There's a tension we face when doing integration tests. we want things to execute in an environment as close to production as possible - otherwise why bother with integration testing at all? - but we also need to avoid complicating test setup with unnecessary dependencies.
 These extra dependencies add no clarity to our determination that some bit of code works or not while simultaneously creating undue burden on the people writing and maintaining the test.
+Mercifully, we're using a dependency injection framework.
+A framework follows the open-closed principle: it's open for extension, closed for modification.
+Put another way: you can change the way Spring behaves without recompiling or changing Spring's code.
+This works because you can swap out, conceptually, one bean for another at any time.
 
 Spring already knows how to wire up your entire production application.
-Because of this, its testing support isn't about adding more configuration - it’s about removing or carving it up.
+Because of this, its testing support isn't about adding more configuration - it’s about removing or carving that configuration up.
 You don't need to waste time teaching a testing framework how to mimic your production environment; Spring already has the blueprint.
 Instead, your job is to tell Spring how to run less of the application, swapping out or isolating the specific pieces you want to test from the ones you don't.
 
+In this section, we'll look at ways to make this work trivial.
+
 We'll demonstrate these concepts using a simple class, called `StoreService`, which is meant to be a service for, you know, a merchant.
 A merchant's store.
+It's store-front.
 
 Here's the `StoreService`.
-It depends on a `java.time.Clock` to do its work.
+It depends on a bean of type  `java.time.Clock` to do its work.
 
 [source,java]
 ----
@@ -505,7 +512,15 @@ include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_b
 
 Now suppose I want to test that my logic works correctly.
 I can't run this using the production implementation of the `Clock` because, of course, that'll change as time goes by.
-I need to pin it down.
+I need to pin it down so that it's invariant relative to my test code.
+
+==== TestBean
+
+The first approach is a Spring Framework homegrown approach that might be enough in plenty of cases, and is my first go-to solution when I want to swap out a part of the bean graph.
+It requires no external dependencies besides Spring.
+
+When you annotate a field with `@TestBean`, you're telling Spring that you'd like a chance to provide a _bean override_ for beans of that particular type.
+In this instance, we provide the bean that overrides the existing one using a `static` factory method.
 
 [source,java]
 ----
@@ -515,12 +530,17 @@ include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_b
 . here we're telling Spring that we will provide an _override_ for the missing bean and, further, that if there is no other bean to be overridden, then this should be treated as an error.
 . here's our `static` factory method which resolves the fixed `Clock` instance.
 Spring will invoke this.
-. finally, the test
+. finally: the test.
 
-=== Mockito Beans
+==== Mockito Beans
 
-In the last example we provided our own instance of `Clock`, which returned pre-programmed results on certain calls. for a more complex c class with more methods, this would involve surgical overrides and finagling state in the parent class.
-It could get ugly really quickly. an alternative is to use Mockito, a mocking library that allows us to define objects that _look_ like our object, but whose responses (and behavior) we can provide to suit the purposes of our tests.
+In the last example we provided our own instance of `Clock` to override the configured one.
+The instance we configured returned pre-programmed results on certain calls.
+For a more complex class with more methods, this would involve surgical overrides and finagling state in the parent class.
+
+It could get ugly really quickly.
+An alternative is to use Mockito, a mocking library that allows us to define objects that _look_ like our object, but whose responses (and behavior) we can provide to suit the purposes of our tests.
+
 With a _mock_, it's up to us to provide implementations of all the methods we intend to invoke in the course of our test.
 No methods of the original class will be called.
 If you remember our section on creating proxies, then this sort of thing should be familiar.
@@ -539,7 +559,7 @@ include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_b
 If we've done our work correctly, `isOpen` will result in a call to the methods whose responses we just provided.
 And the results will work no matter the date.
 
-=== Mockito Spy Beans
+==== Mockito Spy Beans
 
 A _mock_ is an object whose behavior you can provide.
 A _spy_ is a wrapper around a real object.
@@ -555,14 +575,51 @@ include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_b
 . we'll override just this call
 . and then run the test as usual
 
+A good test tests only that which is under test and isolates all the other invariants.
+These three annotations - `@TestBean`, `@MockitoBean`, and `@MockitoSpyBean` - make this trivial for common dependencies.
+Sometimes, however, you will need to isolate entire subsystems, like the web tier itself.
 
+=== Testing services with `MockMvc`
 
+`MockMvc` is Spring's tool for testing your web layer (controllers) without actually starting a real server or opening a real network socket.
+Here's the core idea.
+Normally when you test a Spring MVC controller end-to-end, you'd have to boot up Tomcat, bind to a port, and fire real HTTP requests at it (that's what `TestRestTemplate` or `WebTestClient` against a live port do).
+That works, but it's slow and it's more of an integration test.
+MockMvc instead spins up the Spring MVC machinery - the `DispatcherServlet`, your handler mappings, argument resolvers, message converters, validation, exception handlers, filters — in memory, and lets you send mock requests straight into that dispatcher.
+No socket, no port, no real HTTP.
+So what it actually does is give you a fluent way to say "pretend an HTTP request came in, and let me assert on what the controller layer did with it.
+Here's an example.
 
+First, we'll introduce a trivial Spring MVC controller.
+We won't get too much into this right now, but you've seen a similar controller already.
 
+[source,java]
+----
+include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/SimpleController.java[]
+----
 
+Now let's write a simple test that exercises this controller.
 
-// mockmvc
-// RestTestClient
+[source,java]
+----
+include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/SimpleControllerTest.java[]
+----
+
+. first we tell Spring's `MockMvc` machinery to set up the web tier around this particular controller
+. we use the configured `MockMvc` and use it to make requests against the HTTP API and make assertions about the request and response.
+
+=== Testing clients with `RestTestClient`
+
+`MockMvc` lets you test the behavior of the service, while mocking out the client. `RestTestClient` does the inverse, letting you test the behavior of the client, while mocking out the server.
+Let's try that out, testing the client behavior itself.
+
+[source,java]
+----
+include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/SimpleClientTest.java[]
+----
+
+Here, we're using a fake client to exercise the network and protocol interface for the service and to make assertsion about the results.
+
 //
 // springboottest
 // slices
