@@ -63,7 +63,8 @@ You can, of course, annotate the method in the interface with `@Query`, and Spri
 
 Spring Boot has a ton of convenient conventions.
 For example, it'll create a _real_ `DataSource` backed by the HikariCP connection pool, with properties loaded by convention from the Spring `Environment`.
-Spring Boot will, by convention, load any `application.properties` or `application.yml` it finds in `src/main/resources`. So we no longer need our `@PropertySource` annotation.
+Spring Boot will, by convention, load any `application.properties` or `application.yml` it finds in `src/main/resources`.
+So we no longer need our `@PropertySource` annotation.
 
 == AutoConfiguration
 
@@ -217,7 +218,8 @@ Visit just `/actuator` to see all the sub-endpoints.
 
 We've also got Grafana running in the background.
 As you work through the code in Spring Boot, you might notice that, first of all, you're seeing a good deal more application events.
-Second, if you visit http://localhost:3000 and then navigate to `Drilldown` -> `Metrics`, you can see the same metrics you saw under `/actuator/metrics`, but now graphed over time. Neat!
+Second, if you visit http://localhost:3000 and then navigate to `Drilldown` -> `Metrics`, you can see the same metrics you saw under `/actuator/metrics`, but now graphed over time.
+Neat!
 
 image::images/boot-and-beyond/grafana.png[]
 
@@ -227,7 +229,6 @@ This application runs really quickly and scalably, but could it be faster and us
 Sure!
 One way you might help with that is to embrace GraalVM native images. https://graalvm.org[GraalVM] is an OpenJDK distribution that carries with it some amazing extras.
 You'll need to have it installed on your machine.
-
 
 I'm interested in the `native-image` compiler tool that comes with GraalVM.
 It takes a Java program's `.class` files and turns them into native, operating-system- and architecture-specific machine code.
@@ -393,6 +394,179 @@ If you want to build a container for a GraalVM native image, do the following:
 Let this run for a bit, and it'll give you the name of the container that's just been created.
 You can run it or `docker push` it to whatever container registry you want.
 From there, you're off to production!
+
+== Testing
+
+Spring makes it easy to both do the right thing and to focus on doing the right thing.
+But how do you know if you've actually done the right?
+How do you know if your changes resulted in outcomes you desired when you started writing the code in the first place?
+Testing, of course.
+
+In this book, I'll sometimes use tests as ways to demonstrate features.
+Other times, I'll just give you code you can run and watch work.
+So, let's quickly take a look at the testing story for Spring and Spring Boot.
+
+In a plain JUnit test, you could, of course, quite trivially stand-up Spring Boot and your whole application, obtain references to the beans, etc.
+This works, but it's sort of all-or-nothing.
+The real art comes in skillfully carving out that which is under test from that which isn't.
+That which is variable from the invariant.
+And Spring has amazing support here.
+
+Spring has great integration with JUnit, which is the industry standard.
+Spring also supports Spock for the Groovy community and TestNG.
+But JUnit's the main thing.
+Use that, and things will be alright.
+One of the core Spring Framework engineers, Sam Brannen, is also a major contributor to JUnit the project, too.
+It's no coincidence then that Spring and JUnit have enjoyed a nice symbiotic relationship for decades.
+
+=== The Core Spring TestContext Framework
+
+The Spring TestContext Framework in Spring is a test-framework agnostic framework that provides lifecycle management, dependency injection, support classes, annotations, and more for working with Spring components in a test class.
+It works with JUnit Jupiter (which shipped starting in JUnit 5), JUnit 4, and TestNG.
+By default, when you configure a Spring Boot project, it configures a JUnit 5-based testing stack.
+You can switch to the others, but.. why would you?
+
+In this book, we'll use JUnit 5 when we work with tests.
+The core Spring Framework support is massive.
+Broadly speaking, there are at least two interesting layers of support: unit-testing, and pseudo integration testing.
+
+=== Unit Testing
+
+I assume you understand the gist of unit testing.
+Spring even provides some _mock_ implementations of key Spring Framework types like `Environment` (`org.springframework.mock.env.MockEnvironment`, and the related `org.springframework.mock.env.MockPropertySource`), a bevy of mock-ready Servlet types (see `org.springframework.mock.web`).
+These mock objects are for use with Spring’s Web MVC framework and are generally more convenient to use than dynamic mock objects with mocking frameworks like EasyMock.
+There is even a slew of _utility_ classes designed to construct interesting objects or answer interesting questions in the context of a test: `AopTestUtils`, `TestSocketUtils`, `ReflectionTestUtils`, `JdbcTestUtils`, etc.
+I won't dive too much into this stuff because it's of little import: for our application, we're probably going to do very little unit testing.
+Instead, we're going to be working with (secure) applications which will need to have several layers of concerns setup and working to do anything interesting.
+We're therefore far more interested in integration-testing.
+
+=== Integration Testing
+
+The support for integration testing in Spring is simple: I want to stand up a Spring `ApplicationContext` and inject the beans I've configured to ensure that they, and they alone, work as expected in the ensemble in which they're configured.
+This isn't plain unit-testing, nor is it full-bore integration testing.
+It's something in between.
+
+Here's the simplest possible test using only the facilities in Spring Framework.
+
+[source,java]
+----
+include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/SpringTest.java[]
+----
+
+. this annotation comes from JUnit and allows customization of the default JUnit lifecycle and instances
+. this annotation tells the JUnit Spring support to load a Java configuration class and make available the beans therein.
+. and here, inside our test class (though this isn't required, it is convenient and portable), is a Java configuration class with but one bean `Announcer`.
+
+The code for `Announcer` looks like this:
+
+[source,java]
+----
+include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/Announcer.java[]
+----
+
+It implements `InitializingBean`, which is a Spring lifecycle callback.
+In a unit-test, we'd have to call that method ourselves to ensure proper setup.
+Similarly, we can trust that the dependency on `Environment` has been satisfied by the time we start poking and prodding at the `Announcer` bean.
+
+At this point there's a good deal more we could do.
+We could _delve_ (yes, I know that's a telltale identifier of AI-written prose, but I didn't use AI to write it!) more deeply into the web framework support.
+Or the database support and the transaction support.
+Tons.
+
+In the example above, injected a _real_ `Environment`.
+
+=== Isolated Configuration
+
+There's a tension we face when doing integration tests. we want things to execute in an environment as close to production as possible - otherwise why bother with integration testing at all? - but we also need to avoid complicating test setup with unncessary dependencies.
+These extra dependencies add no clarity to our determination that some bit of code works or not while simultaneously creating undue burden on the people writing and maintaining the test.
+
+Spring already knows how to wire up your entire production application.
+Because of this, its testing support isn't about adding more configuration - it’s about removing or carving it up.
+You don't need to waste time teaching a testing framework how to mimic your production environment; Spring already has the blueprint.
+Instead, your job is to tell Spring how to run less of the application, swapping out or isolating the specific pieces you want to test from the ones you don't.
+
+We'll demonstrate these concepts using a simple class, called `StoreService`, which is meant to be a service for, you know, a merchant.
+A merchant's store.
+
+Here's the `StoreService`.
+It depends on a `java.time.Clock` to do its work.
+
+[source,java]
+----
+include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/StoreService.java[]
+----
+
+The `Clock` is configured in `StoreConfiguration`.
+
+[source,java]
+----
+include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/StoreConfiguration.java[]
+----
+
+Now suppose I want to test that my logic works correctly.
+I can't run this using the production implementation of the `Clock` because, of course, that'll change as time goes by.
+I need to pin it down.
+
+[source,java]
+----
+include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/TestBeanTest.java[]
+----
+
+. here we're telling Spring that we will provide an _override_ for the missing bean and, further, that if there is no other bean to be overridden, then this should be treated as an error.
+. here's our `static` factory method which resolves the fixed `Clock` instance.
+Spring will invoke this.
+. finally, the test
+
+=== Mockito Beans
+
+In the last example we provided our own instance of `Clock`, which returned pre-programmed results on certain calls. for a more complex c class with more methods, this would involve surgical overrides and finagling state in the parent class.
+It could get ugly really quickly. an alternative is to use Mockito, a mocking library that allows us to define objects that _look_ like our object, but whose responses (and behavior) we can provide to suit the purposes of our tests.
+With a _mock_, it's up to us to provide implementations of all the methods we intend to invoke in the course of our test.
+No methods of the original class will be called.
+If you remember our section on creating proxies, then this sort of thing should be familiar.
+
+We'll use `@MockitoBean` to instruct Spring to create a Mockito proxy for us for a given bean of a given type.
+Then, before our tests run, we'll need to program the mock.
+
+[source,java]
+----
+include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/MockitoBeanTest.java[]
+----
+
+. instead of us providing a factory method, we'll tell Spring to wire up a `Mock` and replace the bean in teh context with that Mock.
+. then we'll use Wiremock's API to instruct the `Clock` on what to do.
+. and finally, we'll kick the whole chain of operations off.
+If we've done our work correctly, `isOpen` will result in a call to the methods whose responses we just provided.
+And the results will work no matter the date.
+
+=== Mockito Spy Beans
+
+A _mock_ is an object whose behavior you can provide.
+A _spy_ is a wrapper around a real object.
+Methods call the real implementation unless you stub them.
+
+[source,java]
+----
+include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/MockitoSpyBeanTest.java[]
+----
+
+. the real `isOpen()` actually executes against the real `Clock`
+. ...but it's a spy, so the invocation is still recorded
+. we'll override just this call
+. and then run the test as usual
+
+
+
+
+
+
+
+// mockmvc
+// RestTestClient
+//
+// springboottest
+// slices
+
 
 == Next Steps
 

@@ -914,6 +914,11 @@ The other just says the user must authenticate with Passkeys.
 Restart the application and enter the Passkey, and you'll be staring at an authenticated page.
 Logout and then enter a username or a one-time token, and you'll be asked to do another authentication.
 
+== Testing Authentication
+
+
+
+
 Our configuration is simple and _global_.
 That bean applies to every request made and to every endpoint.
 Let's turn our attention to how we make more granular decisions about what is required of an authenticated user for particular aspects, like routes, of the application.
@@ -924,18 +929,63 @@ This is called _authorization_.
 Spring Security supports _defense-in-depth_, allowing you to configure multiple layers - requests and methods - of security so that if for whatever reason a would be attacker breaches one layer, they can't get through the other.
 Request-based authorization is the kind with which we'll mostly be dealing here.
 
-But first, let's look at method-level authorization. It can be quite useful, particularly when securing GraphQL.
+=== Method-Level Authorization
+
+Let's look at method-level authorization.
+It can be quite useful, particularly when securing GraphQL.
 It's the idea that method invocations on individual beans can be inhibited based on authorization rules.
 
-
-Youve probably seen the scary diagram from the Spring Security documentation. It looks like this.
+You've probably seen the scary diagram from the Spring Security documentation.
+It looks like this.
 
 image::images/security/authorization/diagram-from-security-docs.png[]
 
-Basically, Spring Security creates a proxy out of your secured bean, and intercepts method invocations, evaluating the authorization rules specified on methods (either as annotation)
+It re-establishes some concepts we've already seen.
 
-// show the method authorization
-// show common expressions you can put in @PreAuthorized like `isAuthenticated()`, etc.
+All interactions with your application's beans are gated by a sort of filter (in this case, a proxy on your bean) that checks that there's a user of some sort with a particular set of permissions These gates happen right as you make a call to a bean.
+There are two kinds of checks: pre-authorization and post-authorization.
+Pre-authorization checks are a good place to ensure that a given user has the right rights (permissions, roles, authorities, whatever) to make this call.
+A post-authorization check is a good place to ensure that the returned value is a value to which the authenticated principal actually has rights.
+Both checks throw exceptions of type  `AccessDeniedException`, which is a `RuntimeException`.
+You should handle this exception in your client code if you want to do something on the spot.
+Otherwise, if you let it bubble up in a web container, Spring Security's default filter machinery will intercept the exception and handle it with the usual error codes.
+
+Let's look at some examples.
+First thing's first: we need to _enable_ method security.
+
+TIP: You might see `@EnableGlobalMethodSecurity` in older code.
+This is deprecated and you're encouraged to move to the newer approach shown here.
+
+You can put the `@EnableMethodSecurity` on any `@Configuration` class or your `@SpringBootApplication`, which is of course a `@Configuration` class.
+Of note here: Spring Boot does _not_ automatically enable method security for you by default.
+
+[source,java]
+----
+include::{code}/security/security/src/main/java/com/example/security/authorization/methods/CustomerServiceConfiguration.java[]
+----
+
+Let's look at a trivial service which handles potentially sensitive data.
+We want to both be sure that the person making the request is an `ADMIN` _and_ that the returned data asked for belongs to them.
+
+[source,java]
+----
+include::{code}/security/security/src/main/java/com/example/security/authorization/methods/CustomerService.java[]
+----
+
+. the `@PreAuthorize` annotation's Spring Expression Language expression has access to all the methods on Spring Security's `SecurityExpressionRoot` class.
+This class has convenience methods to check for all authorities, any authority, to blindly wave the attempt right on through, to reject it outright, etc.
+. we've already looked up the domain data, but let's do one last check to ensure it belongs to the requestor by inspecting the method's return value.
+Imagine the kinds of tenancy checks you could build with this mind!
+
+Now let's exercise this code. While we're at it, we can take a look at some of Spring Security's amazing testing support.
+
+[source,java]
+----
+include::{code}/security/security/src/test/java/com/example/security/authorization/methods/CustomerServiceTest.java[]
+----
+
+
+
 // show the testing capabilities in CustomerServiceTest
 // https://docs.spring.io/spring-security/reference/servlet/test/method.html
 // do a table showing the progression from `@WithAnonymousUser1, to `@WithMockUser`, to `@WithUserDetails` to `@WithSecurityContext`. Each allowing me to exert more and more control over the 'fake' authentication that's put in place when we run the test.
@@ -945,3 +995,5 @@ Basically, Spring Security creates a proxy out of your secured bean, and interce
 // access control is an important part
 // authentication events in spring security
 // exchanging passwords for short term creds w/ oauth (see next chapters!)
+// todo add a discussion around Users
+// todo add a discussion around roles vs authorities in the User object
