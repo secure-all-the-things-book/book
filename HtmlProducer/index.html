@@ -5788,22 +5788,30 @@ Tons.</p>
 <div class="sect3">
 <h4 id="_isolated_configuration">Isolated Configuration</h4>
 <div class="paragraph">
-<p>There&#8217;s a tension we face when doing integration tests. we want things to execute in an environment as close to production as possible - otherwise why bother with integration testing at all? - but we also need to avoid complicating test setup with unncessary dependencies.
-These extra dependencies add no clarity to our determination that some bit of code works or not while simultaneously creating undue burden on the people writing and maintaining the test.</p>
+<p>There&#8217;s a tension we face when doing integration tests. we want things to execute in an environment as close to production as possible - otherwise why bother with integration testing at all? - but we also need to avoid complicating test setup with unnecessary dependencies.
+These extra dependencies add no clarity to our determination that some bit of code works or not while simultaneously creating undue burden on the people writing and maintaining the test.
+Mercifully, we&#8217;re using a dependency injection framework.
+A framework follows the open-closed principle: it&#8217;s open for extension, closed for modification.
+Put another way: you can change the way Spring behaves without recompiling or changing Spring&#8217;s code.
+This works because you can swap out, conceptually, one bean for another at any time.</p>
 </div>
 <div class="paragraph">
 <p>Spring already knows how to wire up your entire production application.
-Because of this, its testing support isn&#8217;t about adding more configuration - it’s about removing or carving it up.
+Because of this, its testing support isn&#8217;t about adding more configuration - it’s about removing or carving that configuration up.
 You don&#8217;t need to waste time teaching a testing framework how to mimic your production environment; Spring already has the blueprint.
 Instead, your job is to tell Spring how to run less of the application, swapping out or isolating the specific pieces you want to test from the ones you don&#8217;t.</p>
 </div>
 <div class="paragraph">
+<p>In this section, we&#8217;ll look at ways to make this work trivial.</p>
+</div>
+<div class="paragraph">
 <p>We&#8217;ll demonstrate these concepts using a simple class, called <code>StoreService</code>, which is meant to be a service for, you know, a merchant.
-A merchant&#8217;s store.</p>
+A merchant&#8217;s store.
+It&#8217;s store-front.</p>
 </div>
 <div class="paragraph">
 <p>Here&#8217;s the <code>StoreService</code>.
-It depends on a <code>java.time.Clock</code> to do its work.</p>
+It depends on a bean of type  <code>java.time.Clock</code> to do its work.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -5821,7 +5829,17 @@ It depends on a <code>java.time.Clock</code> to do its work.</p>
 <div class="paragraph">
 <p>Now suppose I want to test that my logic works correctly.
 I can&#8217;t run this using the production implementation of the <code>Clock</code> because, of course, that&#8217;ll change as time goes by.
-I need to pin it down.</p>
+I need to pin it down so that it&#8217;s invariant relative to my test code.</p>
+</div>
+<div class="sect4">
+<h5 id="_testbean">TestBean</h5>
+<div class="paragraph">
+<p>The first approach is a Spring Framework homegrown approach that might be enough in plenty of cases, and is my first go-to solution when I want to swap out a part of the bean graph.
+It requires no external dependencies besides Spring.</p>
+</div>
+<div class="paragraph">
+<p>When you annotate a field with <code>@TestBean</code>, you&#8217;re telling Spring that you&#8217;d like a chance to provide a <em>bean override</em> for beans of that particular type.
+In this instance, we provide the bean that overrides the existing one using a <code>static</code> factory method.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -5838,17 +5856,24 @@ I need to pin it down.</p>
 Spring will invoke this.</p>
 </li>
 <li>
-<p>finally, the test</p>
+<p>finally: the test.</p>
 </li>
 </ol>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_mockito_beans">Mockito Beans</h4>
+<div class="sect4">
+<h5 id="_mockito_beans">Mockito Beans</h5>
 <div class="paragraph">
-<p>In the last example we provided our own instance of <code>Clock</code>, which returned pre-programmed results on certain calls. for a more complex c class with more methods, this would involve surgical overrides and finagling state in the parent class.
-It could get ugly really quickly. an alternative is to use Mockito, a mocking library that allows us to define objects that <em>look</em> like our object, but whose responses (and behavior) we can provide to suit the purposes of our tests.
-With a <em>mock</em>, it&#8217;s up to us to provide implementations of all the methods we intend to invoke in the course of our test.
+<p>In the last example we provided our own instance of <code>Clock</code> to override the configured one.
+The instance we configured returned pre-programmed results on certain calls.
+For a more complex class with more methods, this would involve surgical overrides and finagling state in the parent class.</p>
+</div>
+<div class="paragraph">
+<p>It could get ugly really quickly.
+An alternative is to use Mockito, a mocking library that allows us to define objects that <em>look</em> like our object, but whose responses (and behavior) we can provide to suit the purposes of our tests.</p>
+</div>
+<div class="paragraph">
+<p>With a <em>mock</em>, it&#8217;s up to us to provide implementations of all the methods we intend to invoke in the course of our test.
 No methods of the original class will be called.
 If you remember our section on creating proxies, then this sort of thing should be familiar.</p>
 </div>
@@ -5877,8 +5902,8 @@ And the results will work no matter the date.</p>
 </ol>
 </div>
 </div>
-<div class="sect3">
-<h4 id="_mockito_spy_beans">Mockito Spy Beans</h4>
+<div class="sect4">
+<h5 id="_mockito_spy_beans">Mockito Spy Beans</h5>
 <div class="paragraph">
 <p>A <em>mock</em> is an object whose behavior you can provide.
 A <em>spy</em> is a wrapper around a real object.
@@ -5904,6 +5929,67 @@ Methods call the real implementation unless you stub them.</p>
 <p>and then run the test as usual</p>
 </li>
 </ol>
+</div>
+<div class="paragraph">
+<p>A good test tests only that which is under test and isolates all the other invariants.
+These three annotations - <code>@TestBean</code>, <code>@MockitoBean</code>, and <code>@MockitoSpyBean</code> - make this trivial for common dependencies.
+Sometimes, however, you will need to isolate entire subsystems, like the web tier itself.</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_testing_services_with_mockmvc">Testing services with <code>MockMvc</code></h4>
+<div class="paragraph">
+<p><code>MockMvc</code> is Spring&#8217;s tool for testing your web layer (controllers) without actually starting a real server or opening a real network socket.
+Here&#8217;s the core idea.
+Normally when you test a Spring MVC controller end-to-end, you&#8217;d have to boot up Tomcat, bind to a port, and fire real HTTP requests at it (that&#8217;s what <code>TestRestTemplate</code> or <code>WebTestClient</code> against a live port do).
+That works, but it&#8217;s slow and it&#8217;s more of an integration test.
+MockMvc instead spins up the Spring MVC machinery - the <code>DispatcherServlet</code>, your handler mappings, argument resolvers, message converters, validation, exception handlers, filters — in memory, and lets you send mock requests straight into that dispatcher.
+No socket, no port, no real HTTP.
+So what it actually does is give you a fluent way to say "pretend an HTTP request came in, and let me assert on what the controller layer did with it.
+Here&#8217;s an example.</p>
+</div>
+<div class="paragraph">
+<p>First, we&#8217;ll introduce a trivial Spring MVC controller.
+We won&#8217;t get too much into this right now, but you&#8217;ve seen a similar controller already.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">Unresolved directive in boot-and-beyond.adoc - include::/home/runner/Desktop/root/code/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/SimpleController.java<span class="type">[]</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now let&#8217;s write a simple test that exercises this controller.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">Unresolved directive in boot-and-beyond.adoc - include::/home/runner/Desktop/root/code/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/SimpleControllerTest.java<span class="type">[]</span></code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>first we tell Spring&#8217;s <code>MockMvc</code> machinery to set up the web tier around this particular controller</p>
+</li>
+<li>
+<p>we use the configured <code>MockMvc</code> and use it to make requests against the HTTP API and make assertions about the request and response.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_testing_clients_with_resttestclient">Testing clients with <code>RestTestClient</code></h4>
+<div class="paragraph">
+<p><code>MockMvc</code> lets you test the behavior of the service, while mocking out the client. <code>RestTestClient</code> does the inverse, letting you test the behavior of the client, while mocking out the server.
+Let&#8217;s try that out, testing the client behavior itself.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">Unresolved directive in boot-and-beyond.adoc - include::/home/runner/Desktop/root/code/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/SimpleClientTest.java<span class="type">[]</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Here, we&#8217;re using a fake client to exercise the network and protocol interface for the service and to make assertsion about the results.</p>
 </div>
 </div>
 </div>
@@ -10949,7 +11035,7 @@ Now, all the other machinery in Spring Security that consults this thread local 
 <div id="footer">
 <div id="footer-text">
 Version 1.0<br>
-Last updated 2026-07-18 04:14:41 UTC
+Last updated 2026-07-18 21:36:55 UTC
 </div>
 </div>
 </body>
