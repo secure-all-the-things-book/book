@@ -533,7 +533,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <span id="author" class="author">Josh Long</span><br>
 <span id="email" class="email"><a href="mailto:josh@joshlong.com">josh@joshlong.com</a></span><br>
 <span id="revnumber">version 1.0,</span>
-<span id="revdate">2026-07-13</span>
+<span id="revdate">2026-07-18</span>
 </div>
 </div>
 <div id="content">
@@ -605,6 +605,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_graalvm_native_images">GraalVM Native Images</a></li>
 <li><a href="#_project_leyden">Project Leyden</a></li>
 <li><a href="#_the_spring_boot_buildpack_integration">The Spring Boot Buildpack integration</a></li>
+<li><a href="#_testing">Testing</a></li>
 <li><a href="#_next_steps_3">Next Steps</a></li>
 </ul>
 </li>
@@ -629,6 +630,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_persistence">Persistence</a></li>
 <li><a href="#_other_interesting_kinds_of_authentication">Other Interesting Kinds of Authentication</a></li>
 <li><a href="#_multifactor_authentication">Multifactor Authentication</a></li>
+<li><a href="#_testing_authentication">Testing Authentication</a></li>
 <li><a href="#_authorization">Authorization</a></li>
 </ul>
 </li>
@@ -5036,7 +5038,8 @@ You can, of course, annotate the method in the interface with <code>@Query</code
 <div class="paragraph">
 <p>Spring Boot has a ton of convenient conventions.
 For example, it&#8217;ll create a <em>real</em> <code>DataSource</code> backed by the HikariCP connection pool, with properties loaded by convention from the Spring <code>Environment</code>.
-Spring Boot will, by convention, load any <code>application.properties</code> or <code>application.yml</code> it finds in <code>src/main/resources</code>. So we no longer need our <code>@PropertySource</code> annotation.</p>
+Spring Boot will, by convention, load any <code>application.properties</code> or <code>application.yml</code> it finds in <code>src/main/resources</code>.
+So we no longer need our <code>@PropertySource</code> annotation.</p>
 </div>
 </div>
 <div class="sect2">
@@ -5356,7 +5359,8 @@ Visit just <code>/actuator</code> to see all the sub-endpoints.</p>
 <div class="paragraph">
 <p>We&#8217;ve also got Grafana running in the background.
 As you work through the code in Spring Boot, you might notice that, first of all, you&#8217;re seeing a good deal more application events.
-Second, if you visit <a href="http://localhost:3000" class="bare">http://localhost:3000</a> and then navigate to <code>Drilldown</code> &#8594; <code>Metrics</code>, you can see the same metrics you saw under <code>/actuator/metrics</code>, but now graphed over time. Neat!</p>
+Second, if you visit <a href="http://localhost:3000" class="bare">http://localhost:3000</a> and then navigate to <code>Drilldown</code> &#8594; <code>Metrics</code>, you can see the same metrics you saw under <code>/actuator/metrics</code>, but now graphed over time.
+Neat!</p>
 </div>
 <div class="imageblock">
 <div class="content">
@@ -5674,6 +5678,233 @@ If you want to build a container for a standard JVM-based application, do the fo
 <p>Let this run for a bit, and it&#8217;ll give you the name of the container that&#8217;s just been created.
 You can run it or <code>docker push</code> it to whatever container registry you want.
 From there, you&#8217;re off to production!</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_testing">Testing</h3>
+<div class="paragraph">
+<p>Spring makes it easy to both do the right thing and to focus on doing the right thing.
+But how do you know if you&#8217;ve actually done the right?
+How do you know if your changes resulted in outcomes you desired when you started writing the code in the first place?
+Testing, of course.</p>
+</div>
+<div class="paragraph">
+<p>In this book, I&#8217;ll sometimes use tests as ways to demonstrate features.
+Other times, I&#8217;ll just give you code you can run and watch work.
+So, let&#8217;s quickly take a look at the testing story for Spring and Spring Boot.</p>
+</div>
+<div class="paragraph">
+<p>In a plain JUnit test, you could, of course, quite trivially stand-up Spring Boot and your whole application, obtain references to the beans, etc.
+This works, but it&#8217;s sort of all-or-nothing.
+The real art comes in skillfully carving out that which is under test from that which isn&#8217;t.
+That which is variable from the invariant.
+And Spring has amazing support here.</p>
+</div>
+<div class="paragraph">
+<p>Spring has great integration with JUnit, which is the industry standard.
+Spring also supports Spock for the Groovy community and TestNG.
+But JUnit&#8217;s the main thing.
+Use that, and things will be alright.
+One of the core Spring Framework engineers, Sam Brannen, is also a major contributor to JUnit the project, too.
+It&#8217;s no coincidence then that Spring and JUnit have enjoyed a nice symbiotic relationship for decades.</p>
+</div>
+<div class="sect3">
+<h4 id="_the_core_spring_testcontext_framework">The Core Spring TestContext Framework</h4>
+<div class="paragraph">
+<p>The Spring TestContext Framework in Spring is a test-framework agnostic framework that provides lifecycle management, dependency injection, support classes, annotations, and more for working with Spring components in a test class.
+It works with JUnit Jupiter (which shipped starting in JUnit 5), JUnit 4, and TestNG.
+By default, when you configure a Spring Boot project, it configures a JUnit 5-based testing stack.
+You can switch to the others, but.. why would you?</p>
+</div>
+<div class="paragraph">
+<p>In this book, we&#8217;ll use JUnit 5 when we work with tests.
+The core Spring Framework support is massive.
+Broadly speaking, there are at least two interesting layers of support: unit-testing, and pseudo integration testing.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_unit_testing">Unit Testing</h4>
+<div class="paragraph">
+<p>I assume you understand the gist of unit testing.
+Spring even provides some <em>mock</em> implementations of key Spring Framework types like <code>Environment</code> (<code>org.springframework.mock.env.MockEnvironment</code>, and the related <code>org.springframework.mock.env.MockPropertySource</code>), a bevy of mock-ready Servlet types (see <code>org.springframework.mock.web</code>).
+These mock objects are for use with Spring’s Web MVC framework and are generally more convenient to use than dynamic mock objects with mocking frameworks like EasyMock.
+There is even a slew of <em>utility</em> classes designed to construct interesting objects or answer interesting questions in the context of a test: <code>AopTestUtils</code>, <code>TestSocketUtils</code>, <code>ReflectionTestUtils</code>, <code>JdbcTestUtils</code>, etc.
+I won&#8217;t dive too much into this stuff because it&#8217;s of little import: for our application, we&#8217;re probably going to do very little unit testing.
+Instead, we&#8217;re going to be working with (secure) applications which will need to have several layers of concerns setup and working to do anything interesting.
+We&#8217;re therefore far more interested in integration-testing.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_integration_testing">Integration Testing</h4>
+<div class="paragraph">
+<p>The support for integration testing in Spring is simple: I want to stand up a Spring <code>ApplicationContext</code> and inject the beans I&#8217;ve configured to ensure that they, and they alone, work as expected in the ensemble in which they&#8217;re configured.
+This isn&#8217;t plain unit-testing, nor is it full-bore integration testing.
+It&#8217;s something in between.</p>
+</div>
+<div class="paragraph">
+<p>Here&#8217;s the simplest possible test using only the facilities in Spring Framework.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">Unresolved directive in boot-and-beyond.adoc - include::/home/runner/Desktop/root/code/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/SpringTest.java<span class="type">[]</span></code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>this annotation comes from JUnit and allows customization of the default JUnit lifecycle and instances</p>
+</li>
+<li>
+<p>this annotation tells the JUnit Spring support to load a Java configuration class and make available the beans therein.</p>
+</li>
+<li>
+<p>and here, inside our test class (though this isn&#8217;t required, it is convenient and portable), is a Java configuration class with but one bean <code>Announcer</code>.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>The code for <code>Announcer</code> looks like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">Unresolved directive in boot-and-beyond.adoc - include::/home/runner/Desktop/root/code/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/Announcer.java<span class="type">[]</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It implements <code>InitializingBean</code>, which is a Spring lifecycle callback.
+In a unit-test, we&#8217;d have to call that method ourselves to ensure proper setup.
+Similarly, we can trust that the dependency on <code>Environment</code> has been satisfied by the time we start poking and prodding at the <code>Announcer</code> bean.</p>
+</div>
+<div class="paragraph">
+<p>At this point there&#8217;s a good deal more we could do.
+We could <em>delve</em> (yes, I know that&#8217;s a telltale identifier of AI-written prose, but I didn&#8217;t use AI to write it!) more deeply into the web framework support.
+Or the database support and the transaction support.
+Tons.</p>
+</div>
+<div class="paragraph">
+<p>In the example above, injected a <em>real</em> <code>Environment</code>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_isolated_configuration">Isolated Configuration</h4>
+<div class="paragraph">
+<p>There&#8217;s a tension we face when doing integration tests. we want things to execute in an environment as close to production as possible - otherwise why bother with integration testing at all? - but we also need to avoid complicating test setup with unncessary dependencies.
+These extra dependencies add no clarity to our determination that some bit of code works or not while simultaneously creating undue burden on the people writing and maintaining the test.</p>
+</div>
+<div class="paragraph">
+<p>Spring already knows how to wire up your entire production application.
+Because of this, its testing support isn&#8217;t about adding more configuration - it’s about removing or carving it up.
+You don&#8217;t need to waste time teaching a testing framework how to mimic your production environment; Spring already has the blueprint.
+Instead, your job is to tell Spring how to run less of the application, swapping out or isolating the specific pieces you want to test from the ones you don&#8217;t.</p>
+</div>
+<div class="paragraph">
+<p>We&#8217;ll demonstrate these concepts using a simple class, called <code>StoreService</code>, which is meant to be a service for, you know, a merchant.
+A merchant&#8217;s store.</p>
+</div>
+<div class="paragraph">
+<p>Here&#8217;s the <code>StoreService</code>.
+It depends on a <code>java.time.Clock</code> to do its work.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">Unresolved directive in boot-and-beyond.adoc - include::/home/runner/Desktop/root/code/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/StoreService.java<span class="type">[]</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>Clock</code> is configured in <code>StoreConfiguration</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">Unresolved directive in boot-and-beyond.adoc - include::/home/runner/Desktop/root/code/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/StoreConfiguration.java<span class="type">[]</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now suppose I want to test that my logic works correctly.
+I can&#8217;t run this using the production implementation of the <code>Clock</code> because, of course, that&#8217;ll change as time goes by.
+I need to pin it down.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">Unresolved directive in boot-and-beyond.adoc - include::/home/runner/Desktop/root/code/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/TestBeanTest.java<span class="type">[]</span></code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>here we&#8217;re telling Spring that we will provide an <em>override</em> for the missing bean and, further, that if there is no other bean to be overridden, then this should be treated as an error.</p>
+</li>
+<li>
+<p>here&#8217;s our <code>static</code> factory method which resolves the fixed <code>Clock</code> instance.
+Spring will invoke this.</p>
+</li>
+<li>
+<p>finally, the test</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_mockito_beans">Mockito Beans</h4>
+<div class="paragraph">
+<p>In the last example we provided our own instance of <code>Clock</code>, which returned pre-programmed results on certain calls. for a more complex c class with more methods, this would involve surgical overrides and finagling state in the parent class.
+It could get ugly really quickly. an alternative is to use Mockito, a mocking library that allows us to define objects that <em>look</em> like our object, but whose responses (and behavior) we can provide to suit the purposes of our tests.
+With a <em>mock</em>, it&#8217;s up to us to provide implementations of all the methods we intend to invoke in the course of our test.
+No methods of the original class will be called.
+If you remember our section on creating proxies, then this sort of thing should be familiar.</p>
+</div>
+<div class="paragraph">
+<p>We&#8217;ll use <code>@MockitoBean</code> to instruct Spring to create a Mockito proxy for us for a given bean of a given type.
+Then, before our tests run, we&#8217;ll need to program the mock.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">Unresolved directive in boot-and-beyond.adoc - include::/home/runner/Desktop/root/code/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/MockitoBeanTest.java<span class="type">[]</span></code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>instead of us providing a factory method, we&#8217;ll tell Spring to wire up a <code>Mock</code> and replace the bean in teh context with that Mock.</p>
+</li>
+<li>
+<p>then we&#8217;ll use Wiremock&#8217;s API to instruct the <code>Clock</code> on what to do.</p>
+</li>
+<li>
+<p>and finally, we&#8217;ll kick the whole chain of operations off.
+If we&#8217;ve done our work correctly, <code>isOpen</code> will result in a call to the methods whose responses we just provided.
+And the results will work no matter the date.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_mockito_spy_beans">Mockito Spy Beans</h4>
+<div class="paragraph">
+<p>A <em>mock</em> is an object whose behavior you can provide.
+A <em>spy</em> is a wrapper around a real object.
+Methods call the real implementation unless you stub them.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">Unresolved directive in boot-and-beyond.adoc - include::/home/runner/Desktop/root/code/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/MockitoSpyBeanTest.java<span class="type">[]</span></code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>the real <code>isOpen()</code> actually executes against the real <code>Clock</code></p>
+</li>
+<li>
+<p>&#8230;&#8203;but it&#8217;s a spy, so the invocation is still recorded</p>
+</li>
+<li>
+<p>we&#8217;ll override just this call</p>
+</li>
+<li>
+<p>and then run the test as usual</p>
+</li>
+</ol>
+</div>
 </div>
 </div>
 <div class="sect2">
@@ -7508,6 +7739,9 @@ The other just says the user must authenticate with Passkeys.</p>
 <p>Restart the application and enter the Passkey, and you&#8217;ll be staring at an authenticated page.
 Logout and then enter a username or a one-time token, and you&#8217;ll be asked to do another authentication.</p>
 </div>
+</div>
+<div class="sect2">
+<h3 id="_testing_authentication">Testing Authentication</h3>
 <div class="paragraph">
 <p>Our configuration is simple and <em>global</em>.
 That bean applies to every request made and to every endpoint.
@@ -7521,12 +7755,16 @@ This is called <em>authorization</em>.</p>
 <p>Spring Security supports <em>defense-in-depth</em>, allowing you to configure multiple layers - requests and methods - of security so that if for whatever reason a would be attacker breaches one layer, they can&#8217;t get through the other.
 Request-based authorization is the kind with which we&#8217;ll mostly be dealing here.</p>
 </div>
+<div class="sect3">
+<h4 id="_method_level_authorization">Method-Level Authorization</h4>
 <div class="paragraph">
-<p>But first, let&#8217;s look at method-level authorization. It can be quite useful, particularly when securing GraphQL.
+<p>Let&#8217;s look at method-level authorization.
+It can be quite useful, particularly when securing GraphQL.
 It&#8217;s the idea that method invocations on individual beans can be inhibited based on authorization rules.</p>
 </div>
 <div class="paragraph">
-<p>Youve probably seen the scary diagram from the Spring Security documentation. It looks like this.</p>
+<p>You&#8217;ve probably seen the scary diagram from the Spring Security documentation.
+It looks like this.</p>
 </div>
 <div class="imageblock">
 <div class="content">
@@ -7534,7 +7772,152 @@ It&#8217;s the idea that method invocations on individual beans can be inhibited
 </div>
 </div>
 <div class="paragraph">
-<p>Basically, Spring Security creates a proxy out of your secured bean, and intercepts method invocations, evaluating the authorization rules specified on methods (either as annotation)</p>
+<p>It re-establishes some concepts we&#8217;ve already seen.</p>
+</div>
+<div class="paragraph">
+<p>All interactions with your application&#8217;s beans are gated by a sort of filter (in this case, a proxy on your bean) that checks that there&#8217;s a user of some sort with a particular set of permissions These gates happen right as you make a call to a bean.
+There are two kinds of checks: pre-authorization and post-authorization.
+Pre-authorization checks are a good place to ensure that a given user has the right rights (permissions, roles, authorities, whatever) to make this call.
+A post-authorization check is a good place to ensure that the returned value is a value to which the authenticated principal actually has rights.
+Both checks throw exceptions of type  <code>AccessDeniedException</code>, which is a <code>RuntimeException</code>.
+You should handle this exception in your client code if you want to do something on the spot.
+Otherwise, if you let it bubble up in a web container, Spring Security&#8217;s default filter machinery will intercept the exception and handle it with the usual error codes.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s look at some examples.
+First thing&#8217;s first: we need to <em>enable</em> method security.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+You might see <code>@EnableGlobalMethodSecurity</code> in older code.
+This is deprecated and you&#8217;re encouraged to move to the newer approach shown here.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>You can put the <code>@EnableMethodSecurity</code> on any <code>@Configuration</code> class or your <code>@SpringBootApplication</code>, which is of course a <code>@Configuration</code> class.
+Of note here: Spring Boot does <em>not</em> automatically enable method security for you by default.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.security.authorization.methods</span>;
+
+<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Configuration</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity</span>;
+
+<span class="annotation">@Configuration</span>
+<span class="annotation">@EnableMethodSecurity</span>
+<span class="type">class</span> <span class="class">CustomerServiceConfiguration</span> {
+
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s look at a trivial service which handles potentially sensitive data.
+We want to both be sure that the person making the request is an <code>ADMIN</code> <em>and</em> that the returned data asked for belongs to them.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.security.authorization.methods</span>;
+
+<span class="keyword">import</span> <span class="include">org.springframework.security.access.prepost.PostAuthorize</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.security.access.prepost.PreAuthorize</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.stereotype.Service</span>;
+
+<span class="keyword">import</span> <span class="include">java.util.Map</span>;
+
+<span class="annotation">@Service</span>
+<span class="type">class</span> <span class="class">CustomerService</span> {
+
+        <i class="conum" data-value="1"></i><b>(1)</b>
+        <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">Map</span>&lt;<span class="predefined-type">Long</span>, Customer&gt; customers = <span class="predefined-type">Map</span>.of(<span class="integer">1L</span>, <span class="keyword">new</span> Customer(<span class="string"><span class="delimiter">&quot;</span><span class="content">josh@joshlong.com</span><span class="delimiter">&quot;</span></span>), <span class="comment">//</span>
+                        <span class="integer">2L</span>, <span class="keyword">new</span> Customer(<span class="string"><span class="delimiter">&quot;</span><span class="content">user@anotherdomain.site</span><span class="delimiter">&quot;</span></span>)<span class="comment">//</span>
+        );
+
+        <span class="annotation">@PreAuthorize</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">hasRole('ADMIN')</span><span class="delimiter">&quot;</span></span>) <i class="conum" data-value="2"></i><b>(2)</b>
+        <span class="annotation">@PostAuthorize</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content"> returnObject  != null  &amp;&amp; returnObject.username == authentication.name </span><span class="delimiter">&quot;</span></span>) <i class="conum" data-value="3"></i><b>(3)</b>
+        Customer readPrivilegedCustomerData(<span class="type">long</span> id) {
+                <span class="keyword">return</span> <span class="local-variable">this</span>.customers.getOrDefault(id, <span class="predefined-constant">null</span>);
+        }
+
+}
+
+record Customer(<span class="predefined-type">String</span> username) {
+}</code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>the <code>@PreAuthorize</code> annotation&#8217;s Spring Expression Language expression has access to all the methods on Spring Security&#8217;s <code>SecurityExpressionRoot</code> class.
+This class has convenience methods to check for all authorities, any authority, to blindly wave the attempt right on through, to reject it outright, etc.</p>
+</li>
+<li>
+<p>we&#8217;ve already looked up the domain data, but let&#8217;s do one last check to ensure it belongs to the requestor by inspecting the method&#8217;s return value.
+Imagine the kinds of tenancy checks you could build with this mind!</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Now let&#8217;s exercise this code. While we&#8217;re at it, we can take a look at some of Spring Security&#8217;s amazing testing support.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.security.authorization.methods</span>;
+
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Assertions</span>;
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Test</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.beans.factory.annotation.Autowired</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.boot.test.context.SpringBootTest</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.security.access.AccessDeniedException</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.security.test.context.support.WithMockUser</span>;
+
+<span class="annotation">@SpringBootTest</span>
+<span class="type">class</span> <span class="class">CustomerServiceTest</span> {
+
+        <span class="directive">private</span> <span class="directive">final</span> CustomerService customerService;
+
+        <span class="annotation">@Autowired</span>
+        CustomerServiceTest(CustomerService customerService) {
+                <span class="local-variable">this</span>.customerService = customerService;
+        }
+
+        <i class="conum" data-value="1"></i><b>(1)</b>
+        <span class="annotation">@Test</span>
+        <span class="annotation">@WithMockUser</span>(username = <span class="string"><span class="delimiter">&quot;</span><span class="content">josh@joshlong.com</span><span class="delimiter">&quot;</span></span>, roles = { <span class="string"><span class="delimiter">&quot;</span><span class="content">ADMIN</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">USER</span><span class="delimiter">&quot;</span></span> })
+        <span class="type">void</span> good() {
+                <span class="keyword">try</span> {
+                        <span class="type">var</span> customer = <span class="local-variable">this</span>.customerService.readPrivilegedCustomerData(<span class="integer">1</span>);
+                        Assertions.assertEquals(<span class="string"><span class="delimiter">&quot;</span><span class="content">josh@joshlong.com</span><span class="delimiter">&quot;</span></span>, customer.username(), <span class="string"><span class="delimiter">&quot;</span><span class="content">the id should be 1</span><span class="delimiter">&quot;</span></span>);
+                } <span class="comment">//</span>
+                <span class="keyword">catch</span> (<span class="exception">Exception</span> e) {
+                        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="exception">RuntimeException</span>(e);
+                }
+        }
+
+        <i class="conum" data-value="2"></i><b>(2)</b>
+        <span class="annotation">@Test</span>
+        <span class="annotation">@WithMockUser</span>(username = <span class="string"><span class="delimiter">&quot;</span><span class="content">bob</span><span class="delimiter">&quot;</span></span>, roles = { <span class="string"><span class="delimiter">&quot;</span><span class="content">USER</span><span class="delimiter">&quot;</span></span> })
+        <span class="type">void</span> badPost() {
+                Assertions.assertThrows(AccessDeniedException.class, () -&gt; <span class="local-variable">this</span>.customerService.readPrivilegedCustomerData(<span class="integer">2</span>));
+        }
+
+        <i class="conum" data-value="3"></i><b>(3)</b>
+        <span class="annotation">@Test</span>
+        <span class="annotation">@WithMockUser</span>(username = <span class="string"><span class="delimiter">&quot;</span><span class="content">bob</span><span class="delimiter">&quot;</span></span>)
+        <span class="type">void</span> badPre() {
+                Assertions.assertThrows(AccessDeniedException.class, () -&gt; <span class="local-variable">this</span>.customerService.readPrivilegedCustomerData(<span class="integer">1</span>));
+        }
+
+}</code></pre>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -10566,7 +10949,7 @@ Now, all the other machinery in Spring Security that consults this thread local 
 <div id="footer">
 <div id="footer-text">
 Version 1.0<br>
-Last updated 2026-07-13 09:45:46 UTC
+Last updated 2026-07-18 04:14:41 UTC
 </div>
 </div>
 </body>
