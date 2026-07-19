@@ -325,7 +325,7 @@ I've placed the schema for the `users` and `authorities` table in the following 
 include::{code}/security/security/src/main/resources/db/migration/V1__users_schema.sql[]
 ----
 
-I've placed the following file in `src/main/resources/db/migration/V1__users_data.sql`.
+I've placed the following file in `src/main/resources/db/migration/V2__users_data.sql`.
 
 [source,sql]
 ----
@@ -368,7 +368,7 @@ include::{code}/security/security/src/main/java/com/example/security/PasswordCon
 ----
 
 A `PasswordEncoder` is an object that takes plaintext Strings and _encodes_ them with an algorithm.
-Spring Security ships with dozens of implementations for algorithms like SHA (_do not_ use this one!), SHA 256 (maybe don't use this one either), PBKDF2, SCrypt, BCrypt, Argon2, etc.
+Spring Security ships with dozens of implementations for algorithms like SHA (_do not_ use this one!), SHA-256 (maybe don't use this one either), PBKDF2, SCrypt, BCrypt, Argon2, etc.
 Many of the implementations are duplicated, in fact, because there is dual support in Spring Security for various algorithms from the third-party BouncyCastle library _and_ from the third-party Password4J library.
 Indeed, most of the good implementations come from either the BouncyCastle or Password4J libraries and require their presence on the CLASSPATH.
 
@@ -456,7 +456,7 @@ Or, worse, in a text file on the public cloud.
 
 Insufficient engineering practices are often to blame.
 In the example above, we showed how to store passwords in an encoded fashion _and_ how to migrate them to better encodings whenever possible.
-Sometimes folks don't do the right thing. https://krebsonsecurity.com/2019/03/facebook-stored-hundreds-of-millions-of-user-passwords-in-plain-text-for-years/?utm_source=chatgpt.com[Meta (formerly known as Facebook) was caught storing hundreds of millions of user passwords in plain text] for years in 2019. In 2019, it also came out https://www.wired.com/story/google-stored-gsuite-passwords-plaintext/?utm_source=chatgpt.com[that Google had stored some passwords in plaintext] since 2005. The https://en.wikipedia.org/wiki/2012_Yahoo_Voices_hack?utm_source=chatgpt.com[2012 Yahoo! Voices attack] revealed that Yahoo! had stored around 450,000 passwords in plaintext.
+Sometimes folks don't do the right thing. https://krebsonsecurity.com/2019/03/facebook-stored-hundreds-of-millions-of-user-passwords-in-plain-text-for-years/[Meta (formerly known as Facebook) was caught storing hundreds of millions of user passwords in plain text] for years in 2019. In 2019, it also came out https://www.wired.com/story/google-stored-gsuite-passwords-plaintext/[that Google had stored some passwords in plaintext] since 2005. The https://en.wikipedia.org/wiki/2012_Yahoo_Voices_hack[2012 Yahoo! Voices attack] revealed that Yahoo! had stored around 450,000 passwords in plaintext.
 If it can happen to these organizations, it can happen to anyone.
 (Why can't everyone just use Spring Security?)
 
@@ -656,7 +656,7 @@ Click on the link, and it'll take you to an input where you can plug in the one-
 image::images/security/ott/ott-04.png[]
 
 TIP: If you are trying to follow the authentication flow in an incognito window in, say, Apple's Safari browser, make sure to copy and paste the link from the console into the browser.
-Clicking on the link will start a _brand-new_  browser whose session is divorced from the first one in the incognito window.
+Clicking on the link will start a _brand-new_ browser whose session is divorced from the first one in the incognito window.
 
 And now you should see your username in the HTTP response.
 
@@ -668,7 +668,7 @@ Easy!
 My friend https://linkedin.com/in/jamesward[James Ward] did something interesting with this mechanism for another book we're jointly writing (and perhaps he'll do it for this book?), where users who bought the book on a website would have had to enter their emails.
 Those emails are turned into users in a database.
 Somebody comes along, signs in, and that grants an OAuth token which is then used to provision and provide access to an MCP service that in turn has access to the chapters of the book.
-Users can point their Claude Codes and Gooses and JetBrains Airs to the MCP service and consume the content and ask questions about it as MCP resources.
+Users can point their MCP client of choice — Claude Code, Goose, JetBrains Air, whatever — at the MCP service and consume the content and ask questions about it as MCP resources.
 Super innovative!
 
 One-time tokens are great for passwordless authentication.
@@ -704,7 +704,7 @@ Because there is no reusable password to steal, passkeys dramatically reduce the
 
 However, early FIDO2 deployments had significant limitations.
 They often required dedicated hardware security keys such as YubiKeys or were tied to a single device, meaning users could lose access if that device was lost.
-The major breakthrough came in 2022–2023 when Apple, Google, and Microsoft committed to expanding the FIDO standard to support what became known as “passkeys”—FIDO credentials that could be securely synchronized across a user’s trusted devices through cloud-based credential managers such as LastPass, BitWarden, 1Passwod, iCloud Keychain, Google Password Manager, and Windows Hello.
+The major breakthrough came in 2022–2023 when Apple, Google, and Microsoft committed to expanding the FIDO standard to support what became known as “passkeys”—FIDO credentials that could be securely synchronized across a user’s trusted devices through cloud-based credential managers such as LastPass, Bitwarden, 1Password, iCloud Keychain, Google Password Manager, and Windows Hello.
 Now a passkey could be created once and used seamlessly across phones, tablets, and computers while remaining protected by each device’s secure hardware and local authentication.
 This eliminated much of the backup-and-recovery problem while maintaining strong security.
 
@@ -722,15 +722,15 @@ When you authenticate, the private key is unlocked using something that’s easi
 Remember, WebAuthn works by creating a key tied to a particular domain (to prevent spoofing).
 So when you work with WebAuthn you need to specify at minimum three things:
 
-* *the relaying party ID* - The RP ID is the domain that a passkey is bound to.
+* *the relying party ID* - The RP ID is the domain that a passkey is bound to.
 It’s the security anchor for WebAuthn.
 When a passkey is created, it is cryptographically tied to this RP ID.
 The browser will only allow that passkey to be used on that domain (or a matching subdomain, depending on the RP ID).
 
-* *the relaying party name* - a human-readable display name.
+* *the relying party name* - a human-readable display name.
 
 * *allowed origins* - The allowed origins are the exact web origins that are permitted to call the WebAuthn APIs.
-You need to specify _everything_: the schema (`http` or `https`), the exact domain, and the port (if applicable).
+You need to specify _everything_: the scheme (`http` or `https`), the exact domain, and the port (if applicable).
 
 == Implementing Passkeys in Spring Security
 
@@ -763,7 +763,7 @@ image::images/security/webauthn/webauthn-04.png[]
 
 I'm on an Apple laptop, and I am using an incognito browser instance.
 As a result the only option I have is to use Apple's Passwords.app, whose secrets are stored securely in iCloud, and federated across various Apple devices like my iPhone, Apple Watch, iPad, and MacBook Pro.
-If I were using a non-incognito browser window, I'd have access to my plugins and there I'd have access to my BitWarden secrets manager.
+If I were using a non-incognito browser window, I'd have access to my plugins and there I'd have access to my Bitwarden secrets manager.
 The secret I'm saving is tied to my Apple TouchID.
 My _finger_!
 But the key is used to authenticate access to the private key, and I can authenticate that in many ways.
@@ -842,7 +842,7 @@ There are so many other ways to authenticate a user, and Spring Security support
 I'll mention a few of them.
 If you know you have these particular use cases, feel free to consult the relevant documentation for the details.
 
-One interesting approach to authentication is  *HTTP BASIC*, where you send username and password (hashed) in an `Authorization` header.
+One interesting approach to authentication is *HTTP BASIC*, where you send username and password (Base64-encoded) in an `Authorization` header.
 
 Another option is to look a user up in an *LDAP* or *Active Directory* instance, instead of a username and password database.
 
@@ -860,7 +860,7 @@ In this scheme, clients present a certificate issued by an authority that our se
 
 Spring Security supports *Java EE Security Services*.
 In the distant, distant past, it was common to run something called an _Application Server_.
-These application servers had their very primitive facilities for authentication such that the user might've already authenticated before a request ever reached the Spring Security filter or Spring Framework code.
+These application servers had their own very primitive facilities for authentication such that the user might've already authenticated before a request ever reached the Spring Security filter or Spring Framework code.
 In such a scenario, the `J2eePreAuthenticatedProcessingFilter` class extracts the username from the `userPrincipal` property of the `HttpServletRequest`.
 Use of this filter would usually be combined with the use of Java EE roles.
 But... don't use any of it, if you can avoid it.
@@ -914,14 +914,12 @@ The other just says the user must authenticate with Passkeys.
 Restart the application and enter the Passkey, and you'll be staring at an authenticated page.
 Logout and then enter a username or a one-time token, and you'll be asked to do another authentication.
 
-== Testing Authentication
+== Authorization
 
 Our configuration is simple and _global_.
 That bean applies to every request made and to every endpoint.
 Let's turn our attention to how we make more granular decisions about what is required of an authenticated user for particular aspects, like routes, of the application.
 This is called _authorization_.
-
-== Authorization
 
 Spring Security supports _defense-in-depth_, allowing you to configure multiple layers - requests and methods - of security so that if for whatever reason a would be attacker breaches one layer, they can't get through the other.
 Request-based authorization is the kind with which we'll mostly be dealing here.
@@ -939,16 +937,17 @@ image::images/security/authorization/diagram-from-security-docs.png[]
 
 It re-establishes some concepts we've already seen.
 
-All interactions with your application's beans are gated by a sort of filter (in this case, a proxy on your bean) that checks that there's a user of some sort with a particular set of permissions These gates happen right as you make a call to a bean.
+All interactions with your application's beans are gated by a sort of filter (in this case, a proxy on your bean) that checks that there's a user of some sort with a particular set of permissions.
+These gates happen right as you make a call to a bean.
 There are two kinds of checks: pre-authorization and post-authorization.
 Pre-authorization checks are a good place to ensure that a given user has the right rights (permissions, roles, authorities, whatever) to make this call.
 A post-authorization check is a good place to ensure that the returned value is a value to which the authenticated principal actually has rights.
-Both checks throw exceptions of type  `AccessDeniedException`, which is a `RuntimeException`.
+Both checks throw exceptions of type `AccessDeniedException`, which is a `RuntimeException`.
 You should handle this exception in your client code if you want to do something on the spot.
 Otherwise, if you let it bubble up in a web container, Spring Security's default filter machinery will intercept the exception and handle it with the usual error codes.
 
 Let's look at some examples.
-First thing's first: we need to _enable_ method security.
+First things first: we need to _enable_ method security.
 
 TIP: You might see `@EnableGlobalMethodSecurity` in older code.
 This is deprecated and you're encouraged to move to the newer approach shown here.
@@ -972,7 +971,7 @@ include::{code}/security/security/src/main/java/com/example/security/authorizati
 . the `@PreAuthorize` annotation's Spring Expression Language expression has access to all the methods on Spring Security's `SecurityExpressionRoot` class.
 This class has convenience methods to check for all authorities, any authority, to blindly wave the attempt right on through, to reject it outright, etc.
 . we've already looked up the domain data, but let's do one last check to ensure it belongs to the requestor by inspecting the method's return value.
-Imagine the kinds of tenancy checks you could build with this mind!
+Imagine the kinds of tenancy checks you could build with this in mind!
 
 Now let's exercise this code.
 
