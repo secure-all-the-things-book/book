@@ -72,7 +72,7 @@ We imported the `DogBeanRegistrar`, so we might as well look at it.
 
 [source,java]
 ----
-include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/boot/Main.java[]
+include::{code}/beans-to-boot/beans-to-boot/src/main/java/com/example/beans_to_boot/boot/DogBeanRegistrar.java[]
 ----
 
 What happened?
@@ -398,7 +398,7 @@ From there, you're off to production!
 == Testing
 
 Spring makes it easy to both do the right thing and to focus on doing the right thing.
-But how do you know if you've actually done the right?
+But how do you know if you've actually done the right thing?
 How do you know if your changes resulted in outcomes you desired when you started writing the code in the first place?
 Testing, of course.
 
@@ -416,7 +416,7 @@ Spring has great integration with JUnit, which is the industry standard.
 Spring also supports Spock for the Groovy community and TestNG.
 But JUnit's the main thing.
 Use that, and things will be alright.
-One of the core Spring Framework engineers, Sam Brannen, is also a major contributor to JUnit the project, too.
+One of the core Spring Framework engineers, Sam Brannen, is also a major contributor to the JUnit project.
 It's no coincidence then that Spring and JUnit have enjoyed a nice symbiotic relationship for decades.
 
 === The Core Spring TestContext Framework
@@ -473,11 +473,11 @@ We could _delve_ (yes, I know that's a telltale identifier of AI-written prose, 
 Or the database support and the transaction support.
 Tons.
 
-In the example above, injected a _real_ `Environment`.
+In the example above, we injected a _real_ `Environment`.
 
 === Isolated Configuration
 
-There's a tension we face when doing integration tests. we want things to execute in an environment as close to production as possible - otherwise why bother with integration testing at all? - but we also need to avoid complicating test setup with unnecessary dependencies.
+There's a tension we face when doing integration tests. We want things to execute in an environment as close to production as possible - otherwise why bother with integration testing at all? - but we also need to avoid complicating test setup with unnecessary dependencies.
 These extra dependencies add no clarity to our determination that some bit of code works or not while simultaneously creating undue burden on the people writing and maintaining the test.
 Mercifully, we're using a dependency injection framework.
 A framework follows the open-closed principle: it's open for extension, closed for modification.
@@ -493,10 +493,10 @@ In this section, we'll look at ways to make this work trivial.
 
 We'll demonstrate these concepts using a simple class, called `StoreService`, which is meant to be a service for, you know, a merchant.
 A merchant's store.
-It's store-front.
+Its storefront.
 
 Here's the `StoreService`.
-It depends on a bean of type  `java.time.Clock` to do its work.
+It depends on a bean of type `java.time.Clock` to do its work.
 
 [source,java]
 ----
@@ -553,8 +553,8 @@ Then, before our tests run, we'll need to program the mock.
 include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/springframework/MockitoBeanTest.java[]
 ----
 
-. instead of us providing a factory method, we'll tell Spring to wire up a `Mock` and replace the bean in teh context with that Mock.
-. then we'll use Wiremock's API to instruct the `Clock` on what to do.
+. instead of us providing a factory method, we'll tell Spring to wire up a `Mock` and replace the bean in the context with that Mock.
+. then we'll use Mockito's API to instruct the `Clock` on what to do.
 . and finally, we'll kick the whole chain of operations off.
 If we've done our work correctly, `isOpen` will result in a call to the methods whose responses we just provided.
 And the results will work no matter the date.
@@ -587,7 +587,7 @@ Normally when you test a Spring MVC controller end-to-end, you'd have to boot up
 That works, but it's slow and it's more of an integration test.
 MockMvc instead spins up the Spring MVC machinery - the `DispatcherServlet`, your handler mappings, argument resolvers, message converters, validation, exception handlers, filters — in memory, and lets you send mock requests straight into that dispatcher.
 No socket, no port, no real HTTP.
-So what it actually does is give you a fluent way to say "pretend an HTTP request came in, and let me assert on what the controller layer did with it.
+So what it actually does is give you a fluent way to say "pretend an HTTP request came in, and let me assert on what the controller layer did with it."
 Here's an example.
 
 First, we'll introduce a trivial Spring MVC controller.
@@ -608,17 +608,18 @@ include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_b
 . first we tell Spring's `MockMvc` machinery to set up the web tier around this particular controller
 . we use the configured `MockMvc` and use it to make requests against the HTTP API and make assertions about the request and response.
 
-=== Testing clients with `RestTestClient`
+=== Endpoint Testing with `RestTestClient`
 
-`MockMvc` lets you test the behavior of the service, while mocking out the client. `RestTestClient` does the inverse, letting you test the behavior of the client, while mocking out the server.
-Let's try that out, testing the client behavior itself.
+`MockMvc` gives you a servlet-centric API for driving your controllers. `RestTestClient` targets those same server-side endpoints, but through a fluent, `RestClient`-style API — the same ergonomics as `WebTestClient`, which developers on the reactive stack will recognize.
+You can point it at a running server, at the whole `ApplicationContext`, or — as we do here — at a single controller, in which case there's no socket, port, or real HTTP involved at all.
+Let's try it out.
 
 [source,java]
 ----
 include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/springframework/SimpleClientTest.java[]
 ----
 
-Here, we're using a fake client to exercise the network and protocol interface for the service and to make assertions about the results.
+Here we bind the client directly to the `SimpleController` and use its fluent API to issue a request against the endpoint, then make assertions about the response.
 
 
 
@@ -633,7 +634,7 @@ Spring Framework doesn't know about Spring Boot autoconfiguration.
 And we'd have to recreate all of it to sufficiently test things as to reproduce them in production.
 Instead, we'll use Spring Boot's testing support, which builds on the support introduced in the Spring Framework, to do this.
 
-TIP: Spring Boot automatically pulls in a whole spate of interesting testing libraries, like Awaitility (for testing asynchronous systems), JSONPath (XPAth for JSON), Mockito (a mocking library), AssertJ (for various assertions), Hamcrest (and for more assertions and matchers), and JUnit (the de facto standard testing framework).
+TIP: Spring Boot automatically pulls in a whole spate of interesting testing libraries, like Awaitility (for testing asynchronous systems), JSONPath (XPath for JSON), Mockito (a mocking library), AssertJ (for various assertions), Hamcrest (for still more assertions and matchers), and JUnit (the de facto standard testing framework).
 
 Everything you've learned so far still applies, there's just _more_ to the story.
 Let's start with a jack-of-all trades annotation, `@SpringBootTest`, which works every time, but might be more than you need in some cases.
@@ -683,14 +684,14 @@ Some of these Docker images have supported configuration properties, environment
 So the Testcontainers project has put together a library of specializations that take strongly typed parameters to help you construct a Docker image correctly.
 If you choose PostgreSQL and Testcontainers on the Spring Initializr, you'll get two new classes in your `src/test/java` folder:
 
-* a `Test*Application.java` - you can run this class as you develop, usually in tandem with the Spring Boot Devtools, and you'll have your full production object graph _and_  bean(s) for the applicable Testcontainer(s).
+* a `Test*Application.java` - you can run this class as you develop, usually in tandem with the Spring Boot Devtools, and you'll have your full production object graph _and_ bean(s) for the applicable Testcontainer(s).
 You don't need to even define the requisite properties to connect to this new instance.
 Spring Boot will derive them for you and connect automatically.
-It'll do this by importing the next class..
-* ..which is `TestcontainersConfiguration.java`.
+It'll do this by importing the next class...
+* ...which is `TestcontainersConfiguration.java`.
 This class defines the actual Testcontainers objects.
 
-It this latter class that we'll use to automatically stand up a PostgreSQL database process.
+It is this latter class that we'll use to automatically stand up a PostgreSQL database process.
 Here's our improved test.
 
 [source,java]
@@ -721,7 +722,7 @@ Spring Boot's got the ability to stand up your entire application and let you sw
 This works well, but it means that you're paying the cost of constructing the entire object graph each and every time the program starts.
 Spring Boot has the notion of _test slices_, which can activate only the objects you need to test a component in its particular subsystem – data, JSON, the web, security, etc.
 
-In most cases, the user would simply add the relevatn annotation from one of the dozens of supported test modules (`@JsonTest`, `@DataJdbcTest`, `@WebMvcTest`, etc.) to get the requisite autoconfiguration for just that subsystem.
+In most cases, the user would simply add the relevant annotation from one of the dozens of supported test modules (`@JsonTest`, `@DataJdbcTest`, `@WebMvcTest`, etc.) to get the requisite autoconfiguration for just that subsystem.
 Then proceed as normal.
 All of these special annotations in turn are meta-annotations and use `@AutoConfigure*` variants and `@ImportAutoConfiguration`.
 You can usually test with just one main annotation, e.g, `@DataJdbcTest`.
