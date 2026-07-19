@@ -8438,9 +8438,10 @@ We want to both be sure that the person making the request is an <code>ADMIN</co
 <span class="type">class</span> <span class="class">CustomerService</span> {
 
         <i class="conum" data-value="1"></i><b>(1)</b>
-        <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">Map</span>&lt;<span class="predefined-type">Long</span>, Customer&gt; customers = <span class="predefined-type">Map</span>.of(<span class="integer">1L</span>, <span class="keyword">new</span> Customer(<span class="string"><span class="delimiter">&quot;</span><span class="content">josh@joshlong.com</span><span class="delimiter">&quot;</span></span>), <span class="comment">//</span>
+        <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">Map</span>&lt;<span class="predefined-type">Long</span>, Customer&gt; customers = <span class="predefined-type">Map</span>.of(<span class="comment">//</span>
+                        <span class="integer">1L</span>, <span class="keyword">new</span> Customer(<span class="string"><span class="delimiter">&quot;</span><span class="content">josh@joshlong.com</span><span class="delimiter">&quot;</span></span>), <span class="comment">//</span>
                         <span class="integer">2L</span>, <span class="keyword">new</span> Customer(<span class="string"><span class="delimiter">&quot;</span><span class="content">user@anotherdomain.site</span><span class="delimiter">&quot;</span></span>)<span class="comment">//</span>
-        );
+        );<span class="comment">//</span>
 
         <span class="annotation">@PreAuthorize</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">hasRole('ADMIN')</span><span class="delimiter">&quot;</span></span>) <i class="conum" data-value="2"></i><b>(2)</b>
         <span class="annotation">@PostAuthorize</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content"> returnObject  != null  &amp;&amp; returnObject.username == authentication.name </span><span class="delimiter">&quot;</span></span>) <i class="conum" data-value="3"></i><b>(3)</b>
@@ -8584,6 +8585,23 @@ Spring Security provides other annotations that give you progressively more and 
 </td>
 </tr>
 </table>
+</div>
+<div class="paragraph">
+<p>Neat, eh?
+You can use this in addition to request-based authorization, which we&#8217;ll look at next.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_request_based_authorization">Request-Based Authorization</h4>
+<div class="paragraph">
+<p>We looked at method-based authorization because, conceptually, there are fewer moving parts.
+However, most people will start with request-based authorization, wherein you secure the application as a whole, at the network protocol level, before control-flow ever enters one of your methods.
+A good many of the things you want to secure are HTTP-based, and Spring Security has good authorization support for path-based matching.
+But HTTP is often just the beginning; gRPC is based on HTTP, but it doesn&#8217;t make sense to use HTTP path matchers for gRPC.
+Ditto Model Context Protocol (MCP).</p>
+</div>
+<div class="paragraph">
+<p>So, keeping that in mind, let&#8217;s look at a trivial HTTP example, and see how we can secure - enforcing authentication and authorization - access to that application.</p>
 </div>
 </div>
 </div>
@@ -11616,7 +11634,7 @@ Now, all the other machinery in Spring Security that consults this thread local 
 <div id="footer">
 <div id="footer-text">
 Version 1.0<br>
-Last updated 2026-07-19 22:12:54 UTC
+Last updated 2026-07-19 22:37:49 UTC
 </div>
 </div>
 </body>
