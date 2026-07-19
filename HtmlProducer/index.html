@@ -2477,7 +2477,7 @@ Let&#8217;s learn what Spring can help you with by way of an example that we&#82
 <p>We will need to incept a new project.
 It&#8217;s just Java and some libraries, so in theory you could create your own with no issues.
 But I like to use the <a href="https://start.spring.io">Spring Initializr (https://start.spring.io)</a>.
-Visit the Spring Initializr and make the following dependency selections: <code>Spring Boot Actuator</code>, <code>Thymeleaf</code>, <code>Spring Data JDBC</code>, <code>PostgreSQL Driver</code>, <code>Spring Web</code>, <code>GraalVM Native Support</code>, <code>OpenTelemetry</code>, and <code>Spring Boot DevTools</code>, and <code>Testcontainers</code>.
+Visit the Spring Initializr and make the following dependency selections: <code>Spring Boot Actuator</code>, <code>Thymeleaf</code>, <code>Spring Data JDBC</code>, <code>PostgreSQL Driver</code>, <code>H2</code>, <code>Spring Web</code>, <code>GraalVM Native Support</code>, <code>OpenTelemetry</code>, and <code>Spring Boot DevTools</code>, and <code>Testcontainers</code>.
 Select Java 25 (or later), and Apache Maven as the build tool.
 You could use Gradle if you prefer, though I&#8217;ll be showing Apache Maven.</p>
 </div>
@@ -6282,8 +6282,20 @@ Spring Framework doesn&#8217;t know about Spring Boot autoconfiguration.
 And we&#8217;d have to recreate all of it to sufficiently test things as to reproduce them in production.
 Instead, we&#8217;ll use Spring Boot&#8217;s testing support, which builds on the support introduced in the Spring Framework, to do this.</p>
 </div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Spring Boot automatically pulls in a whole spate of interesting testing libraries, like Awaitility (for testing asynchronous systems), JSONPath (XPAth for JSON), Mockito (a mocking library), AssertJ (for various assertions), Hamcrest (and for more assertions and matchers), and JUnit (the de facto standard testing framework).
+</td>
+</tr>
+</table>
+</div>
 <div class="paragraph">
-<p>Everything you&#8217;ve learned so far still applies, there&#8217;s jsut <em>more</em> to the story.
+<p>Everything you&#8217;ve learned so far still applies, there&#8217;s just <em>more</em> to the story.
 Let&#8217;s start with a jack-of-all trades annotation, <code>@SpringBootTest</code>, which works every time, but might be more than you need in some cases.
 Add <code>@SpringBootTest</code> to a test class and it&#8217;ll launch the production configuration and environment and then your tests will run with access to all the requisite beans.
 You can continue using <code>@TestBean</code> and <code>@MockitoBean</code> and <code>@MockitoSpyBean</code>, of course.
@@ -6445,7 +6457,68 @@ Here&#8217;s our improved test.</p>
 <p>Shut down all your Docker images and then run this test, and it&#8217;ll still work, because the service connection will supply the PostgreSQL instance and our SQL initialization logic (<code>schema.sql</code> and <code>data.sql</code>, defined earlier) will initialize the schema, all before we ever run a single test.</p>
 </div>
 <div class="paragraph">
-<p>The test is green.</p>
+<p>The test is green.
+Love to see it.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_spring_boot_test_slices">Spring Boot Test Slices</h4>
+<div class="paragraph">
+<p>Spring Boot&#8217;s got the ability to stand up your entire application and let you swap out individual components in the object graph.
+This works well, but it means that you&#8217;re paying the cost of constructing the entire object graph each and every time the program starts.
+Spring Boot has the notion of <em>test slices</em>, which can activate only the objects you need to test a component in its particular subsystem – data, JSON, the web, security, etc.</p>
+</div>
+<div class="paragraph">
+<p>In most cases, the user would simply add the relevatn annotation from one of the dozens of supported test modules (<code>@JsonTest</code>, <code>@DataJdbcTest</code>, <code>@WebMvcTest</code>, etc.) to get the requisite autoconfiguration for just that subsystem.
+Then proceed as normal.
+All of these special annotations in turn are meta-annotations and use <code>@AutoConfigure*</code> variants and <code>@ImportAutoConfiguration</code>.
+You can usually test with just one main annotation, e.g, <code>@DataJdbcTest</code>.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+You can&#8217;t have more than one main annotation, but you can have one main annotation <em>and</em> one or more of the <code>@AutoConfigure*</code> variants.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s look at an example.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.beans_to_boot.boot</span>;
+
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Assertions</span>;
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Test</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.beans.factory.annotation.Autowired</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.boot.data.jdbc.test.autoconfigure.DataJdbcTest</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Import</span>;
+
+<span class="annotation">@DataJdbcTest</span>
+<span class="type">class</span> <span class="class">DataJdbcTestTest</span> {
+
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> dogs(<span class="annotation">@Autowired</span> DogRepository repository) {
+                Assertions.assertEquals(<span class="integer">3</span>, repository.findAll().size());
+        }
+
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>the <code>@DataJdbcTest</code> starts an embedded SQL database for us.
+Recall that when we started this project we added <code>H2</code> to the specification on the Spring Initializr.
+Likewise, it runs all tests in a transaction that is automatically rolled back once the test is done, ensuring that the database state is consistent between tests.
+You get all this <em>while</em> writing less code and while executing a bit faster than when running the full Spring <code>ApplicationContext</code>.
+These gains pay off in a larger suite of tests.</p>
+</div>
+<div class="paragraph">
+<p>All in all, Spring Boot&#8217;s testing support is a crucial way to think about how to build software.</p>
 </div>
 </div>
 </div>
@@ -11491,7 +11564,7 @@ Now, all the other machinery in Spring Security that consults this thread local 
 <div id="footer">
 <div id="footer-text">
 Version 1.0<br>
-Last updated 2026-07-19 15:47:52 UTC
+Last updated 2026-07-19 21:26:43 UTC
 </div>
 </div>
 </body>
