@@ -630,7 +630,6 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_persistence">Persistence</a></li>
 <li><a href="#_other_interesting_kinds_of_authentication">Other Interesting Kinds of Authentication</a></li>
 <li><a href="#_multifactor_authentication">Multifactor Authentication</a></li>
-<li><a href="#_testing_authentication">Testing Authentication</a></li>
 <li><a href="#_authorization">Authorization</a></li>
 </ul>
 </li>
@@ -7135,7 +7134,7 @@ I&#8217;ve placed the schema for the <code>users</code> and <code>authorities</c
 </div>
 </div>
 <div class="paragraph">
-<p>I&#8217;ve placed the following file in <code>src/main/resources/db/migration/V1__users_data.sql</code>.</p>
+<p>I&#8217;ve placed the following file in <code>src/main/resources/db/migration/V2__users_data.sql</code>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -7248,7 +7247,7 @@ We&#8217;ll need to dive into password encoding before we have a good answer.</p
 </div>
 <div class="paragraph">
 <p>A <code>PasswordEncoder</code> is an object that takes plaintext Strings and <em>encodes</em> them with an algorithm.
-Spring Security ships with dozens of implementations for algorithms like SHA (<em>do not</em> use this one!), SHA 256 (maybe don&#8217;t use this one either), PBKDF2, SCrypt, BCrypt, Argon2, etc.
+Spring Security ships with dozens of implementations for algorithms like SHA (<em>do not</em> use this one!), SHA-256 (maybe don&#8217;t use this one either), PBKDF2, SCrypt, BCrypt, Argon2, etc.
 Many of the implementations are duplicated, in fact, because there is dual support in Spring Security for various algorithms from the third-party BouncyCastle library <em>and</em> from the third-party Password4J library.
 Indeed, most of the good implementations come from either the BouncyCastle or Password4J libraries and require their presence on the CLASSPATH.</p>
 </div>
@@ -7401,7 +7400,7 @@ Or, worse, in a text file on the public cloud.</p>
 <div class="paragraph">
 <p>Insufficient engineering practices are often to blame.
 In the example above, we showed how to store passwords in an encoded fashion <em>and</em> how to migrate them to better encodings whenever possible.
-Sometimes folks don&#8217;t do the right thing. <a href="https://krebsonsecurity.com/2019/03/facebook-stored-hundreds-of-millions-of-user-passwords-in-plain-text-for-years/?utm_source=chatgpt.com">Meta (formerly known as Facebook) was caught storing hundreds of millions of user passwords in plain text</a> for years in 2019. In 2019, it also came out <a href="https://www.wired.com/story/google-stored-gsuite-passwords-plaintext/?utm_source=chatgpt.com">that Google had stored some passwords in plaintext</a> since 2005. The <a href="https://en.wikipedia.org/wiki/2012_Yahoo_Voices_hack?utm_source=chatgpt.com">2012 Yahoo! Voices attack</a> revealed that Yahoo! had stored around 450,000 passwords in plaintext.
+Sometimes folks don&#8217;t do the right thing. <a href="https://krebsonsecurity.com/2019/03/facebook-stored-hundreds-of-millions-of-user-passwords-in-plain-text-for-years/">Meta (formerly known as Facebook) was caught storing hundreds of millions of user passwords in plain text</a> for years in 2019. In 2019, it also came out <a href="https://www.wired.com/story/google-stored-gsuite-passwords-plaintext/">that Google had stored some passwords in plaintext</a> since 2005. The <a href="https://en.wikipedia.org/wiki/2012_Yahoo_Voices_hack">2012 Yahoo! Voices attack</a> revealed that Yahoo! had stored around 450,000 passwords in plaintext.
 If it can happen to these organizations, it can happen to anyone.
 (Why can&#8217;t everyone just use Spring Security?)</p>
 </div>
@@ -7855,7 +7854,7 @@ Web design&#8217;s not my thing.</p>
 </td>
 <td class="content">
 If you are trying to follow the authentication flow in an incognito window in, say, Apple&#8217;s Safari browser, make sure to copy and paste the link from the console into the browser.
-Clicking on the link will start a <em>brand-new</em>  browser whose session is divorced from the first one in the incognito window.
+Clicking on the link will start a <em>brand-new</em> browser whose session is divorced from the first one in the incognito window.
 </td>
 </tr>
 </table>
@@ -7875,7 +7874,7 @@ Clicking on the link will start a <em>brand-new</em>  browser whose session is d
 <p>My friend <a href="https://linkedin.com/in/jamesward">James Ward</a> did something interesting with this mechanism for another book we&#8217;re jointly writing (and perhaps he&#8217;ll do it for this book?), where users who bought the book on a website would have had to enter their emails.
 Those emails are turned into users in a database.
 Somebody comes along, signs in, and that grants an OAuth token which is then used to provision and provide access to an MCP service that in turn has access to the chapters of the book.
-Users can point their Claude Codes and Gooses and JetBrains Airs to the MCP service and consume the content and ask questions about it as MCP resources.
+Users can point their MCP client of choice — Claude Code, Goose, JetBrains Air, whatever — at the MCP service and consume the content and ask questions about it as MCP resources.
 Super innovative!</p>
 </div>
 <div class="paragraph">
@@ -7918,7 +7917,7 @@ Because there is no reusable password to steal, passkeys dramatically reduce the
 <div class="paragraph">
 <p>However, early FIDO2 deployments had significant limitations.
 They often required dedicated hardware security keys such as YubiKeys or were tied to a single device, meaning users could lose access if that device was lost.
-The major breakthrough came in 2022–2023 when Apple, Google, and Microsoft committed to expanding the FIDO standard to support what became known as “passkeys”—FIDO credentials that could be securely synchronized across a user’s trusted devices through cloud-based credential managers such as LastPass, BitWarden, 1Passwod, iCloud Keychain, Google Password Manager, and Windows Hello.
+The major breakthrough came in 2022–2023 when Apple, Google, and Microsoft committed to expanding the FIDO standard to support what became known as “passkeys”—FIDO credentials that could be securely synchronized across a user’s trusted devices through cloud-based credential managers such as LastPass, Bitwarden, 1Password, iCloud Keychain, Google Password Manager, and Windows Hello.
 Now a passkey could be created once and used seamlessly across phones, tablets, and computers while remaining protected by each device’s secure hardware and local authentication.
 This eliminated much of the backup-and-recovery problem while maintaining strong security.</p>
 </div>
@@ -7943,17 +7942,17 @@ So when you work with WebAuthn you need to specify at minimum three things:</p>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>the relaying party ID</strong> - The RP ID is the domain that a passkey is bound to.
+<p><strong>the relying party ID</strong> - The RP ID is the domain that a passkey is bound to.
 It’s the security anchor for WebAuthn.
 When a passkey is created, it is cryptographically tied to this RP ID.
 The browser will only allow that passkey to be used on that domain (or a matching subdomain, depending on the RP ID).</p>
 </li>
 <li>
-<p><strong>the relaying party name</strong> - a human-readable display name.</p>
+<p><strong>the relying party name</strong> - a human-readable display name.</p>
 </li>
 <li>
 <p><strong>allowed origins</strong> - The allowed origins are the exact web origins that are permitted to call the WebAuthn APIs.
-You need to specify <em>everything</em>: the schema (<code>http</code> or <code>https</code>), the exact domain, and the port (if applicable).</p>
+You need to specify <em>everything</em>: the scheme (<code>http</code> or <code>https</code>), the exact domain, and the port (if applicable).</p>
 </li>
 </ul>
 </div>
@@ -8040,7 +8039,7 @@ So, unfortunately, we need to authenticate using one of the other pre-configured
 <div class="paragraph">
 <p>I&#8217;m on an Apple laptop, and I am using an incognito browser instance.
 As a result the only option I have is to use Apple&#8217;s Passwords.app, whose secrets are stored securely in iCloud, and federated across various Apple devices like my iPhone, Apple Watch, iPad, and MacBook Pro.
-If I were using a non-incognito browser window, I&#8217;d have access to my plugins and there I&#8217;d have access to my BitWarden secrets manager.
+If I were using a non-incognito browser window, I&#8217;d have access to my plugins and there I&#8217;d have access to my Bitwarden secrets manager.
 The secret I&#8217;m saving is tied to my Apple TouchID.
 My <em>finger</em>!
 But the key is used to authenticate access to the private key, and I can authenticate that in many ways.
@@ -8193,7 +8192,7 @@ I&#8217;ll mention a few of them.
 If you know you have these particular use cases, feel free to consult the relevant documentation for the details.</p>
 </div>
 <div class="paragraph">
-<p>One interesting approach to authentication is  <strong>HTTP BASIC</strong>, where you send username and password (hashed) in an <code>Authorization</code> header.</p>
+<p>One interesting approach to authentication is <strong>HTTP BASIC</strong>, where you send username and password (Base64-encoded) in an <code>Authorization</code> header.</p>
 </div>
 <div class="paragraph">
 <p>Another option is to look a user up in an <strong>LDAP</strong> or <strong>Active Directory</strong> instance, instead of a username and password database.</p>
@@ -8216,7 +8215,7 @@ In this scheme, clients present a certificate issued by an authority that our se
 <div class="paragraph">
 <p>Spring Security supports <strong>Java EE Security Services</strong>.
 In the distant, distant past, it was common to run something called an <em>Application Server</em>.
-These application servers had their very primitive facilities for authentication such that the user might&#8217;ve already authenticated before a request ever reached the Spring Security filter or Spring Framework code.
+These application servers had their own very primitive facilities for authentication such that the user might&#8217;ve already authenticated before a request ever reached the Spring Security filter or Spring Framework code.
 In such a scenario, the <code>J2eePreAuthenticatedProcessingFilter</code> class extracts the username from the <code>userPrincipal</code> property of the <code>HttpServletRequest</code>.
 Use of this filter would usually be combined with the use of Java EE roles.
 But&#8230;&#8203; don&#8217;t use any of it, if you can avoid it.
@@ -8346,16 +8345,13 @@ Logout and then enter a username or a one-time token, and you&#8217;ll be asked 
 </div>
 </div>
 <div class="sect2">
-<h3 id="_testing_authentication">Testing Authentication</h3>
+<h3 id="_authorization">Authorization</h3>
 <div class="paragraph">
 <p>Our configuration is simple and <em>global</em>.
 That bean applies to every request made and to every endpoint.
 Let&#8217;s turn our attention to how we make more granular decisions about what is required of an authenticated user for particular aspects, like routes, of the application.
 This is called <em>authorization</em>.</p>
 </div>
-</div>
-<div class="sect2">
-<h3 id="_authorization">Authorization</h3>
 <div class="paragraph">
 <p>Spring Security supports <em>defense-in-depth</em>, allowing you to configure multiple layers - requests and methods - of security so that if for whatever reason a would be attacker breaches one layer, they can&#8217;t get through the other.
 Request-based authorization is the kind with which we&#8217;ll mostly be dealing here.</p>
@@ -8380,17 +8376,18 @@ It looks like this.</p>
 <p>It re-establishes some concepts we&#8217;ve already seen.</p>
 </div>
 <div class="paragraph">
-<p>All interactions with your application&#8217;s beans are gated by a sort of filter (in this case, a proxy on your bean) that checks that there&#8217;s a user of some sort with a particular set of permissions These gates happen right as you make a call to a bean.
+<p>All interactions with your application&#8217;s beans are gated by a sort of filter (in this case, a proxy on your bean) that checks that there&#8217;s a user of some sort with a particular set of permissions.
+These gates happen right as you make a call to a bean.
 There are two kinds of checks: pre-authorization and post-authorization.
 Pre-authorization checks are a good place to ensure that a given user has the right rights (permissions, roles, authorities, whatever) to make this call.
 A post-authorization check is a good place to ensure that the returned value is a value to which the authenticated principal actually has rights.
-Both checks throw exceptions of type  <code>AccessDeniedException</code>, which is a <code>RuntimeException</code>.
+Both checks throw exceptions of type <code>AccessDeniedException</code>, which is a <code>RuntimeException</code>.
 You should handle this exception in your client code if you want to do something on the spot.
 Otherwise, if you let it bubble up in a web container, Spring Security&#8217;s default filter machinery will intercept the exception and handle it with the usual error codes.</p>
 </div>
 <div class="paragraph">
 <p>Let&#8217;s look at some examples.
-First thing&#8217;s first: we need to <em>enable</em> method security.</p>
+First things first: we need to <em>enable</em> method security.</p>
 </div>
 <div class="admonitionblock tip">
 <table>
@@ -8465,7 +8462,7 @@ This class has convenience methods to check for all authorities, any authority, 
 </li>
 <li>
 <p>we&#8217;ve already looked up the domain data, but let&#8217;s do one last check to ensure it belongs to the requestor by inspecting the method&#8217;s return value.
-Imagine the kinds of tenancy checks you could build with this mind!</p>
+Imagine the kinds of tenancy checks you could build with this in mind!</p>
 </li>
 </ol>
 </div>
@@ -11619,7 +11616,7 @@ Now, all the other machinery in Spring Security that consults this thread local 
 <div id="footer">
 <div id="footer-text">
 Version 1.0<br>
-Last updated 2026-07-19 22:04:49 UTC
+Last updated 2026-07-19 22:12:54 UTC
 </div>
 </div>
 </body>
