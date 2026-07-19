@@ -533,7 +533,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <span id="author" class="author">Josh Long</span><br>
 <span id="email" class="email"><a href="mailto:josh@joshlong.com">josh@joshlong.com</a></span><br>
 <span id="revnumber">version 1.0,</span>
-<span id="revdate">2026-07-18</span>
+<span id="revdate">2026-07-19</span>
 </div>
 </div>
 <div id="content">
@@ -2477,7 +2477,7 @@ Let&#8217;s learn what Spring can help you with by way of an example that we&#82
 <p>We will need to incept a new project.
 It&#8217;s just Java and some libraries, so in theory you could create your own with no issues.
 But I like to use the <a href="https://start.spring.io">Spring Initializr (https://start.spring.io)</a>.
-Visit the Spring Initializr and make the following dependency selections: <code>Spring Boot Actuator</code>, <code>Thymeleaf</code>, <code>Spring Data JDBC</code>, <code>PostgreSQL Driver</code>, <code>Spring Web</code>, <code>GraalVM Native Support</code>, <code>OpenTelemetry</code>, and <code>Spring Boot DevTools</code>.
+Visit the Spring Initializr and make the following dependency selections: <code>Spring Boot Actuator</code>, <code>Thymeleaf</code>, <code>Spring Data JDBC</code>, <code>PostgreSQL Driver</code>, <code>Spring Web</code>, <code>GraalVM Native Support</code>, <code>OpenTelemetry</code>, and <code>Spring Boot DevTools</code>, and <code>Testcontainers</code>.
 Select Java 25 (or later), and Apache Maven as the build tool.
 You could use Gradle if you prefer, though I&#8217;ll be showing Apache Maven.</p>
 </div>
@@ -5746,7 +5746,43 @@ It&#8217;s something in between.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java">Unresolved directive in boot-and-beyond.adoc - include::/home/runner/Desktop/root/code/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/SpringTest.java<span class="type">[]</span></code></pre>
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.beans_to_boot.springframework</span>;
+
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Assertions</span>;
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Test</span>;
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.extension.ExtendWith</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.beans.factory.annotation.Autowired</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Bean</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Configuration</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.core.env.Environment</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.test.context.ContextConfiguration</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.test.context.junit.jupiter.SpringExtension</span>;
+
+<i class="conum" data-value="1"></i><b>(1)</b>
+<span class="annotation">@ExtendWith</span>(SpringExtension.class)
+<i class="conum" data-value="2"></i><b>(2)</b>
+<span class="annotation">@ContextConfiguration</span>(classes = SpringTest.SpringTestConfiguration.class)
+<span class="type">class</span> <span class="class">SpringTest</span> {
+
+        <span class="directive">final</span> <span class="directive">static</span> <span class="predefined-type">String</span> NAME = <span class="string"><span class="delimiter">&quot;</span><span class="content">Spring fans</span><span class="delimiter">&quot;</span></span>;
+
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> test(<span class="annotation">@Autowired</span> Announcer announcer) {
+                Assertions.assertEquals(NAME, announcer.name());
+        }
+
+        <i class="conum" data-value="3"></i><b>(3)</b>
+        <span class="annotation">@Configuration</span>
+        <span class="directive">static</span> <span class="type">class</span> <span class="class">SpringTestConfiguration</span> {
+
+                <span class="annotation">@Bean</span>
+                Announcer announcer(Environment env) {
+                        <span class="keyword">return</span> <span class="keyword">new</span> Announcer(env, NAME);
+                }
+
+        }
+
+}</code></pre>
 </div>
 </div>
 <div class="olist arabic">
@@ -5767,7 +5803,35 @@ It&#8217;s something in between.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java">Unresolved directive in boot-and-beyond.adoc - include::/home/runner/Desktop/root/code/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/Announcer.java<span class="type">[]</span></code></pre>
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.beans_to_boot.boot</span>;
+
+<span class="keyword">import</span> <span class="include">org.springframework.beans.factory.InitializingBean</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.core.env.Environment</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.util.Assert</span>;
+
+<span class="type">class</span> <span class="class">Announcer</span> <span class="directive">implements</span> InitializingBean {
+
+        <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">String</span> name;
+
+        <span class="directive">private</span> <span class="directive">final</span> Environment environment;
+
+        Announcer(Environment environment, <span class="predefined-type">String</span> name) {
+                <span class="local-variable">this</span>.name = name;
+                <span class="local-variable">this</span>.environment = environment;
+                Assert.notNull(name, <span class="string"><span class="delimiter">&quot;</span><span class="content">Name must not be null</span><span class="delimiter">&quot;</span></span>);
+                Assert.notNull(environment, <span class="string"><span class="delimiter">&quot;</span><span class="content">Environment must not be null</span><span class="delimiter">&quot;</span></span>);
+        }
+
+        <span class="annotation">@Override</span>
+        <span class="directive">public</span> <span class="type">void</span> afterPropertiesSet() <span class="directive">throws</span> <span class="exception">Exception</span> {
+                IO.println(<span class="string"><span class="delimiter">&quot;</span><span class="content">Hello, </span><span class="delimiter">&quot;</span></span> + name + <span class="string"><span class="delimiter">&quot;</span><span class="content">!</span><span class="delimiter">&quot;</span></span>);
+        }
+
+        <span class="predefined-type">String</span> name() {
+                <span class="keyword">return</span> name;
+        }
+
+}</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -5815,7 +5879,30 @@ It depends on a bean of type  <code>java.time.Clock</code> to do its work.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java">Unresolved directive in boot-and-beyond.adoc - include::/home/runner/Desktop/root/code/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/StoreService.java<span class="type">[]</span></code></pre>
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.beans_to_boot.springframework</span>;
+
+<span class="keyword">import</span> <span class="include">org.springframework.stereotype.Service</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.transaction.annotation.Transactional</span>;
+
+<span class="keyword">import</span> <span class="include">java.time.Clock</span>;
+<span class="keyword">import</span> <span class="include">java.time.LocalTime</span>;
+
+<span class="annotation">@Service</span>
+<span class="annotation">@Transactional</span>
+<span class="type">class</span> <span class="class">StoreService</span> {
+
+        <span class="directive">private</span> <span class="directive">final</span> Clock clock;
+
+        StoreService(Clock clock) {
+                <span class="local-variable">this</span>.clock = clock;
+        }
+
+        <span class="type">boolean</span> isOpen() {
+                <span class="type">var</span> hour = LocalTime.now(<span class="local-variable">this</span>.clock).getHour();
+                <span class="keyword">return</span> hour &gt;= <span class="integer">9</span> &amp;&amp; hour &lt; <span class="integer">17</span>;
+        }
+
+}</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -5823,7 +5910,27 @@ It depends on a bean of type  <code>java.time.Clock</code> to do its work.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java">Unresolved directive in boot-and-beyond.adoc - include::/home/runner/Desktop/root/code/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/StoreConfiguration.java<span class="type">[]</span></code></pre>
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.beans_to_boot.springframework</span>;
+
+<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Bean</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Configuration</span>;
+
+<span class="keyword">import</span> <span class="include">java.time.Clock</span>;
+
+<span class="annotation">@Configuration</span>
+<span class="type">class</span> <span class="class">StoreConfiguration</span> {
+
+        <span class="annotation">@Bean</span>
+        StoreService storeService(Clock clock) {
+                <span class="keyword">return</span> <span class="keyword">new</span> StoreService(clock);
+        }
+
+        <span class="annotation">@Bean</span>
+        Clock clock() {
+                <span class="keyword">return</span> Clock.systemDefaultZone();
+        }
+
+}</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -5843,7 +5950,40 @@ In this instance, we provide the bean that overrides the existing one using a <c
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java">Unresolved directive in boot-and-beyond.adoc - include::/home/runner/Desktop/root/code/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/TestBeanTest.java<span class="type">[]</span></code></pre>
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.beans_to_boot.springframework</span>;
+
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Assertions</span>;
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Test</span>;
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.extension.ExtendWith</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.beans.factory.annotation.Autowired</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.test.context.ContextConfiguration</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.test.context.bean.override.convention.TestBean</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.test.context.junit.jupiter.SpringExtension</span>;
+
+<span class="keyword">import</span> <span class="include">java.time.Clock</span>;
+<span class="keyword">import</span> <span class="include">java.time.Instant</span>;
+<span class="keyword">import</span> <span class="include">java.time.ZoneOffset</span>;
+
+<span class="annotation">@ExtendWith</span>(SpringExtension.class)
+<span class="annotation">@ContextConfiguration</span>(classes = StoreConfiguration.class)
+<span class="type">class</span> <span class="class">TestBeanTest</span> {
+
+        <i class="conum" data-value="1"></i><b>(1)</b>
+        <span class="annotation">@TestBean</span>(enforceOverride = <span class="predefined-constant">true</span>)
+        Clock clock;
+
+        <i class="conum" data-value="2"></i><b>(2)</b>
+        <span class="directive">static</span> Clock clock() <span class="directive">throws</span> <span class="exception">Exception</span> {
+                <span class="type">var</span> tenAm = Instant.parse(<span class="string"><span class="delimiter">&quot;</span><span class="content">2026-07-17T10:00:00Z</span><span class="delimiter">&quot;</span></span>);
+                <span class="keyword">return</span> Clock.fixed(tenAm, ZoneOffset.UTC);
+        }
+
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> businessIsOpenAt10Am(<span class="annotation">@Autowired</span> StoreService service) {
+                Assertions.assertTrue(service.isOpen());
+        }
+
+}</code></pre>
 </div>
 </div>
 <div class="olist arabic">
@@ -5883,7 +6023,45 @@ Then, before our tests run, we&#8217;ll need to program the mock.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java">Unresolved directive in boot-and-beyond.adoc - include::/home/runner/Desktop/root/code/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/MockitoBeanTest.java<span class="type">[]</span></code></pre>
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.beans_to_boot.springframework</span>;
+
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Assertions</span>;
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.BeforeEach</span>;
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Test</span>;
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.extension.ExtendWith</span>;
+<span class="keyword">import</span> <span class="include">org.mockito.Mockito</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.beans.factory.annotation.Autowired</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.test.context.ContextConfiguration</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.test.context.bean.override.mockito.MockitoBean</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.test.context.junit.jupiter.SpringExtension</span>;
+
+<span class="keyword">import</span> <span class="include">java.time.Clock</span>;
+<span class="keyword">import</span> <span class="include">java.time.Instant</span>;
+<span class="keyword">import</span> <span class="include">java.time.ZoneId</span>;
+
+<span class="annotation">@ExtendWith</span>(SpringExtension.class)
+<span class="annotation">@ContextConfiguration</span>(classes = StoreConfiguration.class)
+<span class="type">class</span> <span class="class">MockitoBeanTest</span> {
+
+        <i class="conum" data-value="1"></i><b>(1)</b>
+        <span class="annotation">@MockitoBean</span>(enforceOverride = <span class="predefined-constant">true</span>)
+        Clock clock;
+
+        <i class="conum" data-value="2"></i><b>(2)</b>
+        <span class="annotation">@BeforeEach</span>
+        <span class="type">void</span> before() <span class="directive">throws</span> <span class="exception">Exception</span> {
+                <span class="type">var</span> tenAm = Instant.parse(<span class="string"><span class="delimiter">&quot;</span><span class="content">2026-07-17T10:00:00Z</span><span class="delimiter">&quot;</span></span>);
+                Mockito.when(<span class="local-variable">this</span>.clock.instant()).thenReturn(tenAm);
+                Mockito.when(<span class="local-variable">this</span>.clock.getZone()).thenReturn(ZoneId.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">Z</span><span class="delimiter">&quot;</span></span>));
+        }
+
+        <i class="conum" data-value="3"></i><b>(3)</b>
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> businessIsOpenAt10Am(<span class="annotation">@Autowired</span> StoreService service) {
+                Assertions.assertTrue(service.isOpen());
+        }
+
+}</code></pre>
 </div>
 </div>
 <div class="olist arabic">
@@ -5911,7 +6089,47 @@ Methods call the real implementation unless you stub them.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java">Unresolved directive in boot-and-beyond.adoc - include::/home/runner/Desktop/root/code/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/MockitoSpyBeanTest.java<span class="type">[]</span></code></pre>
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.beans_to_boot.springframework</span>;
+
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Test</span>;
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.extension.ExtendWith</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.test.context.ContextConfiguration</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.test.context.bean.override.mockito.MockitoSpyBean</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.test.context.junit.jupiter.SpringExtension</span>;
+
+<span class="keyword">import</span> <span class="include">static</span> <span class="include">org.assertj.core.api.AssertionsForClassTypes.assertThat</span>;
+<span class="keyword">import</span> <span class="include">static</span> <span class="include">org.mockito.BDDMockito.given</span>;
+<span class="keyword">import</span> <span class="include">static</span> <span class="include">org.mockito.Mockito.verify</span>;
+
+<span class="annotation">@ExtendWith</span>(SpringExtension.class)
+<span class="annotation">@ContextConfiguration</span>(classes = StoreConfiguration.class)
+<span class="type">class</span> <span class="class">MockitoSpyBeanTest</span> {
+
+        <i class="conum" data-value="1"></i><b>(1)</b>
+        <span class="annotation">@MockitoSpyBean</span>
+        StoreService storeService;
+
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> callsTheRealMethodByDefault() {
+
+                <i class="conum" data-value="2"></i><b>(2)</b>
+                <span class="type">var</span> open = storeService.isOpen();
+
+                <i class="conum" data-value="3"></i><b>(3)</b>
+                verify(storeService).isOpen();
+                assertThat(open).isIn(<span class="predefined-constant">true</span>, <span class="predefined-constant">false</span>);
+        }
+
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> canStubASingleMethodWhenYouWantTo() {
+                <i class="conum" data-value="4"></i><b>(4)</b>
+                given(storeService.isOpen()).willReturn(<span class="predefined-constant">true</span>);
+
+                <i class="conum" data-value="5"></i><b>(5)</b>
+                assertThat(storeService.isOpen()).isTrue();
+        }
+
+}</code></pre>
 </div>
 </div>
 <div class="olist arabic">
@@ -5955,7 +6173,25 @@ We won&#8217;t get too much into this right now, but you&#8217;ve seen a similar
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java">Unresolved directive in boot-and-beyond.adoc - include::/home/runner/Desktop/root/code/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/SimpleController.java<span class="type">[]</span></code></pre>
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.beans_to_boot.springframework</span>;
+
+<span class="keyword">import</span> <span class="include">org.springframework.stereotype.Controller</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.web.bind.annotation.GetMapping</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.web.bind.annotation.RequestParam</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.web.bind.annotation.ResponseBody</span>;
+
+<span class="keyword">import</span> <span class="include">java.util.Map</span>;
+
+<span class="annotation">@ResponseBody</span>
+<span class="annotation">@Controller</span>
+<span class="type">class</span> <span class="class">SimpleController</span> {
+
+        <span class="annotation">@GetMapping</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">/greetings</span><span class="delimiter">&quot;</span></span>)
+        <span class="predefined-type">Map</span>&lt;<span class="predefined-type">String</span>, <span class="predefined-type">String</span>&gt; greetings(<span class="annotation">@RequestParam</span> <span class="predefined-type">String</span> name) {
+                <span class="keyword">return</span> <span class="predefined-type">Map</span>.of(<span class="string"><span class="delimiter">&quot;</span><span class="content">greeting</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">Hello, </span><span class="delimiter">&quot;</span></span> + name + <span class="string"><span class="delimiter">&quot;</span><span class="content">!</span><span class="delimiter">&quot;</span></span>);
+        }
+
+}</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -5963,7 +6199,29 @@ We won&#8217;t get too much into this right now, but you&#8217;ve seen a similar
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java">Unresolved directive in boot-and-beyond.adoc - include::/home/runner/Desktop/root/code/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/SimpleControllerTest.java<span class="type">[]</span></code></pre>
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.beans_to_boot.springframework</span>;
+
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Test</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.http.MediaType</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.test.web.servlet.MockMvc</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.test.web.servlet.request.MockMvcRequestBuilders</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.test.web.servlet.result.MockMvcResultMatchers</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.test.web.servlet.setup.MockMvcBuilders</span>;
+
+<span class="type">class</span> <span class="class">SimpleControllerTest</span> {
+
+        <i class="conum" data-value="1"></i><b>(1)</b>
+        <span class="directive">private</span> <span class="directive">final</span> MockMvc mockMvc = MockMvcBuilders.standaloneSetup(<span class="keyword">new</span> SimpleController()).build();
+
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> greetings() <span class="directive">throws</span> <span class="exception">Exception</span> {
+                <span class="local-variable">this</span>.mockMvc
+                        .perform(MockMvcRequestBuilders.get(<span class="string"><span class="delimiter">&quot;</span><span class="content">/greetings</span><span class="delimiter">&quot;</span></span>).param(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">Josh</span><span class="delimiter">&quot;</span></span>).accept(MediaType.APPLICATION_JSON))
+                        .andExpect(MockMvcResultMatchers.status().isOk())
+                        .andExpect(MockMvcResultMatchers.jsonPath(<span class="string"><span class="delimiter">&quot;</span><span class="content">$.greeting</span><span class="delimiter">&quot;</span></span>).value(<span class="string"><span class="delimiter">&quot;</span><span class="content">Hello, Josh!</span><span class="delimiter">&quot;</span></span>));
+        }
+
+}</code></pre>
 </div>
 </div>
 <div class="olist arabic">
@@ -5985,11 +6243,209 @@ Let&#8217;s try that out, testing the client behavior itself.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java">Unresolved directive in boot-and-beyond.adoc - include::/home/runner/Desktop/root/code/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/SimpleClientTest.java<span class="type">[]</span></code></pre>
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.beans_to_boot.springframework</span>;
+
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Test</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.http.MediaType</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.test.web.servlet.client.RestTestClient</span>;
+
+<span class="type">class</span> <span class="class">SimpleClientTest</span> {
+
+        <span class="directive">private</span> <span class="directive">final</span> RestTestClient client = RestTestClient.bindToController(<span class="keyword">new</span> SimpleController()).build();
+
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> greetings() {
+                <span class="local-variable">this</span>.client.get()
+                        .uri(<span class="string"><span class="delimiter">&quot;</span><span class="content">/greetings?name=Josh</span><span class="delimiter">&quot;</span></span>)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .exchange()
+                        .expectStatus()
+                        .isOk()
+                        .expectBody()
+                        .jsonPath(<span class="string"><span class="delimiter">&quot;</span><span class="content">$.greeting</span><span class="delimiter">&quot;</span></span>)
+                        .isEqualTo(<span class="string"><span class="delimiter">&quot;</span><span class="content">Hello, Josh!</span><span class="delimiter">&quot;</span></span>);
+        }
+
+}</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Here, we&#8217;re using a fake client to exercise the network and protocol interface for the service and to make assertsion about the results.</p>
+<p>Here, we&#8217;re using a fake client to exercise the network and protocol interface for the service and to make assertions about the results.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_testing_in_spring_boot">Testing in Spring Boot</h4>
+<div class="paragraph">
+<p>So far we&#8217;ve looked at isolated pieces in Spring Framework and seen how they layer one on top of the other.
+But a typical, secure application has a good many more moving parts, parts that are usually supplied by Spring Boot autoconfiguration.
+Spring Framework doesn&#8217;t know about Spring Boot autoconfiguration.
+And we&#8217;d have to recreate all of it to sufficiently test things as to reproduce them in production.
+Instead, we&#8217;ll use Spring Boot&#8217;s testing support, which builds on the support introduced in the Spring Framework, to do this.</p>
+</div>
+<div class="paragraph">
+<p>Everything you&#8217;ve learned so far still applies, there&#8217;s jsut <em>more</em> to the story.
+Let&#8217;s start with a jack-of-all trades annotation, <code>@SpringBootTest</code>, which works every time, but might be more than you need in some cases.
+Add <code>@SpringBootTest</code> to a test class and it&#8217;ll launch the production configuration and environment and then your tests will run with access to all the requisite beans.
+You can continue using <code>@TestBean</code> and <code>@MockitoBean</code> and <code>@MockitoSpyBean</code>, of course.
+Let&#8217;s look at an example.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.beans_to_boot.boot</span>;
+
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Assertions</span>;
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Test</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.beans.factory.annotation.Autowired</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.boot.test.context.SpringBootTest</span>;
+
+<span class="annotation">@SpringBootTest</span>
+<span class="type">class</span> <span class="class">BootifulTest</span> {
+
+        <i class="conum" data-value="1"></i><b>(1)</b>
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> dogs(<span class="annotation">@Autowired</span> DogRepository repository) {
+                Assertions.assertEquals(<span class="integer">3</span>, repository.findAll().size());
+        }
+
+}</code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>we have access to everything Spring Boot will have autoconfigured, including the <code>DogRepository</code>.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Good news! we can inject the <em>live</em> <code>DogRepository</code> and poke at it, just as if you were in your production code.
+Bad news: it&#8217;s <em>live</em>!
+Don&#8217;t forget to start your Docker image before running this test!</p>
+</div>
+<div class="paragraph">
+<p>There are, of course, ways around this.
+If you visit the Spring Initializr and choose <code>Docker Compose</code> support and then choose, say PostgreSQL, you&#8217;ll get a Docker Compose <code>compose.yml</code> file that looks like this.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">services</span>:
+  <span class="key">postgres</span>:
+    <span class="key">image</span>: <span class="string"><span class="content">'postgres:latest'</span></span>
+    <span class="key">environment</span>:
+      - <span class="string"><span class="content">'POSTGRES_DB=mydatabase'</span></span>
+      - <span class="string"><span class="content">'POSTGRES_PASSWORD=secret'</span></span>
+      - <span class="string"><span class="content">'POSTGRES_USER=myuser'</span></span>
+    <span class="key">ports</span>:
+      - <span class="string"><span class="content">'5432'</span></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>this is fantastic during development because you can live that <code>git clone</code>-and-run lifestyle.
+Spring Boot will detect it and automatically run it <em>and</em> it&#8217;ll automatically connect to it.
+No need to specify the connection details, e.g.: <code>spring.datasource.url</code>, <code>spring.datasource.username</code>, etc.
+Indeed, the <code>compose.yml</code> we&#8217;ve used for this chapter and the last one?
+I sourced it from the Spring Initializr and took the liberty of exposing the ports.
+The default generated on the Spring Initializr does not do this, because it doesn&#8217;t need to.</p>
+</div>
+<div class="paragraph">
+<p>But what about during development?
+Here you might want to use Testcontainers.
+Testcontainers are an amazing Java library for running Docker images from Java code.
+There&#8217;s a core <code>Container</code> class which you can instantiate to launch any arbitrary Docker image.
+Some of these Docker images have supported configuration properties, environment variables, required mounts, etc.
+So the Testcontainers project has put together a library of specializations that take strongly typed parameters to help you construct a Docker image correctly.
+If you choose PostgreSQL and Testcontainers on the Spring Initializr, you&#8217;ll get two new classes in your <code>src/test/java</code> folder:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>a <code>Test*Application.java</code> - you can run this class as you develop, usually in tandem with the Spring Boot Devtools, and you&#8217;ll have your full production object graph <em>and</em>  bean(s) for the applicable Testcontainer(s).
+You don&#8217;t need to even define the requisite properties to connect to this new instance.
+Spring Boot will derive them for you and connect automatically.
+It&#8217;ll do this by importing the next class..</p>
+</li>
+<li>
+<p>..which is <code>TestcontainersConfiguration.java</code>.
+This class defines the actual Testcontainers objects.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>It this latter class that we&#8217;ll use to automatically stand up a PostgreSQL database process.
+Here&#8217;s our improved test.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.beans_to_boot.boot</span>;
+
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Assertions</span>;
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Test</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.beans.factory.annotation.Autowired</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.boot.test.context.SpringBootTest</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Import</span>;
+
+<i class="conum" data-value="1"></i><b>(1)</b>
+<span class="annotation">@Import</span>(TestcontainersConfiguration.class)
+<span class="annotation">@SpringBootTest</span>
+<span class="type">class</span> <span class="class">BootifulTestcontainersTest</span> {
+
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> dogs(<span class="annotation">@Autowired</span> DogRepository repository) {
+                Assertions.assertEquals(<span class="integer">3</span>, repository.findAll().size());
+        }
+
+}</code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>this pulls in our Testcontainers configuration</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>And here&#8217;s the actual Testcontainers configuration class, defining a bean that we&#8217;ve identified as a <code>@ServiceConnection</code>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.beans_to_boot.boot</span>;
+
+<span class="keyword">import</span> <span class="include">org.springframework.boot.test.context.TestConfiguration</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.boot.testcontainers.service.connection.ServiceConnection</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Bean</span>;
+<span class="keyword">import</span> <span class="include">org.testcontainers.postgresql.PostgreSQLContainer</span>;
+<span class="keyword">import</span> <span class="include">org.testcontainers.utility.DockerImageName</span>;
+
+<i class="conum" data-value="1"></i><b>(1)</b>
+<span class="annotation">@TestConfiguration</span>(proxyBeanMethods = <span class="predefined-constant">false</span>)
+<span class="type">class</span> <span class="class">TestcontainersConfiguration</span> {
+
+        <i class="conum" data-value="2"></i><b>(2)</b>
+        <span class="annotation">@Bean</span>
+        <span class="annotation">@ServiceConnection</span>
+        PostgreSQLContainer postgresContainer() {
+                <span class="keyword">return</span> <span class="keyword">new</span> PostgreSQLContainer(DockerImageName.parse(<span class="string"><span class="delimiter">&quot;</span><span class="content">postgres:latest</span><span class="delimiter">&quot;</span></span>));
+        }
+
+}</code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>this is a meta-annotation for <code>@Configuration</code>.</p>
+</li>
+<li>
+<p>a <code>@ServiceConnection</code> is a bean that Spring Boot will identify and use to hydrate connection details automatically, obviating the need for us to specify, e.g., <code>spring.datasource.url</code>, <code>spring.datasource.username</code>, etc.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Shut down all your Docker images and then run this test, and it&#8217;ll still work, because the service connection will supply the PostgreSQL instance and our SQL initialization logic (<code>schema.sql</code> and <code>data.sql</code>, defined earlier) will initialize the schema, all before we ever run a single test.</p>
+</div>
+<div class="paragraph">
+<p>The test is green.</p>
 </div>
 </div>
 </div>
@@ -11035,7 +11491,7 @@ Now, all the other machinery in Spring Security that consults this thread local 
 <div id="footer">
 <div id="footer-text">
 Version 1.0<br>
-Last updated 2026-07-18 21:36:55 UTC
+Last updated 2026-07-19 15:47:52 UTC
 </div>
 </div>
 </body>
