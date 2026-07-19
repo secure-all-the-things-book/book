@@ -1001,6 +1001,20 @@ In this case, the user has a username of `josh@joshlong.com`, and two roles.
 
 TIP: Spring Security provides other annotations that give you progressively more and more control over the mock object installed in the context. `@WithMockUser` lets you describe the attributes for a user which it will place in the `SecurityContext`. `@WithUserDetails` lets you specify not just the attributes of a mock `User`, but the `UserDetailsService` bean name from which to source a mock `User`.
 
+Neat, eh?
+You can use this in addition to request-based authorization, which we'll look at next.
+
+=== Request-Based Authorization
+
+We looked at method-based authorization because, conceptually, there are fewer moving parts.
+However, most people will start with request-based authorization, wherein you secure the application as a whole, at the network protocol level, before control-flow ever enters one of your methods.
+A good many of the things you want to secure are HTTP-based, and Spring Security has good authorization support for path-based matching.
+But HTTP is often just the beginning; gRPC is based on HTTP, but it doesn't make sense to use HTTP path matchers for gRPC.
+Ditto Model Context Protocol (MCP).
+
+So, keeping that in mind, let's look at a trivial HTTP example, and see how we can secure - enforcing authentication and authorization - access to that application.
+
+
 
 
 // time to concern ourselves with authorization
