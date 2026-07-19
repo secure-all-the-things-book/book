@@ -450,7 +450,7 @@ Here's the simplest possible test using only the facilities in Spring Framework.
 
 [source,java]
 ----
-include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/SpringTest.java[]
+include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/springframework/SpringTest.java[]
 ----
 
 . this annotation comes from JUnit and allows customization of the default JUnit lifecycle and instances
@@ -500,14 +500,14 @@ It depends on a bean of type  `java.time.Clock` to do its work.
 
 [source,java]
 ----
-include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/StoreService.java[]
+include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/springframework/StoreService.java[]
 ----
 
 The `Clock` is configured in `StoreConfiguration`.
 
 [source,java]
 ----
-include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/StoreConfiguration.java[]
+include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/springframework/StoreConfiguration.java[]
 ----
 
 Now suppose I want to test that my logic works correctly.
@@ -524,7 +524,7 @@ In this instance, we provide the bean that overrides the existing one using a `s
 
 [source,java]
 ----
-include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/TestBeanTest.java[]
+include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/springframework/TestBeanTest.java[]
 ----
 
 . here we're telling Spring that we will provide an _override_ for the missing bean and, further, that if there is no other bean to be overridden, then this should be treated as an error.
@@ -550,7 +550,7 @@ Then, before our tests run, we'll need to program the mock.
 
 [source,java]
 ----
-include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/MockitoBeanTest.java[]
+include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/springframework/MockitoBeanTest.java[]
 ----
 
 . instead of us providing a factory method, we'll tell Spring to wire up a `Mock` and replace the bean in teh context with that Mock.
@@ -567,7 +567,7 @@ Methods call the real implementation unless you stub them.
 
 [source,java]
 ----
-include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/MockitoSpyBeanTest.java[]
+include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/springframework/MockitoSpyBeanTest.java[]
 ----
 
 . the real `isOpen()` actually executes against the real `Clock`
@@ -595,14 +595,14 @@ We won't get too much into this right now, but you've seen a similar controller 
 
 [source,java]
 ----
-include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/SimpleController.java[]
+include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/springframework/SimpleController.java[]
 ----
 
 Now let's write a simple test that exercises this controller.
 
 [source,java]
 ----
-include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/SimpleControllerTest.java[]
+include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/springframework/SimpleControllerTest.java[]
 ----
 
 . first we tell Spring's `MockMvc` machinery to set up the web tier around this particular controller
@@ -615,15 +615,101 @@ Let's try that out, testing the client behavior itself.
 
 [source,java]
 ----
-include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/SimpleClientTest.java[]
+include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/springframework/SimpleClientTest.java[]
 ----
 
-Here, we're using a fake client to exercise the network and protocol interface for the service and to make assertsion about the results.
+Here, we're using a fake client to exercise the network and protocol interface for the service and to make assertions about the results.
+
 
 // todo
 // springboottest
 // slices
+=== Testing in Spring Boot
 
+So far we've looked at isolated pieces in Spring Framework and seen how they layer one on top of the other.
+But a typical, secure application has a good many more moving parts, parts that are usually supplied by Spring Boot autoconfiguration.
+Spring Framework doesn't know about Spring Boot autoconfiguration.
+And we'd have to recreate all of it to sufficiently test things as to reproduce them in production.
+Instead, we'll use Spring Boot's testing support, which builds on the support introduced in the Spring Framework, to do this.
+
+Everything you've learned so far still applies, there's jsut _more_ to the story.
+Let's start with a jack-of-all trades annotation, `@SpringBootTest`, which works every time, but might be more than you need in some cases.
+Add `@SpringBootTest` to a test class and it'll launch the production configuration and environment and then your tests will run with access to all the requisite beans.
+You can continue using `@TestBean` and `@MockitoBean` and `@MockitoSpyBean`, of course.
+Let's look at an example.
+
+[source,java]
+----
+include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/BootifulTest.java[]
+----
+
+. we have access to everything Spring Boot will have autoconfigured, including the `DogRepository`.
+
+Good news! we can inject the _live_ `DogRepository` and poke at it, just as if you were in your production code.
+Bad news: it's _live_!
+Don't forget to start your Docker image before running this test!
+
+There are, of course, ways around this.
+If you visit the Spring Initializr and choose `Docker Compose` support and then choose, say PostgreSQL, you'll get a Docker Compose `compose.yml` file that looks like this.
+
+[source,yaml]
+----
+services:
+  postgres:
+    image: 'postgres:latest'
+    environment:
+      - 'POSTGRES_DB=mydatabase'
+      - 'POSTGRES_PASSWORD=secret'
+      - 'POSTGRES_USER=myuser'
+    ports:
+      - '5432'
+----
+
+this is fantastic during development because you can live that `git clone`-and-run lifestyle.
+Spring Boot will detect it and automatically run it _and_ it'll automatically connect to it.
+No need to specify the connection details, e.g.: `spring.datasource.url`, `spring.datasource.username`, etc.
+Indeed, the `compose.yml` we've used for this chapter and the last one?
+I sourced it from the Spring Initializr and took the liberty of exposing the ports.
+The default generated on the Spring Initializr does not do this, because it doesn't need to.
+
+But what about during development?
+Here you might want to use Testcontainers.
+Testcontainers are an amazing Java library for running Docker images from Java code.
+There's a core `Container` class which you can instantiate to launch any arbitrary Docker image.
+Some of these Docker images have supported configuration properties, environment variables, required mounts, etc.
+So the Testcontainers project has put together a library of specializations that take strongly typed parameters to help you construct a Docker image correctly.
+If you choose PostgreSQL and Testcontainers on the Spring Initializr, you'll get two new classes in your `src/test/java` folder:
+
+* a `Test*Application.java` - you can run this class as you develop, usually in tandem with the Spring Boot Devtools, and you'll have your full production object graph _and_  bean(s) for the applicable Testcontainer(s).
+You don't need to even define the requisite properties to connect to this new instance.
+Spring Boot will derive them for you and connect automatically.
+It'll do this by importing the next class..
+* ..which is `TestcontainersConfiguration.java`.
+This class defines the actual Testcontainers objects.
+
+It this latter class that we'll use to automatically stand up a PostgreSQL database process.
+Here's our improved test.
+
+[source,java]
+----
+include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/BootifulTestcontainersTest.java[]
+----
+
+. this pulls in our Testcontainers configuration
+
+And here's the actual Testcontainers configuration class, defining a bean that we've identified as a `@ServiceConnection`.
+
+[source,java]
+----
+include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/TestcontainersConfiguration.java[]
+----
+
+. this is a meta-annotation for `@Configuration`.
+. a `@ServiceConnection` is a bean that Spring Boot will identify and use to hydrate connection details automatically, obviating the need for us to specify, e.g., `spring.datasource.url`, `spring.datasource.username`, etc.
+
+Shut down all your Docker images and then run this test, and it'll still work, because the service connection will supply the PostgreSQL instance and our SQL initialization logic (`schema.sql` and `data.sql`, defined earlier) will initialize the schema, all before we ever run a single test.
+
+The test is green.
 
 == Next Steps
 
