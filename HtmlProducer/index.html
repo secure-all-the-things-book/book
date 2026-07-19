@@ -2477,7 +2477,7 @@ Let&#8217;s learn what Spring can help you with by way of an example that we&#82
 <p>We will need to incept a new project.
 It&#8217;s just Java and some libraries, so in theory you could create your own with no issues.
 But I like to use the <a href="https://start.spring.io">Spring Initializr (https://start.spring.io)</a>.
-Visit the Spring Initializr and make the following dependency selections: <code>Spring Boot Actuator</code>, <code>Thymeleaf</code>, <code>Spring Data JDBC</code>, <code>PostgreSQL Driver</code>, <code>H2</code>, <code>Spring Web</code>, <code>GraalVM Native Support</code>, <code>OpenTelemetry</code>, and <code>Spring Boot DevTools</code>, and <code>Testcontainers</code>.
+Visit the Spring Initializr and make the following dependency selections: <code>Spring Boot Actuator</code>, <code>Thymeleaf</code>, <code>Spring Data JDBC</code>, <code>PostgreSQL Driver</code>, <code>H2</code>, <code>Spring Web</code>, <code>GraalVM Native Support</code>, <code>OpenTelemetry</code>, <code>Spring Boot DevTools</code>, and <code>Testcontainers</code>.
 Select Java 25 (or later), and Apache Maven as the build tool.
 You could use Gradle if you prefer, though I&#8217;ll be showing Apache Maven.</p>
 </div>
@@ -2989,10 +2989,10 @@ Here&#8217;s an abbreviated list:</p>
 <p>JDO (based on JDBC)</p>
 </li>
 <li>
-<p>JDB (based on JDBC)</p>
+<p>JDBI (based on JDBC)</p>
 </li>
 <li>
-<p>JOOQ (based on JDBC)</p>
+<p>jOOQ (based on JDBC)</p>
 </li>
 <li>
 <p>Kafka</p>
@@ -3001,7 +3001,7 @@ Here&#8217;s an abbreviated list:</p>
 <p>AMQP (the protocol under RabbitMQ)</p>
 </li>
 <li>
-<p>Neo4J</p>
+<p>Neo4j</p>
 </li>
 <li>
 <p>MongoDB</p>
@@ -3336,7 +3336,7 @@ But we can&#8217;t scale that.
 We&#8217;d get too many permutations of too many types in no time at all.
 So what if we could do this automatically?
 What if we could, at runtime, <em>programmatically</em> create a class that implements the interface?
-Java has had a way to do this since Java 1.4.</p>
+Java has had a way to do this since Java 1.3.</p>
 </div>
 <div class="paragraph">
 <p>I&#8217;ve extracted the real metaprogramming magic into a separate new class called <code>Transactions</code>.</p>
@@ -3481,7 +3481,7 @@ We can programmatically write—with bytecode—a new class file that we add to 
 There are many libraries that can help with this sort of thing.
 ASM.
 The JDK itself in more recent versions can do this.
-ByteBuddy.
+Byte Buddy.
 And, a perennial favorite, CGLIB.</p>
 </div>
 <div class="paragraph">
@@ -4433,7 +4433,7 @@ One does not simply programmatically add methods to a class in a for-loop.
 The same limitation exists with stereotype annotations.</p>
 </div>
 <div class="paragraph">
-<p>Spring Framework 7 (in 2026) introduced a new mechanism that nicely addresses some limitations of the other two models.
+<p>Spring Framework 7 (in 2025) introduced a new mechanism that nicely addresses some limitations of the other two models.
 If you need the dynamism it affords, it&#8217;s the best way to get it.</p>
 </div>
 <div class="admonitionblock note">
@@ -4716,11 +4716,11 @@ You can turn the expressions into <em>compiled</em> code!</p>
 <div class="paragraph">
 <p>I&#8217;ll never forget the SpEL&#8217;s introduction into the Spring Framework.
 I was trawling the updates to Spring Framework 3.0 back in 2008 or 2009, watching as Andy Clement added this amazing new mechanism to the codebase.
-The first incarnation of the Spring Expression Language was written using Antlr, which is the Java analog to Yak and Bison.
+The first incarnation of the Spring Expression Language was written using Antlr, which is the Java analog to Yacc and Bison.
 These are tools with which you can write grammar, then a generator will turn the grammar into a recursive descent parser.
-Basically, its a way to build interpreters or the foundations of a compiler.
+Basically, it&#8217;s a way to build interpreters or the foundations of a compiler.
 It makes perfect sense for even a gifted craftsman like Andy Clement to use these venerable tools to handle such a dedicated task.
-After all, Antlr&#8217;s a basically a standard!
+After all, Antlr&#8217;s basically a standard!
 There is no better toolchain for building lexers and parsers on the JVM, full stop.
 Plenty of other projects do: Hibernate, Apache Spark, Apache Camel, Apache KIE Drools, GraphQL Java, Apache Groovy, Neo4j, Elasticsearch, PrestoDB, Apache Hive, Apache Cassandra, etc.
 But not Andy!
@@ -4777,7 +4777,7 @@ record Order(<span class="predefined-type">String</span> sku) {
 </div>
 </div>
 <div class="paragraph">
-<p>In the next few iterations of our examples, we&#8217;ll refere to a <code>List&lt;Order&gt;</code>.</p>
+<p>In the next few iterations of our examples, we&#8217;ll refer to a <code>List&lt;Order&gt;</code>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -5051,27 +5051,16 @@ So we no longer need our <code>@PropertySource</code> annotation.</p>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.beans_to_boot.boot</span>;
 
-<span class="keyword">import</span> <span class="include">org.springframework.boot.ApplicationRunner</span>;
-<span class="keyword">import</span> <span class="include">org.springframework.boot.SpringApplication</span>;
-<span class="keyword">import</span> <span class="include">org.springframework.boot.autoconfigure.SpringBootApplication</span>;
-<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Bean</span>;
-<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Import</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.beans.factory.BeanRegistrar</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.beans.factory.BeanRegistry</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.core.env.Environment</span>;
 
-<i class="conum" data-value="1"></i><b>(1)</b>
-<span class="annotation">@SpringBootApplication</span>
-<i class="conum" data-value="2"></i><b>(2)</b>
-<span class="annotation">@Import</span>(DogBeanRegistrar.class)
-<span class="directive">public</span> <span class="type">class</span> <span class="class">Main</span> {
+<span class="type">class</span> <span class="class">DogBeanRegistrar</span> <span class="directive">implements</span> BeanRegistrar {
 
-        <span class="directive">static</span> <span class="type">void</span> main(<span class="predefined-type">String</span><span class="type">[]</span> args) {
-                <i class="conum" data-value="3"></i><b>(3)</b>
-                SpringApplication.run(Main.class, args);
-        }
-
-        <i class="conum" data-value="4"></i><b>(4)</b>
-        <span class="annotation">@Bean</span>
-        ApplicationRunner testRunner(DogRepository repository) {
-                <span class="keyword">return</span> _ -&gt; repository.findAll().forEach(IO::println);
+        <span class="annotation">@Override</span>
+        <span class="directive">public</span> <span class="type">void</span> register(BeanRegistry registry, Environment env) {
+                registry.registerBean(MyBeanFactoryPostProcessor.class);
+                registry.registerBean(Listener.class);
         }
 
 }</code></pre>
@@ -5684,7 +5673,7 @@ From there, you&#8217;re off to production!</p>
 <h3 id="_testing">Testing</h3>
 <div class="paragraph">
 <p>Spring makes it easy to both do the right thing and to focus on doing the right thing.
-But how do you know if you&#8217;ve actually done the right?
+But how do you know if you&#8217;ve actually done the right thing?
 How do you know if your changes resulted in outcomes you desired when you started writing the code in the first place?
 Testing, of course.</p>
 </div>
@@ -5705,7 +5694,7 @@ And Spring has amazing support here.</p>
 Spring also supports Spock for the Groovy community and TestNG.
 But JUnit&#8217;s the main thing.
 Use that, and things will be alright.
-One of the core Spring Framework engineers, Sam Brannen, is also a major contributor to JUnit the project, too.
+One of the core Spring Framework engineers, Sam Brannen, is also a major contributor to the JUnit project.
 It&#8217;s no coincidence then that Spring and JUnit have enjoyed a nice symbiotic relationship for decades.</p>
 </div>
 <div class="sect3">
@@ -5846,13 +5835,13 @@ Or the database support and the transaction support.
 Tons.</p>
 </div>
 <div class="paragraph">
-<p>In the example above, injected a <em>real</em> <code>Environment</code>.</p>
+<p>In the example above, we injected a <em>real</em> <code>Environment</code>.</p>
 </div>
 </div>
 <div class="sect3">
 <h4 id="_isolated_configuration">Isolated Configuration</h4>
 <div class="paragraph">
-<p>There&#8217;s a tension we face when doing integration tests. we want things to execute in an environment as close to production as possible - otherwise why bother with integration testing at all? - but we also need to avoid complicating test setup with unnecessary dependencies.
+<p>There&#8217;s a tension we face when doing integration tests. We want things to execute in an environment as close to production as possible - otherwise why bother with integration testing at all? - but we also need to avoid complicating test setup with unnecessary dependencies.
 These extra dependencies add no clarity to our determination that some bit of code works or not while simultaneously creating undue burden on the people writing and maintaining the test.
 Mercifully, we&#8217;re using a dependency injection framework.
 A framework follows the open-closed principle: it&#8217;s open for extension, closed for modification.
@@ -5871,11 +5860,11 @@ Instead, your job is to tell Spring how to run less of the application, swapping
 <div class="paragraph">
 <p>We&#8217;ll demonstrate these concepts using a simple class, called <code>StoreService</code>, which is meant to be a service for, you know, a merchant.
 A merchant&#8217;s store.
-It&#8217;s store-front.</p>
+Its storefront.</p>
 </div>
 <div class="paragraph">
 <p>Here&#8217;s the <code>StoreService</code>.
-It depends on a bean of type  <code>java.time.Clock</code> to do its work.</p>
+It depends on a bean of type <code>java.time.Clock</code> to do its work.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -6067,10 +6056,10 @@ Then, before our tests run, we&#8217;ll need to program the mock.</p>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>instead of us providing a factory method, we&#8217;ll tell Spring to wire up a <code>Mock</code> and replace the bean in teh context with that Mock.</p>
+<p>instead of us providing a factory method, we&#8217;ll tell Spring to wire up a <code>Mock</code> and replace the bean in the context with that Mock.</p>
 </li>
 <li>
-<p>then we&#8217;ll use Wiremock&#8217;s API to instruct the <code>Clock</code> on what to do.</p>
+<p>then we&#8217;ll use Mockito&#8217;s API to instruct the <code>Clock</code> on what to do.</p>
 </li>
 <li>
 <p>and finally, we&#8217;ll kick the whole chain of operations off.
@@ -6164,7 +6153,7 @@ Normally when you test a Spring MVC controller end-to-end, you&#8217;d have to b
 That works, but it&#8217;s slow and it&#8217;s more of an integration test.
 MockMvc instead spins up the Spring MVC machinery - the <code>DispatcherServlet</code>, your handler mappings, argument resolvers, message converters, validation, exception handlers, filters — in memory, and lets you send mock requests straight into that dispatcher.
 No socket, no port, no real HTTP.
-So what it actually does is give you a fluent way to say "pretend an HTTP request came in, and let me assert on what the controller layer did with it.
+So what it actually does is give you a fluent way to say "pretend an HTTP request came in, and let me assert on what the controller layer did with it."
 Here&#8217;s an example.</p>
 </div>
 <div class="paragraph">
@@ -6236,10 +6225,11 @@ We won&#8217;t get too much into this right now, but you&#8217;ve seen a similar
 </div>
 </div>
 <div class="sect3">
-<h4 id="_testing_clients_with_resttestclient">Testing clients with <code>RestTestClient</code></h4>
+<h4 id="_endpoint_testing_with_resttestclient">Endpoint Testing with <code>RestTestClient</code></h4>
 <div class="paragraph">
-<p><code>MockMvc</code> lets you test the behavior of the service, while mocking out the client. <code>RestTestClient</code> does the inverse, letting you test the behavior of the client, while mocking out the server.
-Let&#8217;s try that out, testing the client behavior itself.</p>
+<p><code>MockMvc</code> gives you a servlet-centric API for driving your controllers. <code>RestTestClient</code> targets those same server-side endpoints, but through a fluent, <code>RestClient</code>-style API — the same ergonomics as <code>WebTestClient</code>, which developers on the reactive stack will recognize.
+You can point it at a running server, at the whole <code>ApplicationContext</code>, or — as we do here — at a single controller, in which case there&#8217;s no socket, port, or real HTTP involved at all.
+Let&#8217;s try it out.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -6270,7 +6260,7 @@ Let&#8217;s try that out, testing the client behavior itself.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Here, we&#8217;re using a fake client to exercise the network and protocol interface for the service and to make assertions about the results.</p>
+<p>Here we bind the client directly to the <code>SimpleController</code> and use its fluent API to issue a request against the endpoint, then make assertions about the response.</p>
 </div>
 </div>
 <div class="sect3">
@@ -6289,7 +6279,7 @@ Instead, we&#8217;ll use Spring Boot&#8217;s testing support, which builds on th
 <i class="fa icon-tip" title="Tip"></i>
 </td>
 <td class="content">
-Spring Boot automatically pulls in a whole spate of interesting testing libraries, like Awaitility (for testing asynchronous systems), JSONPath (XPAth for JSON), Mockito (a mocking library), AssertJ (for various assertions), Hamcrest (and for more assertions and matchers), and JUnit (the de facto standard testing framework).
+Spring Boot automatically pulls in a whole spate of interesting testing libraries, like Awaitility (for testing asynchronous systems), JSONPath (XPath for JSON), Mockito (a mocking library), AssertJ (for various assertions), Hamcrest (for still more assertions and matchers), and JUnit (the de facto standard testing framework).
 </td>
 </tr>
 </table>
@@ -6371,19 +6361,19 @@ If you choose PostgreSQL and Testcontainers on the Spring Initializr, you&#8217;
 <div class="ulist">
 <ul>
 <li>
-<p>a <code>Test*Application.java</code> - you can run this class as you develop, usually in tandem with the Spring Boot Devtools, and you&#8217;ll have your full production object graph <em>and</em>  bean(s) for the applicable Testcontainer(s).
+<p>a <code>Test*Application.java</code> - you can run this class as you develop, usually in tandem with the Spring Boot Devtools, and you&#8217;ll have your full production object graph <em>and</em> bean(s) for the applicable Testcontainer(s).
 You don&#8217;t need to even define the requisite properties to connect to this new instance.
 Spring Boot will derive them for you and connect automatically.
-It&#8217;ll do this by importing the next class..</p>
+It&#8217;ll do this by importing the next class&#8230;&#8203;</p>
 </li>
 <li>
-<p>..which is <code>TestcontainersConfiguration.java</code>.
+<p>&#8230;&#8203;which is <code>TestcontainersConfiguration.java</code>.
 This class defines the actual Testcontainers objects.</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>It this latter class that we&#8217;ll use to automatically stand up a PostgreSQL database process.
+<p>It is this latter class that we&#8217;ll use to automatically stand up a PostgreSQL database process.
 Here&#8217;s our improved test.</p>
 </div>
 <div class="listingblock">
@@ -6469,7 +6459,7 @@ This works well, but it means that you&#8217;re paying the cost of constructing 
 Spring Boot has the notion of <em>test slices</em>, which can activate only the objects you need to test a component in its particular subsystem – data, JSON, the web, security, etc.</p>
 </div>
 <div class="paragraph">
-<p>In most cases, the user would simply add the relevatn annotation from one of the dozens of supported test modules (<code>@JsonTest</code>, <code>@DataJdbcTest</code>, <code>@WebMvcTest</code>, etc.) to get the requisite autoconfiguration for just that subsystem.
+<p>In most cases, the user would simply add the relevant annotation from one of the dozens of supported test modules (<code>@JsonTest</code>, <code>@DataJdbcTest</code>, <code>@WebMvcTest</code>, etc.) to get the requisite autoconfiguration for just that subsystem.
 Then proceed as normal.
 All of these special annotations in turn are meta-annotations and use <code>@AutoConfigure*</code> variants and <code>@ImportAutoConfiguration</code>.
 You can usually test with just one main annotation, e.g, <code>@DataJdbcTest</code>.</p>
@@ -6961,7 +6951,7 @@ But for now, let&#8217;s start with a web application.
 Let&#8217;s take these simple concepts and look at them in practice, in a more fleshed-out example implemented using Spring Boot and Spring Security.</p>
 </div>
 <div class="paragraph">
-<p>Visit the Spring Initializr, add <code>PostgreSQL Driver</code>, <code>Flyway</code>, <code>JDBC API</code>, <code>GraalVM Native Support</code>, <code>Spring Web</code>, <code>Spring Security</code>, <code>DevTools</code>, and <code>WebAuthn for Spring Security</code> to the build.
+<p>Visit the Spring Initializr, add <code>PostgreSQL Driver</code>, <code>Flyway</code>, <code>JDBC API</code>, <code>GraalVM Native Support</code>, <code>Spring Web</code>, <code>Testcontainers</code>, <code>Spring Security</code>, <code>DevTools</code>, and <code>WebAuthn for Spring Security</code> to the build.
 I always choose Apache Maven and, of course, the latest version of Java or the latest long-term support (LTS) version of Java.
 Click <code>Generate</code> and open the resulting zip file in your IDE.</p>
 </div>
@@ -8480,7 +8470,40 @@ Imagine the kinds of tenancy checks you could build with this mind!</p>
 </ol>
 </div>
 <div class="paragraph">
-<p>Now let&#8217;s exercise this code. While we&#8217;re at it, we can take a look at some of Spring Security&#8217;s amazing testing support.</p>
+<p>Now let&#8217;s exercise this code.</p>
+</div>
+<div class="paragraph">
+<p>First, we&#8217;ll need a <code>TestcontainersConfiguration</code> class.
+Let&#8217;s look at that.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">package</span> <span class="namespace">com.example.security.authorization.methods</span>;
+
+<span class="keyword">import</span> <span class="include">org.springframework.boot.test.context.TestConfiguration</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.boot.testcontainers.service.connection.ServiceConnection</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Bean</span>;
+<span class="keyword">import</span> <span class="include">org.testcontainers.postgresql.PostgreSQLContainer</span>;
+<span class="keyword">import</span> <span class="include">org.testcontainers.utility.DockerImageName</span>;
+
+<span class="annotation">@TestConfiguration</span>(proxyBeanMethods = <span class="predefined-constant">false</span>)
+<span class="type">class</span> <span class="class">TestcontainersConfiguration</span> {
+
+        <span class="annotation">@Bean</span>
+        <span class="annotation">@ServiceConnection</span>
+        PostgreSQLContainer postgresContainer() {
+                <span class="keyword">return</span> <span class="keyword">new</span> PostgreSQLContainer(DockerImageName.parse(<span class="string"><span class="delimiter">&quot;</span><span class="content">postgres:latest</span><span class="delimiter">&quot;</span></span>));
+        }
+
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Standard stuff.
+You can get that generated from the Spring Initializr.</p>
+</div>
+<div class="paragraph">
+<p>Now let&#8217;s look at a test that depends on this test database and that furnishes mock users with Spring Security&#8217;s <code>@WithMockUser</code>.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -8490,9 +8513,12 @@ Imagine the kinds of tenancy checks you could build with this mind!</p>
 <span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Test</span>;
 <span class="keyword">import</span> <span class="include">org.springframework.beans.factory.annotation.Autowired</span>;
 <span class="keyword">import</span> <span class="include">org.springframework.boot.test.context.SpringBootTest</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.context.annotation.Import</span>;
 <span class="keyword">import</span> <span class="include">org.springframework.security.access.AccessDeniedException</span>;
 <span class="keyword">import</span> <span class="include">org.springframework.security.test.context.support.WithMockUser</span>;
 
+<i class="conum" data-value="1"></i><b>(1)</b>
+<span class="annotation">@Import</span>(TestcontainersConfiguration.class)
 <span class="annotation">@SpringBootTest</span>
 <span class="type">class</span> <span class="class">CustomerServiceTest</span> {
 
@@ -8503,7 +8529,7 @@ Imagine the kinds of tenancy checks you could build with this mind!</p>
                 <span class="local-variable">this</span>.customerService = customerService;
         }
 
-        <i class="conum" data-value="1"></i><b>(1)</b>
+        <i class="conum" data-value="2"></i><b>(2)</b>
         <span class="annotation">@Test</span>
         <span class="annotation">@WithMockUser</span>(username = <span class="string"><span class="delimiter">&quot;</span><span class="content">josh@joshlong.com</span><span class="delimiter">&quot;</span></span>, roles = { <span class="string"><span class="delimiter">&quot;</span><span class="content">ADMIN</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">USER</span><span class="delimiter">&quot;</span></span> })
         <span class="type">void</span> good() {
@@ -8516,13 +8542,6 @@ Imagine the kinds of tenancy checks you could build with this mind!</p>
                 }
         }
 
-        <i class="conum" data-value="2"></i><b>(2)</b>
-        <span class="annotation">@Test</span>
-        <span class="annotation">@WithMockUser</span>(username = <span class="string"><span class="delimiter">&quot;</span><span class="content">bob</span><span class="delimiter">&quot;</span></span>, roles = { <span class="string"><span class="delimiter">&quot;</span><span class="content">USER</span><span class="delimiter">&quot;</span></span> })
-        <span class="type">void</span> badPost() {
-                Assertions.assertThrows(AccessDeniedException.class, () -&gt; <span class="local-variable">this</span>.customerService.readPrivilegedCustomerData(<span class="integer">2</span>));
-        }
-
         <i class="conum" data-value="3"></i><b>(3)</b>
         <span class="annotation">@Test</span>
         <span class="annotation">@WithMockUser</span>(username = <span class="string"><span class="delimiter">&quot;</span><span class="content">bob</span><span class="delimiter">&quot;</span></span>)
@@ -8530,8 +8549,44 @@ Imagine the kinds of tenancy checks you could build with this mind!</p>
                 Assertions.assertThrows(AccessDeniedException.class, () -&gt; <span class="local-variable">this</span>.customerService.readPrivilegedCustomerData(<span class="integer">1</span>));
         }
 
+        <span class="annotation">@Test</span>
+        <span class="annotation">@WithMockUser</span>(username = <span class="string"><span class="delimiter">&quot;</span><span class="content">bob</span><span class="delimiter">&quot;</span></span>, roles = { <span class="string"><span class="delimiter">&quot;</span><span class="content">USER</span><span class="delimiter">&quot;</span></span> })
+        <span class="type">void</span> badPost() {
+                Assertions.assertThrows(AccessDeniedException.class, () -&gt; <span class="local-variable">this</span>.customerService.readPrivilegedCustomerData(<span class="integer">2</span>));
+        }
+        <i class="conum" data-value="4"></i><b>(4)</b>
+
 }</code></pre>
 </div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>we&#8217;re using Spring Boot&#8217;s very convenient <code>@SpringBootTest</code> to autoconfigure the application so that we can interact with the full Spring Boot application</p>
+</li>
+<li>
+<p>Spring Security&#8217;s <code>@WithMockUser</code> annotation lets us describe a contrived, <em>mock</em>, user to plug in to the context.
+In this case, the user has a username of <code>josh@joshlong.com</code>, and two roles.</p>
+</li>
+<li>
+<p>this test should fail because our mock user won&#8217;t have the necessary roles for authorization</p>
+</li>
+<li>
+<p>this test should fail because the returned <code>Customer</code> seemingly belongs to another user.</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Spring Security provides other annotations that give you progressively more and more control over the mock object installed in the context. <code>@WithMockUser</code> lets you describe the attributes for a user which it will place in the <code>SecurityContext</code>. <code>@WithUserDetails</code> lets you specify not just the attributes of a mock <code>User</code>, but the <code>UserDetailsService</code> bean name from which to source a mock <code>User</code>.
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
@@ -11564,7 +11619,7 @@ Now, all the other machinery in Spring Security that consults this thread local 
 <div id="footer">
 <div id="footer-text">
 Version 1.0<br>
-Last updated 2026-07-19 21:26:43 UTC
+Last updated 2026-07-19 22:04:49 UTC
 </div>
 </div>
 </body>
