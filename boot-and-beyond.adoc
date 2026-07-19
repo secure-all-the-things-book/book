@@ -621,6 +621,7 @@ include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_b
 Here, we're using a fake client to exercise the network and protocol interface for the service and to make assertions about the results.
 
 
+
 // todo
 // springboottest
 // slices
@@ -632,7 +633,9 @@ Spring Framework doesn't know about Spring Boot autoconfiguration.
 And we'd have to recreate all of it to sufficiently test things as to reproduce them in production.
 Instead, we'll use Spring Boot's testing support, which builds on the support introduced in the Spring Framework, to do this.
 
-Everything you've learned so far still applies, there's jsut _more_ to the story.
+TIP: Spring Boot automatically pulls in a whole spate of interesting testing libraries, like Awaitility (for testing asynchronous systems), JSONPath (XPAth for JSON), Mockito (a mocking library), AssertJ (for various assertions), Hamcrest (and for more assertions and matchers), and JUnit (the de facto standard testing framework).
+
+Everything you've learned so far still applies, there's just _more_ to the story.
 Let's start with a jack-of-all trades annotation, `@SpringBootTest`, which works every time, but might be more than you need in some cases.
 Add `@SpringBootTest` to a test class and it'll launch the production configuration and environment and then your tests will run with access to all the requisite beans.
 You can continue using `@TestBean` and `@MockitoBean` and `@MockitoSpyBean`, of course.
@@ -710,6 +713,35 @@ include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_b
 Shut down all your Docker images and then run this test, and it'll still work, because the service connection will supply the PostgreSQL instance and our SQL initialization logic (`schema.sql` and `data.sql`, defined earlier) will initialize the schema, all before we ever run a single test.
 
 The test is green.
+Love to see it.
+
+=== Spring Boot Test Slices
+
+Spring Boot's got the ability to stand up your entire application and let you swap out individual components in the object graph.
+This works well, but it means that you're paying the cost of constructing the entire object graph each and every time the program starts.
+Spring Boot has the notion of _test slices_, which can activate only the objects you need to test a component in its particular subsystem – data, JSON, the web, security, etc.
+
+In most cases, the user would simply add the relevatn annotation from one of the dozens of supported test modules (`@JsonTest`, `@DataJdbcTest`, `@WebMvcTest`, etc.) to get the requisite autoconfiguration for just that subsystem.
+Then proceed as normal.
+All of these special annotations in turn are meta-annotations and use `@AutoConfigure*` variants and `@ImportAutoConfiguration`.
+You can usually test with just one main annotation, e.g, `@DataJdbcTest`.
+
+TIP: You can't have more than one main annotation, but you can have one main annotation _and_ one or more of the `@AutoConfigure*` variants.
+
+Let's look at an example.
+
+[source,java]
+----
+include::{code}/beans-to-boot/beans-to-boot/src/test/java/com/example/beans_to_boot/boot/DataJdbcTestTest.java[]
+----
+
+the `@DataJdbcTest` starts an embedded SQL database for us.
+Recall that when we started this project we added `H2` to the specification on the Spring Initializr.
+Likewise, it runs all tests in a transaction that is automatically rolled back once the test is done, ensuring that the database state is consistent between tests.
+You get all this _while_ writing less code and while executing a bit faster than when running the full Spring `ApplicationContext`.
+These gains pay off in a larger suite of tests.
+
+All in all, Spring Boot's testing support is a crucial way to think about how to build software.
 
 == Next Steps
 

@@ -37,7 +37,7 @@ But first, we'll need a project and a database...
 We will need to incept a new project.
 It's just Java and some libraries, so in theory you could create your own with no issues.
 But I like to use the https://start.spring.io[Spring Initializr (https://start.spring.io)].
-Visit the Spring Initializr and make the following dependency selections: `Spring Boot Actuator`, `Thymeleaf`, `Spring Data JDBC`, `PostgreSQL Driver`, `Spring Web`, `GraalVM Native Support`, `OpenTelemetry`, and `Spring Boot DevTools`, and `Testcontainers`.
+Visit the Spring Initializr and make the following dependency selections: `Spring Boot Actuator`, `Thymeleaf`, `Spring Data JDBC`, `PostgreSQL Driver`, `H2`, `Spring Web`, `GraalVM Native Support`, `OpenTelemetry`, and `Spring Boot DevTools`, and `Testcontainers`.
 Select Java 25 (or later), and Apache Maven as the build tool.
 You could use Gradle if you prefer, though I'll be showing Apache Maven.
 
